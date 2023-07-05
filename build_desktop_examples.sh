@@ -67,17 +67,27 @@ apps="${app_dir}/*"
 for app in ${apps}; do
   if [[ -d "${app}" ]]; then
     target_name=${app##*/}
-    if [[ "${target_name}" == "autoflip" ||
-          "${target_name}" == "hello_world" ||
-          "${target_name}" == "media_sequence" ||
-          "${target_name}" == "object_detection_3d" ||
-          "${target_name}" == "template_matching" ||
-          "${target_name}" == "youtube8m" ]]; then
-      continue
+    if [[ "${target_name}" == "hello_world" ||
+          "${target_name}" == "hello_ovms" ]]; then
+      target="${app}:${target_name}"
+    elif
+      if [[ "${target_name}" == "media_sequence" ]]; then
+        target="${app}:${target_name}_demo"
+    elif
+      if [[ "${target_name}" == "autoflip" ]]; then
+        target="${app}:run_${target_name}"
+    elif
+      if [[ "${target_name}" == "object_detection_3d" ]]; then
+        target="${app}:objectron_cpu"
+    elif
+      if [[ "${target_name}" == "template_matching" ]]; then
+        target="${app}:template_matching_tflite"
+    elif
+      if [[ "${target_name}" == "youtube8m" ]]; then
+        target="${app}:extract_yt8m_features"
+    else
+      target="${app}:${target_name}_cpu"
     fi
-    target="${app}:${target_name}_cpu"
-
-    echo "=== Target: ${target}"
 
     if [[ $run_only == false ]]; then
       bazel_flags=("${default_bazel_flags[@]}")
