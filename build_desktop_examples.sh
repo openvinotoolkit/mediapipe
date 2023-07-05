@@ -70,21 +70,18 @@ for app in ${apps}; do
     if [[ "${target_name}" == "hello_world" ||
           "${target_name}" == "hello_ovms" ]]; then
       target="${app}:${target_name}"
-    elif
-      if [[ "${target_name}" == "media_sequence" ]]; then
+    elif [[ "${target_name}" == "media_sequence" ]]; then
         target="${app}:${target_name}_demo"
-    elif
-      if [[ "${target_name}" == "autoflip" ]]; then
+        continue
+    elif [[ "${target_name}" == "autoflip" ]]; then
         target="${app}:run_${target_name}"
-    elif
-      if [[ "${target_name}" == "object_detection_3d" ]]; then
+    elif [[ "${target_name}" == "object_detection_3d" ]]; then
         target="${app}:objectron_cpu"
-    elif
-      if [[ "${target_name}" == "template_matching" ]]; then
+    elif [[ "${target_name}" == "template_matching" ]]; then
         target="${app}:template_matching_tflite"
-    elif
-      if [[ "${target_name}" == "youtube8m" ]]; then
+    elif [[ "${target_name}" == "youtube8m" ]]; then
         target="${app}:extract_yt8m_features"
+        continue
     else
       target="${app}:${target_name}_cpu"
     fi
@@ -94,9 +91,10 @@ for app in ${apps}; do
       bazel_flags+=(${target})
 
       bazelisk "${bazel_flags[@]}"
-      cp -f "${bin_dir}/${app}/"*"_cpu" "${out_dir}"
     fi
+
     if [[ $build_only == false ]]; then
+      cp -f "${bin_dir}/${app}/"*"" "${out_dir}"
       if  [[ ${target_name} == "object_tracking" ]]; then
         graph_name="tracking/object_detection_tracking"
       elif [[ ${target_name} == "upper_body_pose_tracking" ]]; then

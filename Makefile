@@ -29,13 +29,12 @@ docker_build:
 	--build-arg OVMS_BRANCH=$(OVMS_BRANCH) \
 	-t $(OVMS_MEDIA_DOCKER_IMAGE):$(OVMS_MEDIA_IMAGE_TAG)
 
-tests: run_unit_tests build_examples run_hello_ovms
+tests: run_unit_tests run_hello_world run_hello_ovms
 run_hello_ovms:
 	docker run -it $(OVMS_MEDIA_DOCKER_IMAGE):$(OVMS_MEDIA_IMAGE_TAG) bazel-bin/mediapipe/examples/desktop/hello_ovms/hello_ovms | grep "Output tensor data: 9 - 11"
 
 run_unit_tests:
 	docker run -it $(OVMS_MEDIA_DOCKER_IMAGE):$(OVMS_MEDIA_IMAGE_TAG) bazel test --define=MEDIAPIPE_DISABLE_GPU=1 //mediapipe/framework/... | grep "Build completed successfully"
 
-build_examples:
-	docker run -it $(OVMS_MEDIA_DOCKER_IMAGE):$(OVMS_MEDIA_IMAGE_TAG) bash build_desktop_examples.sh -b | grep "Build completed successfully"
-
+run_hello_world:
+	docker run -it $(OVMS_MEDIA_DOCKER_IMAGE):$(OVMS_MEDIA_IMAGE_TAG) bazel-bin/mediapipe/examples/desktop/hello_world/hello_world | grep "Hello World!"
