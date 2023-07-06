@@ -156,20 +156,19 @@ RUN cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_ONLY=s3 -DENABLE_TESTING=OFF -DBUIL
 
 ####### End of AWS S3 SDK
 
-COPY . /mediapipe/
-
-# RUN examples
-WORKDIR /mediapipe
-
 ####### Build OpenCV
-RUN sed -i 's:git checkout 3.4:git checkout 4.7.0:g' setup_opencv.sh
-RUN sed -i 's:#"include/opencv4/opencv2/\*\*/\*\.h\*",:"include/opencv4/opencv2/\*\*/\*\.h\*",:g' third_party/opencv_linux.BUILD
-RUN sed -i 's:#"include/opencv4/opencv2/\*\.h\*",:"include/opencv4/opencv2/\*\.h\*",:g' third_party/opencv_linux.BUILD
-RUN sed -i 's:#"include/opencv4/",:"include/opencv4/",:g' third_party/opencv_linux.BUILD
+COPY setup_opencv.sh /mediapipe/setup_opencv.sh
+COPY third_party/opencv_linux.BUILD /mediapipe/third_party/opencv_linux.BUILD
+COPY WORKSPACE /mediapipe/WORKSPACE
+
+WORKDIR /mediapipe
 
 RUN ./setup_opencv.sh
 ####### End of OpenCV
 
+COPY . /mediapipe/
+
+# BUILD examples
 ENV GLOG_logtostderr=1
 ENV LD_LIBRARY_PATH="/opt/intel/openvino/runtime/lib/intel64/:${LD_LIBRARY_PATH}"
 RUN bash build_desktop_examples.sh -b
