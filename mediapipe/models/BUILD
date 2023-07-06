@@ -40,3 +40,7 @@ mediapipe_files(
         "ssdlite_object_detection_labelmap.txt",
     ],
 )
+
+exports_files(
+    srcs = glob(["**"]),
+)
