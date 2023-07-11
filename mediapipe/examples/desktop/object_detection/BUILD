@@ -53,3 +53,16 @@ cc_binary(
         "//mediapipe/graphs/object_detection:desktop_tflite_calculators",
     ],
 )
+
+cc_binary(
+    name = "object_detection_ovms",
+    data = [
+        "//mediapipe/models:ssdlite_object_detection.xml",
+        "//mediapipe/models:ssdlite_object_detection.bin",
+        "//mediapipe/models:ssdlite_object_detection_labelmap.txt"
+	],
+    deps = [
+        "//mediapipe/examples/desktop:simple_run_graph_main",
+        "//mediapipe/graphs/object_detection:desktop_ovms_calculators",
+    ],
+)

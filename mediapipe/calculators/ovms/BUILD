@@ -22,11 +22,17 @@ cc_library(
     srcs = ["modelapiovmsadapter.cc",
             "modelapiovmsadapter.hpp",
             "modelapiovmsinferencecalculator.cc",
+            "openvino_converter_calculator.cc",
+            "openvino_tensors_to_classification_calculator.cc",
+            "openvino_tensors_to_detections_calculator.cc",
             "modelapiovmssessioncalculator.cc"],
     deps = [
         "@ovms//src:ovms_lib",
         "//mediapipe/calculators/ovms:modelapiovmsinferencecalculator_cc_proto",
         "//mediapipe/calculators/ovms:modelapiovmssessioncalculator_cc_proto",
+        "//mediapipe/calculators/ovms:openvino_converter_calculator_cc_proto",
+        "//mediapipe/calculators/ovms:openvino_tensors_to_classification_calculator_cc_proto",
+        "//mediapipe/calculators/ovms:openvino_tensors_to_detections_calculator_cc_proto",
         "//mediapipe/framework:calculator_framework",
         "//mediapipe/framework/port:status",
         "@model_api//:adapter_api",
@@ -37,7 +43,34 @@ cc_library(
 )
 
 load("@mediapipe//mediapipe/framework/port:build_config.bzl", "mediapipe_cc_proto_library", "mediapipe_proto_library")
-
+# openvino
+mediapipe_proto_library(
+    name = "openvino_converter_calculator_proto",
+    srcs = ["openvino_converter_calculator.proto"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//mediapipe/framework:calculator_options_proto",
+        "//mediapipe/framework:calculator_proto",
+    ],
+)
+mediapipe_proto_library(
+    name = "openvino_tensors_to_classification_calculator_proto",
+    srcs = ["openvino_tensors_to_classification_calculator.proto"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//mediapipe/framework:calculator_options_proto",
+        "//mediapipe/framework:calculator_proto",
+    ],
+)
+mediapipe_proto_library(
+    name = "openvino_tensors_to_detections_calculator_proto",
+    srcs = ["openvino_tensors_to_detections_calculator.proto"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//mediapipe/framework:calculator_options_proto",
+        "//mediapipe/framework:calculator_proto",
+    ],
+)
 # ovms
 mediapipe_proto_library(
     name = "modelapiovmsinferencecalculator_proto",
