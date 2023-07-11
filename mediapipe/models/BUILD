@@ -38,9 +38,10 @@ mediapipe_files(
         "object_detection_saved_model/saved_model.pb",
         "ssdlite_object_detection.tflite",
         "ssdlite_object_detection_labelmap.txt",
+        "ssdlite_object_detection_openvino/ssdlite_object_detection.bin",
+        "ssdlite_object_detection_openvino/ssdlite_object_detection.mapping",
+        "ssdlite_object_detection_openvino/ssdlite_object_detection.onnx",
+        "ssdlite_object_detection_openvino/ssdlite_object_detection.xml",
+        "ssdlite_object_detection_openvino/ssdlite_object_detection_labelmap.txt",
     ],
-)
-
-exports_files(
-    srcs = glob(["**"]),
 )
