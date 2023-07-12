@@ -54,7 +54,9 @@ namespace {
 
 const std::string SESSION_TAG{"SESSION"};
 const std::string OVTENSOR_TAG{"OVTENSOR"};
+const std::string OVTENSORS_TAG{"OVTENSORS"};
 const std::string TFTENSOR_TAG{"TENSOR"};
+const std::string TFTENSORS_TAG{"TENSORS"};
 
 static tensorflow::Tensor convertOVTensor2TFTensor(const ov::Tensor& t) {
     using tensorflow::Tensor;
@@ -96,9 +98,15 @@ public:
         RET_CHECK(!cc->Outputs().GetTags().empty());
         for (const std::string& tag : cc->Inputs().GetTags()) {
             // could be replaced with absl::StartsWith when migrated to MP
-            if (ovms::startsWith(tag, OVTENSOR_TAG)) {
+            if (ovms::startsWith(tag, OVTENSORS_TAG)) {
+                LOG(INFO) << "setting input tag:" << tag << " to OVTensor";
+                cc->Inputs().Tag(tag).Set<std::vector<ov::Tensor>>();
+            } else if (ovms::startsWith(tag, OVTENSOR_TAG)) {
                 LOG(INFO) << "setting input tag:" << tag << " to OVTensor";
                 cc->Inputs().Tag(tag).Set<ov::Tensor>();
+            } else if (ovms::startsWith(tag, TFTENSORS_TAG)) {
+                LOG(INFO) << "setting input tag:" << tag << " to TFTensor";
+                cc->Inputs().Tag(tag).Set<std::vector<tensorflow::Tensor>>();
             } else if (ovms::startsWith(tag, TFTENSOR_TAG)) {
                 LOG(INFO) << "setting input tag:" << tag << " to TFTensor";
                 cc->Inputs().Tag(tag).Set<tensorflow::Tensor>();
@@ -114,12 +122,18 @@ public:
             }
         }
         for (const std::string& tag : cc->Outputs().GetTags()) {
-            if (ovms::startsWith(tag, OVTENSOR_TAG)) {
+            if (ovms::startsWith(tag, OVTENSORS_TAG)) {
+                LOG(INFO) << "setting input tag:" << tag << " to std::vector<ov::Tensor>";
+                cc->Outputs().Tag(tag).Set<std::vector<ov::Tensor>>();
+            } else if (ovms::startsWith(tag, OVTENSOR_TAG)) {
+                LOG(INFO) << "setting input tag:" << tag << " to OVTensor";
                 cc->Outputs().Tag(tag).Set<ov::Tensor>();
-                LOG(INFO) << "setting output tag:" << tag << " to OVTensor";
+            } else if (ovms::startsWith(tag, TFTENSORS_TAG)) {
+                LOG(INFO) << "setting input tag:" << tag << " to TFTensor";
+                cc->Outputs().Tag(tag).Set<std::vector<tensorflow::Tensor>>();
             } else if (ovms::startsWith(tag, TFTENSOR_TAG)) {
+                LOG(INFO) << "setting input tag:" << tag << " to TFTensor";
                 cc->Outputs().Tag(tag).Set<tensorflow::Tensor>();
-                LOG(INFO) << "setting output tag:" << tag << " to TFTensor";
             } else {
                 // TODO decide which will be easier to migrating later
                 // using OV tensor by default will be more performant
@@ -187,7 +201,10 @@ public:
             } else {
                 realInputName = it->second.c_str();
             }
-            if (ovms::startsWith(tag, OVTENSOR_TAG)) {
+            if (ovms::startsWith(tag, OVTENSORS_TAG)) {
+                auto& packet = cc->Inputs().Tag(tag).Get<std::vector<ov::Tensor>>();
+                input[realInputName] = packet[0];
+            } else if (ovms::startsWith(tag, OVTENSOR_TAG)) {
                 auto& packet = cc->Inputs().Tag(tag).Get<ov::Tensor>();
                 input[realInputName] = packet;
 #if 0
@@ -226,8 +243,10 @@ public:
             RET_CHECK(false);
         }
         auto outputsCount = output.size();
-        RET_CHECK(outputsCount == cc->Outputs().GetTags().size());
+        RET_CHECK(outputsCount >= cc->Outputs().GetTags().size());
+        LOG(INFO) << "output tags size: " << cc->Outputs().GetTags().size();
         for (const auto& tag : cc->Outputs().GetTags()) {
+            LOG(INFO) << "Processing tag: " << tag;
             std::string tensorName;
             auto it = options.tag_to_output_tensor_names().find(tag);
             if (it == options.tag_to_output_tensor_names().end()) {
@@ -240,7 +259,22 @@ public:
                 LOG(INFO) << "Could not find: " << tensorName << " in inference output";
                 RET_CHECK(false);
             }
-            if (ovms::startsWith(tag, OVTENSOR_TAG)) {
+            if (ovms::startsWith(tag, OVTENSORS_TAG)) {
+                auto tensors = std::make_unique<std::vector<ov::Tensor>>();
+                LOG(INFO) << "XYZXYZXYZXYZ hacking";
+                for (auto& [name,tensor] : output) {
+                    tensors->emplace_back(tensor);
+                }
+                LOG(INFO) << "XXXXXXXX outputs size: " << output.size();
+                LOG(INFO) << "XXXXXXXX after packing size: " << tensors->size();
+                cc->Outputs().Tag(tag).Add(
+                    tensors.release(),
+                    cc->InputTimestamp());
+
+                //break; // TODO FIXME order of outputs
+                // no need to break since we only have one tag
+                // create concatenator calc
+            }else if (ovms::startsWith(tag, OVTENSOR_TAG)) {
                 cc->Outputs().Tag(tag).Add(
                     new ov::Tensor(tensorIt->second),
                     cc->InputTimestamp());

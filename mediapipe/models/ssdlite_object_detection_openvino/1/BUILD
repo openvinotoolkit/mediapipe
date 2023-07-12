@@ -23,6 +23,5 @@ exports_files(
         "ssdlite_object_detection.mapping",
         "ssdlite_object_detection.onnx",
         "ssdlite_object_detection.xml",
-        "ssdlite_object_detection_labelmap.txt",
     ],
 )
