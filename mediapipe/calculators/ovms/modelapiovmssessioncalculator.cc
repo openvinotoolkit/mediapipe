@@ -56,6 +56,8 @@ class ModelAPISessionCalculator : public CalculatorBase {
     OVMS_Server* cserver{nullptr};
     OVMS_ServerSettings* _serverSettings{nullptr};
     OVMS_ModelsSettings* _modelsSettings{nullptr};
+    static std::vector<std::string> input_order_list;
+    static std::vector<std::string> output_order_list;
 public:
     static absl::Status GetContract(CalculatorContract* cc) {
         LOG(INFO) << "Session GetContract start";
@@ -67,6 +69,16 @@ public:
         // TODO validate version from string
         // TODO validate service url format
         // this is for later support for remote server inference
+        auto& input_list = options.input_order_list();
+        input_order_list.clear();
+        for(int i = 0; i < input_list.size(); i++){
+            input_order_list.push_back(input_list[i]);
+        }
+        auto& output_list = options.output_order_list();
+        output_order_list.clear();
+        for(int i = 0; i < output_list.size(); i++){
+            output_order_list.push_back(output_list[i]);
+        }
         LOG(INFO) << "Session GetContract end";
         return absl::OkStatus();
     }

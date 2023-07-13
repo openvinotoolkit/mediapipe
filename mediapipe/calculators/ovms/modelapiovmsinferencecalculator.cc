@@ -203,7 +203,15 @@ public:
             }
             if (ovms::startsWith(tag, OVTENSORS_TAG)) {
                 auto& packet = cc->Inputs().Tag(tag).Get<std::vector<ov::Tensor>>();
-                input[realInputName] = packet[0];
+                if (session->input_order_list.size() > 0){
+                    for (int i = 0; i < session->input_order_list.size(); i++)
+                    {
+                        auto& tensor = packet[i];
+                        //TODO
+                    }
+                } else  {
+                    input[realInputName] = packet[0];
+                }
             } else if (ovms::startsWith(tag, OVTENSOR_TAG)) {
                 auto& packet = cc->Inputs().Tag(tag).Get<ov::Tensor>();
                 input[realInputName] = packet;
@@ -261,9 +269,21 @@ public:
             }
             if (ovms::startsWith(tag, OVTENSORS_TAG)) {
                 auto tensors = std::make_unique<std::vector<ov::Tensor>>();
-                LOG(INFO) << "XYZXYZXYZXYZ hacking";
-                for (auto& [name,tensor] : output) {
-                    tensors->emplace_back(tensor);
+                if (session->output_order_list.size() > 0){
+                    for (int i = 0; i < session->output_order_list.size(); i++)
+                    {
+                        tensorName = packet[i];
+                        tensorIt = output.find(tensorName);
+                        if (tensorIt == output.end()) {
+                            LOG(INFO) << "Could not find: " << tensorName << " in inference output";
+                            RET_CHECK(false);
+                        }
+                        tensors->emplace_back(tensorIt);
+                    }
+                } else  {
+                    for (auto& [name,tensor] : output) {
+                        tensors->emplace_back(tensor);
+                    }
                 }
                 LOG(INFO) << "XXXXXXXX outputs size: " << output.size();
                 LOG(INFO) << "XXXXXXXX after packing size: " << tensors->size();
