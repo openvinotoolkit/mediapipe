@@ -30,6 +30,5 @@ message ModelAPIOVMSSessionCalculatorOptions {
     // service_url: "13.21.212.171:9718"
     optional string service_url = 3;
     optional string server_config = 4;
-    repeated string input_order_list = 5;
-    repeated string output_order_list = 6;
+    // repeated gives optional option by default
 }

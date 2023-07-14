@@ -51,16 +51,6 @@ node {
 # Runs a TensorFlow Lite model on CPU that takes an image tensor and outputs a
 # vector of tensors representing, for instance, detection boxes/keypoints and
 # scores.
-#node {
-#  calculator: "OpenVINOInferenceCalculator"
-#  input_stream: "TENSORS:image_tensor"
-#  output_stream: "TENSORS:detection_tensors"
-#  node_options: {
-#    [type.googleapis.com/mediapipe.OpenVINOInferenceCalculatorOptions] {
-#      model_path: "mediapipe/models/ssdlite_object_detection.xml"
-#    }
-#  }
-#}
 node {
   calculator: "ModelAPISessionCalculator"
   output_side_packet: "SESSION:session"
@@ -72,8 +62,6 @@ node {
     }
   }
 }
-# TODO vector<tensor>
-# TODO read config.json
 node {
   calculator: "ModelAPISideFeedCalculator"
   input_side_packet: "SESSION:session"
@@ -81,6 +69,8 @@ node {
   output_stream: "OVTENSORS2:detection_tensors"
   node_options: {
     [type.googleapis.com / mediapipe.ModelAPIInferenceCalculatorOptions]: {
+          input_order_list :["normalized_input_image_tensor"]
+          output_order_list :["raw_outputs/box_encodings","raw_outputs/class_predictions"]
           tag_to_input_tensor_names {
             key: "OVTENSORS"
             value: "normalized_input_image_tensor"
