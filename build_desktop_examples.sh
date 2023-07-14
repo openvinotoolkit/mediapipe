@@ -101,6 +101,7 @@ for app in ${apps}; do
       if [[ "${target_name}" == "${one_target_name}" ]]; then
         bazel_flags=("${default_bazel_flags[@]}")
         bazel_flags+=(${target})
+        echo "BUILD COMMAND:bazelisk ${bazel_flags[@]}"
         bazelisk "${bazel_flags[@]}"
         exit 0
       else
