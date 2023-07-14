@@ -291,7 +291,7 @@ public:
                 auto tensors = std::make_unique<std::vector<ov::Tensor>>();
                 if ( output.size() > 1 && this->output_order_list.size() <= 1)
                 {
-                    LOG(INFO) << "Output_order_list not set in options for multiple outputs.";
+                    LOG(INFO) << "output_order_list not set in options for multiple outputs.";
                     RET_CHECK(false);
                 }
                 if (this->output_order_list.size() > 0) {
