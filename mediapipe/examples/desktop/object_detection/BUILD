@@ -64,5 +64,6 @@ cc_binary(
     deps = [
         "//mediapipe/examples/desktop:simple_run_graph_main",
         "//mediapipe/graphs/object_detection:desktop_ovms_calculators",
+        "//mediapipe/graphs/object_detection:desktop_tflite_calculators", # TODO temporary to check converters
     ],
 )

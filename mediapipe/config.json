@@ -4,6 +4,11 @@
                 "name":"ssdlite_object_detection",
                 "base_path":"./models/ssdlite_object_detection"
             }
+        },
+        { "config": {
+                "name":"ssdlite_object_detection2",
+                "base_path":"./models/ssdlite_object_detection2"
+            }
         }
     ]
 }
