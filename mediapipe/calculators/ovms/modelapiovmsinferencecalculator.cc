@@ -117,6 +117,7 @@ class ModelAPISideFeedCalculator : public CalculatorBase {
     std::unordered_map<std::string, std::string> outputNameToTag;
     // TODO create only if required
   std::unique_ptr<tflite::Interpreter> interpreter_ = absl::make_unique<tflite::Interpreter>();
+  bool initialized = false;
 
 public:
     static absl::Status GetContract(CalculatorContract* cc) {
@@ -320,13 +321,14 @@ public:
             } else if (ovms::startsWith(tag, TFLITE_TENSORS_TAG)) {
                 LOG(INFO) << "YYYY will process TfLite tensors";
                 // TODO BEGIN move to Open()
+                auto outputStreamTensors = std::vector<TfLiteTensor>();
+                if (!this->initialized) {
                 interpreter_->AddTensors(output.size()); // HARDCODE
                 interpreter_->SetInputs({0,1}); // HARDCODE was 0 for single input
                 LOG(INFO) << "YYYY will process TfLite tensors: " << interpreter_->inputs().size();
                 // TODO END move to Open()
                 // interpreter Process()
                 //auto outputStreamTensors = std::make_unique<std::vector<TfLiteTensor>>();
-                auto outputStreamTensors = std::vector<TfLiteTensor>();
                 LOG(INFO) << "YYYY will process TfLite tensors";
                 size_t tensorId = 0;
                 for (auto& [name,tensor] : output) {
@@ -342,8 +344,10 @@ public:
                                                    tfliteshape, TfLiteQuantization());
                     ++tensorId;
                 }
-                tensorId = 0;
                 interpreter_->AllocateTensors();
+                    this->initialized = true;
+                }
+                size_t tensorId = 0;
                 for (auto& [name,tensor] : output) {
                     LOG(INFO) << "YYYY will process TfLite tensors of tensorId: " << tensorId;
                     const int interpreterTensorId = interpreter_->inputs()[tensorId];
@@ -366,7 +370,7 @@ public:
                     outputStreamTensors.emplace_back(*tflitetensor);
                     ++tensorId;
                 }
-                std::reverse(outputStreamTensors.begin(), outputStreamTensors.end());
+                //std::reverse(outputStreamTensors.begin(), outputStreamTensors.end());
                 LOG(INFO) << "YYYY output size: " << outputStreamTensors.size();
                 LOG(INFO) << "YYYY output address: " << (void*)&outputStreamTensors;
                 const auto raw_box_tensor = &(outputStreamTensors)[0];
