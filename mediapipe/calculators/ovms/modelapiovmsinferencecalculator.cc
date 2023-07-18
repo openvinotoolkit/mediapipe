@@ -30,12 +30,8 @@
 #include "mediapipe/framework/calculator_framework.h"
 #include "mediapipe/framework/port/canonical_errors.h"
 #include "mediapipe/calculators/ovms/modelapiovmsinferencecalculator.pb.h"
-//#include "mediapipe/util/tflite/tflite_model_loader.h"
 #include "tensorflow/lite/c/common.h"
-#include "tensorflow/lite/error_reporter.h"
 #include "tensorflow/lite/interpreter.h"
-#include "tensorflow/lite/kernels/register.h"
-#include "tensorflow/lite/model.h" // TFLiteTensor
 // here we need to decide if we have several calculators (1 for OVMS repository, 1-N inside mediapipe)
 // for the one inside OVMS repo it makes sense to reuse code from ovms lib
 namespace mediapipe {
