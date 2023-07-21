@@ -131,6 +131,8 @@ def _add_mp_init_files():
   # Save the original mediapipe/__init__.py file.
   shutil.copyfile(MP_DIR_INIT_PY, _get_backup_file(MP_DIR_INIT_PY))
   mp_dir_init_file = open(MP_DIR_INIT_PY, 'a')
+  # Removes licence but clears contents so that it doesnt get messed up with every build
+  mp_dir_init_file.truncate(0);
   mp_dir_init_file.writelines([
       '\n', 'from mediapipe.python import *\n',
       'import mediapipe.python.solutions as solutions \n',
@@ -272,7 +274,8 @@ class BuildModules(build_ext.build_ext):
         'hand_landmark/hand_landmark_tracking_cpu',
         'holistic_landmark/holistic_landmark_cpu', 'objectron/objectron_cpu',
         'pose_landmark/pose_landmark_cpu',
-        'selfie_segmentation/selfie_segmentation_cpu'
+        'selfie_segmentation/selfie_segmentation_cpu',
+        'object_detection_ovms/object_detection_ovms'
     ]
     for elem in binary_graphs:
       binary_graph = os.path.join('mediapipe/modules/', elem)
