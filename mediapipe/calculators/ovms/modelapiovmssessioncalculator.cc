@@ -15,6 +15,8 @@
 //*****************************************************************************
 #include <iostream>
 #include <memory>
+#include <thread>
+#include <chrono>
 #include <sstream>
 #include <unordered_map>
 
@@ -46,7 +48,6 @@ ov::Core UNUSED_OV_CORE;
             OVMS_StatusGetDetails(err, &msg);                                               \
             LOG(INFO) << "Error encountred in OVMSCalculator:" << msg << " code: " << code; \
             OVMS_StatusDelete(err);                                                         \
-            RET_CHECK(err == nullptr);                                                      \
         }                                                                                   \
     }
 class ModelAPISessionCalculator : public CalculatorBase {
@@ -100,8 +101,20 @@ public:
             OVMS_ServerSettingsNew(&_serverSettings);
             OVMS_ModelsSettingsNew(&_modelsSettings);
             OVMS_ModelsSettingsSetConfigPath(_modelsSettings, options.server_config().c_str());
+            LOG(INFO) << "state config file:" << options.server_config();
             OVMS_ServerSettingsSetLogLevel(_serverSettings, OVMS_LOG_DEBUG);
+            auto* err = OVMS_ServerStartFromConfigurationFile(cserver, _serverSettings, _modelsSettings);
+            if (err != nullptr) {
+                uint32_t code = 0;
+                const char* msg = nullptr;
+                OVMS_StatusGetCode(err, &code);
+                OVMS_StatusGetDetails(err, &msg);
+                LOG(INFO) << "Error encountred in OVMSCalculator:" << msg << " code: " << code;
+                LOG(INFO) << " for no we will ignore error here"; // this is due to not starting several ovms
+                OVMS_StatusDelete(err);
+            }
             ASSERT_CAPI_STATUS_NULL(OVMS_ServerStartFromConfigurationFile(cserver, _serverSettings, _modelsSettings));
+            std::this_thread::sleep_for(std::chrono::seconds(3));
             LOG(INFO) << "Started new server";
         }
 

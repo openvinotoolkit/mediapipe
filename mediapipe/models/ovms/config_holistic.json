@@ -1,0 +1,34 @@
+{
+    "model_config_list" : [
+        { "config": {
+                "name":"face_landmark",
+                "base_path":"./face_landmark"
+            }
+        },
+        { "config": {
+                "name":"hand_landmark_full",
+                "base_path":"./hand_landmark_full"
+            }
+        },
+        { "config": {
+                "name":"hand_recrop",
+                "base_path":"./hand_recrop"
+            }
+        },
+        { "config": {
+                "name":"pose_detection",
+                "base_path":"./pose_detection"
+            }
+        },
+        { "config": {
+                "name":"face_detection",
+                "base_path":"./face_detection_short_range"
+            }
+        },
+        { "config": {
+                "name":"pose_landmark_full",
+                "base_path":"./pose_landmark_full"
+            }
+        }
+    ]
+}

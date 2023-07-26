@@ -34,6 +34,7 @@ cc_library(
         "//mediapipe/calculators/openvino:openvino_tensors_to_detections_calculator",
         "//mediapipe/framework:calculator_framework",
         "//mediapipe/framework/port:status",
+        "//mediapipe/framework/formats:tensor", # Tensor GetContract
         "@ovms//src:ovms_lib",
         "@model_api//:adapter_api",
         "@org_tensorflow//tensorflow/lite:framework_stable", # to use tflite
