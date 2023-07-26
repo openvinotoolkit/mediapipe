@@ -77,19 +77,15 @@ node {
   output_side_packet: "SESSION:session"
   node_options: {
     [type.googleapis.com / mediapipe.ModelAPIOVMSSessionCalculatorOptions]: {
-      servable_name: "face_detection"  # TODO check
+      servable_name: "face_detection"
       servable_version: "1"
       server_config: "mediapipe/models/ovms/config_holistic.json"
     }
   }
 }
-# TODO vector<tensor>
-# TODO read config.json
 node {
   calculator: "ModelAPISideFeedCalculator"
   input_side_packet: "SESSION:session"
-  #input_stream: "TFLITE_TENSORS:input_tensors"
-  #output_stream: "TFLITE_TENSORS:detection_tensors"
   input_stream: "TENSORS:input_tensors"
   output_stream: "TENSORS:detection_tensors"
   node_options: {
@@ -101,11 +97,11 @@ node {
           }
           tag_to_output_tensor_names {
             key: "TENSORS"
-            value: "regressors" #"raw_outputs/box_encodings"
+            value: "regressors"
           }
           tag_to_output_tensor_names {
             key: "TENSORS"
-            value: "classificators"   #"raw_outputs/class_predictions"
+            value: "classificators"
           }
         }
   }

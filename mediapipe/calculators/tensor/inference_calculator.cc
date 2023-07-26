@@ -63,6 +63,15 @@ class InferenceCalculatorSelectorImpl
     for (const auto& suffix : impls) {
       const auto impl = absl::StrCat("InferenceCalculator", suffix);
       if (!mediapipe::CalculatorBaseRegistry::IsRegistered(impl)) continue;
+      // TODO debug to remove
+      VLOG(1) << "Using " << suffix << " for InferenceCalculator with "
+              << (options.has_model_path()
+                      ? "model " + options.model_path()
+                      : "output_stream " + subgraph_node.output_stream(0));
+      LOG(INFO) << "Using " << suffix << " for InferenceCalculator with "
+              << (options.has_model_path()
+                      ? "model " + options.model_path()
+                      : "output_stream " + subgraph_node.output_stream(0));
       CalculatorGraphConfig::Node impl_node = subgraph_node;
       impl_node.set_calculator(impl);
       return tool::MakeSingleNodeGraph(std::move(impl_node));
@@ -74,6 +83,8 @@ class InferenceCalculatorSelectorImpl
 absl::StatusOr<Packet<TfLiteModelPtr>> InferenceCalculator::GetModelAsPacket(
     CalculatorContext* cc) {
   const auto& options = cc->Options<mediapipe::InferenceCalculatorOptions>();
+  // TODO debug changes
+  LOG(INFO) << "MMMMMMMMMMMMMMMMMMM InferenceCalculator modelpath: " << options.model_path();
   if (!options.model_path().empty()) {
     return TfLiteModelLoader::LoadFromPath(options.model_path());
   }
