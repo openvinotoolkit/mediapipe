@@ -17,7 +17,8 @@
         },
         { "config": {
                 "name":"pose_detection",
-                "base_path":"./pose_detection"
+                "base_path":"./pose_detection",
+                "layout": "NHWC:NCHW"
             }
         },
         { "config": {
