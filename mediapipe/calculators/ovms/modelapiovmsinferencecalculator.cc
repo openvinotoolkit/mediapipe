@@ -370,6 +370,7 @@ public:
                 RET_CHECK(false);
             }
             if (ovms::startsWith(tag, OVTENSORS_TAG)) {
+                LOG(INFO) << "OVMS calculator will process vector<ov::Tensor>";
                 auto tensors = std::make_unique<std::vector<ov::Tensor>>();
                 if ( output.size() > 1 && this->output_order_list.size() != this->output_order_list.size())
                 {
@@ -398,6 +399,7 @@ public:
                 // no need to break since we only have one tag
                 // create concatenator calc
             } else if (ovms::startsWith(tag, MPTENSORS_TAG)) {
+                LOG(INFO) << "OVMS calculator will process vector<Tensor>";
                 auto tensors = std::make_unique<std::vector<Tensor>>();
                 if ( output.size() > 1 && this->output_order_list.size() != this->output_order_list.size())
                 {
@@ -426,6 +428,8 @@ public:
                 // no need to break since we only have one tag
                 // create concatenator calc
             } else if (ovms::startsWith(tag, TFLITE_TENSORS_TAG)) {
+                // TODO FIXME use output_order_list
+                LOG(INFO) << "OVMS calculator will process vector<TfLiteTensor>";
                 auto outputStreamTensors = std::vector<TfLiteTensor>();
                 if (!this->initialized) {
                     interpreter_->AddTensors(output.size()); // HARDCODE
@@ -458,17 +462,17 @@ public:
                 cc->Outputs().Tag(tag).AddPacket(MakePacket<std::vector<TfLiteTensor>>(std::move(outputStreamTensors)).At( cc->InputTimestamp()));
                 break;
             }else if (ovms::startsWith(tag, OVTENSOR_TAG)) {
-                LOG(INFO) << "YYYY will process TfLite tensors";
+                LOG(INFO) << "OVMS calculator will process ov::Tensor";
                 cc->Outputs().Tag(tag).Add(
                     new ov::Tensor(tensorIt->second),
                     cc->InputTimestamp());
             } else if (ovms::startsWith(tag, TFTENSOR_TAG)) {
-                LOG(INFO) << "YYYY will process TfLite tensors";
+                LOG(INFO) << "OVMS calculator will process tensorflow::Tensor";
                 cc->Outputs().Tag(tag).Add(
                     new tensorflow::Tensor(convertOVTensor2TFTensor(tensorIt->second)),
                     cc->InputTimestamp());
             } else {
-                LOG(INFO) << "YYYY will process TfLite tensors";
+                LOG(INFO) << "OVMS calculator will process ov::Tensor";
                 /*
                 cc->Outputs().Tag(tag).Add(
                     new tensorflow::Tensor(convertOVTensor2TFTensor(tensorIt->second)),
@@ -478,7 +482,6 @@ public:
                     new ov::Tensor(tensorIt->second),
                     cc->InputTimestamp());
             }
-            LOG(INFO) << "YYYY will process TfLite tensors";
         }
         LOG(INFO) << "Main process end";
         return absl::OkStatus();

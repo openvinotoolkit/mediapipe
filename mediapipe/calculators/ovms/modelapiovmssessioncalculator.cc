@@ -48,8 +48,23 @@ ov::Core UNUSED_OV_CORE;
             OVMS_StatusGetDetails(err, &msg);                                               \
             LOG(INFO) << "Error encountred in OVMSCalculator:" << msg << " code: " << code; \
             OVMS_StatusDelete(err);                                                         \
+            RET_CHECK(nullptr == err);                                                      \
         }                                                                                   \
     }
+
+#define REPORT_CAPI_STATUS_NULL(C_API_CALL)                                                 \
+    {                                                                                       \
+        auto* err = C_API_CALL;                                                             \
+        if (err != nullptr) {                                                               \
+            uint32_t code = 0;                                                              \
+            const char* msg = nullptr;                                                      \
+            OVMS_StatusGetCode(err, &code);                                                 \
+            OVMS_StatusGetDetails(err, &msg);                                               \
+            LOG(INFO) << "Error encountred in OVMSCalculator:" << msg << " code: " << code; \
+            OVMS_StatusDelete(err);                                                         \
+        }                                                                                   \
+    }
+
 class ModelAPISessionCalculator : public CalculatorBase {
     std::shared_ptr<::InferenceAdapter> adapter;
     std::unordered_map<std::string, std::string> outputNameToTag;
@@ -103,19 +118,16 @@ public:
             OVMS_ModelsSettingsSetConfigPath(_modelsSettings, options.server_config().c_str());
             LOG(INFO) << "state config file:" << options.server_config();
             OVMS_ServerSettingsSetLogLevel(_serverSettings, OVMS_LOG_DEBUG);
-            auto* err = OVMS_ServerStartFromConfigurationFile(cserver, _serverSettings, _modelsSettings);
-            if (err != nullptr) {
-                uint32_t code = 0;
-                const char* msg = nullptr;
-                OVMS_StatusGetCode(err, &code);
-                OVMS_StatusGetDetails(err, &msg);
-                LOG(INFO) << "Error encountred in OVMSCalculator:" << msg << " code: " << code;
-                LOG(INFO) << " for no we will ignore error here"; // this is due to not starting several ovms
-                OVMS_StatusDelete(err);
+            bool isServerReady = false;
+            ASSERT_CAPI_STATUS_NULL(OVMS_ServerReady(cserver, &isServerReady));
+            if (!isServerReady) {
+                REPORT_CAPI_STATUS_NULL(OVMS_ServerStartFromConfigurationFile(cserver, _serverSettings, _modelsSettings));
             }
-            ASSERT_CAPI_STATUS_NULL(OVMS_ServerStartFromConfigurationFile(cserver, _serverSettings, _modelsSettings));
-            std::this_thread::sleep_for(std::chrono::seconds(3));
-            LOG(INFO) << "Started new server";
+            while (!isServerReady) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                ASSERT_CAPI_STATUS_NULL(OVMS_ServerReady(cserver, &isServerReady));
+            }
+            LOG(INFO) << "Ensured server is ready";
         }
 
         const std::string& servableName = options.servable_name();
