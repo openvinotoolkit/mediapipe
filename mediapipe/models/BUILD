@@ -41,7 +41,3 @@ mediapipe_files(
     ],
 )
 
-# TODO
-exports_files(
-    srcs=glob(["*"]),
-)
