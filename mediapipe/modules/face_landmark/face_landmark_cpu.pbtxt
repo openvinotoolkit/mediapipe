@@ -94,6 +94,7 @@ node {
   output_side_packet: "SESSION:session"
   node_options: {
     [type.googleapis.com / mediapipe.ModelAPIOVMSSessionCalculatorOptions]: {
+      #servable_name: "face_landmark_with_attention" # could be enabled when we have IR model
       servable_name: "face_landmark"
       servable_version: "1"
       server_config: "mediapipe/models/ovms/config_holistic.json"
