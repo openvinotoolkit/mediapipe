@@ -118,6 +118,7 @@ public:
             OVMS_ModelsSettingsSetConfigPath(_modelsSettings, options.server_config().c_str());
             LOG(INFO) << "state config file:" << options.server_config();
             OVMS_ServerSettingsSetLogLevel(_serverSettings, OVMS_LOG_DEBUG);
+            OVMS_ServerSettingsSetFileSystemPollWaitSeconds(_serverSettings, 0);
             bool isServerReady = false;
             ASSERT_CAPI_STATUS_NULL(OVMS_ServerReady(cserver, &isServerReady));
             if (!isServerReady) {

@@ -6,6 +6,13 @@ input_stream: "input_video"
 # CPU image with rendered results. (ImageFrame)
 output_stream: "output_video"
 
+profiler_config {
+  trace_enabled: true
+  enable_profiler: true
+  trace_log_interval_count: 200
+  trace_log_path: "/mediapipe/tracing"
+}
+
 # Throttles the images flowing downstream for flow control. It passes through
 # the very first incoming image unaltered, and waits for downstream nodes
 # (calculators and subgraphs) in the graph to finish their tasks before it
@@ -27,8 +34,8 @@ node {
   output_stream: "throttled_input_video"
   node_options: {
     [type.googleapis.com/mediapipe.FlowLimiterCalculatorOptions] {
-      max_in_flight: 1
-      max_in_queue: 1
+      max_in_flight: 30
+      max_in_queue: 30
       # Timeout is disabled (set to 0) as first frame processing can take more
       # than 1 second.
       in_flight_timeout: 0
