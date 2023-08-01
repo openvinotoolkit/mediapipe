@@ -85,10 +85,11 @@ absl::Status RunMPPGraph() {
 
   LOG(INFO) << "Start grabbing and processing frames.";
   bool grab_frames = true;
-  std::atomic<int> framesToProcess = 40000;
-  const int MAX_CONCURRENT_FRAMES = 16;
+  std::atomic<int> maxFramesToProcess = 40000;
+  std::atomic<int> framesProcessed = 0;
+  const int MAX_CONCURRENT_FRAMES = 1;
   std::atomic<int> framesInflight = 0;
-  std::thread t([&poller, &writer, &grab_frames,&save_video, &capture, &framesInflight](){
+  std::thread t([&poller, &writer, &grab_frames,&save_video, &capture, &framesInflight, &framesProcessed](){
     // Get the graph result packet, or stop if that fails.
     mediapipe::Packet packet;
     //while(poller.Next(&packet) || grab_frames) {
@@ -114,8 +115,10 @@ absl::Status RunMPPGraph() {
       if (pressed_key >= 0 && pressed_key != 255) grab_frames = false;
     }
     --framesInflight;
+    ++framesProcessed;
     }
   });
+  auto start = std::chrono::high_resolution_clock::now();
   while (grab_frames) {
     // Capture opencv camera or video frame.
     cv::Mat camera_frame_raw;
@@ -152,15 +155,21 @@ absl::Status RunMPPGraph() {
         kInputStream, mediapipe::Adopt(input_frame.release())
                           .At(mediapipe::Timestamp(frame_timestamp_us))));
     ++framesInflight;
-    if (--framesToProcess < 0) {
+    if (--maxFramesToProcess < 0) {
         LOG(INFO) << "no frames left";
         grab_frames = false;
         break;
     }
   }
-  LOG(INFO) << "try to join";
+  LOG(INFO) << "close input stream";
   MP_RETURN_IF_ERROR(graph.CloseInputStream(kInputStream));
+  LOG(INFO) << "wait until done";
   graph.WaitUntilDone();
+  LOG(INFO) << "measure fps";
+  auto stop = std::chrono::high_resolution_clock::now();
+  int totalMs = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count();
+  LOG(INFO) << "Frames processed: " << framesProcessed << " total time[s]: " << totalMs/1000. << " FPS:" << totalMs / 1000. * framesProcessed;
+  LOG(INFO) << "try to join";
   t.join();
 
   LOG(INFO) << "Shutting down.";
