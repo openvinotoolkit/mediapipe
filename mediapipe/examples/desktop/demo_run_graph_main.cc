@@ -87,7 +87,7 @@ absl::Status RunMPPGraph() {
   bool grab_frames = true;
   std::atomic<int> maxFramesToProcess = 1000;
   std::atomic<int> framesProcessed = 0;
-  const int MAX_CONCURRENT_FRAMES = 1;
+  const int MAX_CONCURRENT_FRAMES = 16;
   std::atomic<int> framesInflight = 0;
   std::atomic<int> framesInflightUntilSave = 0;
   std::thread t([&poller, &writer, &grab_frames,&save_video, &capture, &framesInflight, &framesProcessed, &framesInflightUntilSave](){
@@ -169,20 +169,16 @@ absl::Status RunMPPGraph() {
   LOG(INFO) << "close input stream";
   MP_RETURN_IF_ERROR(graph.CloseInputStream(kInputStream));
   LOG(INFO) << "XXXXXXXXXXXXXXXX wait until no processed";
-  while (framesInflightUntilSave > 0) {
-        std::this_thread::sleep_for(std::chrono::microseconds(30));
-  }
-  LOG(INFO) << "measure fps";
   auto stop = std::chrono::high_resolution_clock::now();
-  LOG(INFO) << "measure fps";
+  while (framesInflightUntilSave > 0) {
+        std::this_thread::sleep_for(std::chrono::microseconds(10000));
+      stop = std::chrono::high_resolution_clock::now();
+      int totalMs = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count();
+      LOG(INFO) << "waiting till end totalMS: " << totalMs << " Frames processed: " << framesProcessed << " FPS:" << framesProcessed / (totalMs / 1000.);
+  }
+  stop = std::chrono::high_resolution_clock::now();
   int totalMs = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count();
-  std::this_thread::sleep_for(std::chrono::microseconds(30000));
-  LOG(INFO) << "XXXXXXXXXXXXX totalMS: " << totalMs;
-  LOG(INFO) << "Frames processed: " << framesProcessed << " total time[s]: " << totalMs/1000. << " FPS:" << framesProcessed / (totalMs / 1000.);
-  LOG(INFO) << "measure fps";
-  std::this_thread::sleep_for(std::chrono::microseconds(30));
-  LOG(INFO) << "total Ms: " << totalMs;
-  LOG(INFO) << "Frames processed: " << framesProcessed << " total time[s]: " << totalMs/1000. << " FPS:" << framesProcessed / (totalMs / 1000.);
+  LOG(INFO) << "waiting till end totalMS: " << totalMs << " Frames processed: " << framesProcessed << " FPS:" << framesProcessed / (totalMs / 1000.);
   LOG(INFO) << "try to join";
   std::this_thread::sleep_for(std::chrono::microseconds(30));
   t.join();
