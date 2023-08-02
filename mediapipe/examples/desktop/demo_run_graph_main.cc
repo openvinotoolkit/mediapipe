@@ -85,11 +85,12 @@ absl::Status RunMPPGraph() {
 
   LOG(INFO) << "Start grabbing and processing frames.";
   bool grab_frames = true;
-  std::atomic<int> maxFramesToProcess = 40000;
+  std::atomic<int> maxFramesToProcess = 1000;
   std::atomic<int> framesProcessed = 0;
   const int MAX_CONCURRENT_FRAMES = 1;
   std::atomic<int> framesInflight = 0;
-  std::thread t([&poller, &writer, &grab_frames,&save_video, &capture, &framesInflight, &framesProcessed](){
+  std::atomic<int> framesInflightUntilSave = 0;
+  std::thread t([&poller, &writer, &grab_frames,&save_video, &capture, &framesInflight, &framesProcessed, &framesInflightUntilSave](){
     // Get the graph result packet, or stop if that fails.
     mediapipe::Packet packet;
     //while(poller.Next(&packet) || grab_frames) {
@@ -99,6 +100,7 @@ absl::Status RunMPPGraph() {
     // Convert back to opencv for display or saving.
     cv::Mat output_frame_mat = mediapipe::formats::MatView(&output_frame);
     cv::cvtColor(output_frame_mat, output_frame_mat, cv::COLOR_RGB2BGR);
+    --framesInflight;
     if (save_video) {
       if (!writer.isOpened()) {
         LOG(INFO) << "Prepare video writer.";
@@ -114,8 +116,9 @@ absl::Status RunMPPGraph() {
       const int pressed_key = cv::waitKey(5);
       if (pressed_key >= 0 && pressed_key != 255) grab_frames = false;
     }
-    --framesInflight;
     ++framesProcessed;
+    --framesInflightUntilSave;
+    LOG(INFO) << "XXXXXXXXXXXXXXXXXX frames processed: " << framesProcessed;
     }
   });
   auto start = std::chrono::high_resolution_clock::now();
@@ -128,6 +131,7 @@ absl::Status RunMPPGraph() {
         LOG(INFO) << "Ignore empty frames from camera.";
         continue;
       }
+        LOG(INFO) << "XXXXXXXXXXXXXXXXXX frames ended";
       LOG(INFO) << "Empty frame, end of video reached.";
       break;
     }
@@ -155,6 +159,7 @@ absl::Status RunMPPGraph() {
         kInputStream, mediapipe::Adopt(input_frame.release())
                           .At(mediapipe::Timestamp(frame_timestamp_us))));
     ++framesInflight;
+    ++framesInflightUntilSave;
     if (--maxFramesToProcess < 0) {
         LOG(INFO) << "no frames left";
         grab_frames = false;
@@ -163,13 +168,23 @@ absl::Status RunMPPGraph() {
   }
   LOG(INFO) << "close input stream";
   MP_RETURN_IF_ERROR(graph.CloseInputStream(kInputStream));
-  LOG(INFO) << "wait until done";
-  graph.WaitUntilDone();
+  LOG(INFO) << "XXXXXXXXXXXXXXXX wait until no processed";
+  while (framesInflightUntilSave > 0) {
+        std::this_thread::sleep_for(std::chrono::microseconds(30));
+  }
   LOG(INFO) << "measure fps";
   auto stop = std::chrono::high_resolution_clock::now();
+  LOG(INFO) << "measure fps";
   int totalMs = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count();
-  LOG(INFO) << "Frames processed: " << framesProcessed << " total time[s]: " << totalMs/1000. << " FPS:" << totalMs / 1000. * framesProcessed;
+  std::this_thread::sleep_for(std::chrono::microseconds(30000));
+  LOG(INFO) << "XXXXXXXXXXXXX totalMS: " << totalMs;
+  LOG(INFO) << "Frames processed: " << framesProcessed << " total time[s]: " << totalMs/1000. << " FPS:" << framesProcessed / (totalMs / 1000.);
+  LOG(INFO) << "measure fps";
+  std::this_thread::sleep_for(std::chrono::microseconds(30));
+  LOG(INFO) << "total Ms: " << totalMs;
+  LOG(INFO) << "Frames processed: " << framesProcessed << " total time[s]: " << totalMs/1000. << " FPS:" << framesProcessed / (totalMs / 1000.);
   LOG(INFO) << "try to join";
+  std::this_thread::sleep_for(std::chrono::microseconds(30));
   t.join();
 
   LOG(INFO) << "Shutting down.";
