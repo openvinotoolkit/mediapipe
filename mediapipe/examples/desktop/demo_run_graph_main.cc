@@ -87,13 +87,13 @@ absl::Status RunMPPGraph() {
   bool grab_frames = true;
   std::atomic<int> maxFramesToProcess = 1000;
   std::atomic<int> framesProcessed = 0;
-  const int MAX_CONCURRENT_FRAMES = 16;
+  const int MAX_CONCURRENT_FRAMES = 1;
   std::atomic<int> framesInflight = 0;
   std::atomic<int> framesInflightUntilSave = 0;
-  std::thread t([&poller, &writer, &grab_frames,&save_video, &capture, &framesInflight, &framesProcessed, &framesInflightUntilSave](){
+  bool readAll = false;
+  std::thread t([&poller, &writer, &grab_frames,&save_video, &capture, &framesInflight, &framesProcessed, &framesInflightUntilSave, &readAll](){
     // Get the graph result packet, or stop if that fails.
     mediapipe::Packet packet;
-    //while(poller.Next(&packet) || grab_frames) {
     while(poller.Next(&packet)) {
     auto& output_frame = packet.Get<mediapipe::ImageFrame>();
 
@@ -118,8 +118,9 @@ absl::Status RunMPPGraph() {
     }
     ++framesProcessed;
     --framesInflightUntilSave;
-    LOG(INFO) << "XXXXXXXXXXXXXXXXXX frames processed: " << framesProcessed;
+    LOG(INFO) << "frames processed: " << framesProcessed;
     }
+    readAll = true;
   });
   auto start = std::chrono::high_resolution_clock::now();
   while (grab_frames) {
@@ -131,7 +132,7 @@ absl::Status RunMPPGraph() {
         LOG(INFO) << "Ignore empty frames from camera.";
         continue;
       }
-        LOG(INFO) << "XXXXXXXXXXXXXXXXXX frames ended";
+        LOG(INFO) << "frames ended";
       LOG(INFO) << "Empty frame, end of video reached.";
       break;
     }
@@ -168,8 +169,9 @@ absl::Status RunMPPGraph() {
   }
   LOG(INFO) << "close input stream";
   MP_RETURN_IF_ERROR(graph.CloseInputStream(kInputStream));
-  LOG(INFO) << "XXXXXXXXXXXXXXXX wait until no processed";
+  LOG(INFO) << "wait until no processed";
   auto stop = std::chrono::high_resolution_clock::now();
+  // while (framesInflight > 0) {
   while (framesInflightUntilSave > 0) {
         std::this_thread::sleep_for(std::chrono::microseconds(10000));
       stop = std::chrono::high_resolution_clock::now();
@@ -178,13 +180,24 @@ absl::Status RunMPPGraph() {
   }
   stop = std::chrono::high_resolution_clock::now();
   int totalMs = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count();
-  LOG(INFO) << "waiting till end totalMS: " << totalMs << " Frames processed: " << framesProcessed << " FPS:" << framesProcessed / (totalMs / 1000.);
+  LOG(INFO) << "End totalMS: " << totalMs << " Frames processed: " << framesProcessed << " FPS:" << framesProcessed / (totalMs / 1000.);
+  std::this_thread::sleep_for(std::chrono::microseconds(3000));
+  LOG(INFO) << "Closing writer";
+  while (!readAll) {
+      LOG(INFO) << "Waiting till all frames are read by writer";
+      std::this_thread::sleep_for(std::chrono::microseconds(3000));
+  }
+  if (writer.isOpened()) {
+      LOG(INFO) << "Closing writer";
+          writer.release();
+  } else {
+      LOG(INFO) << "Not closing writer";
+  }
   LOG(INFO) << "try to join";
-  std::this_thread::sleep_for(std::chrono::microseconds(30));
+  std::this_thread::sleep_for(std::chrono::microseconds(3000));
   t.join();
-
-  LOG(INFO) << "Shutting down.";
-  if (writer.isOpened()) writer.release();
+  LOG(INFO) << "Wait until done";
+  std::this_thread::sleep_for(std::chrono::microseconds(300000));
   return graph.WaitUntilDone();
 }
 
