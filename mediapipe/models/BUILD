@@ -40,8 +40,3 @@ mediapipe_files(
         "ssdlite_object_detection_labelmap.txt",
     ],
 )
-
-# TODO
-exports_files(
-    srcs=glob(["*"]),
-)
