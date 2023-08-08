@@ -122,6 +122,21 @@ static ov::Tensor convertTFTensor2OVTensor(const tensorflow::Tensor& t) {
     ov::Tensor result(datatype, shape, data);
     return result;
 }
+static ov::Tensor convertTFLiteTensor2OVTensor(const TfLiteTensor& t) {
+    void* data = t.data.f; // TODO probably works only for floats
+    auto datatype = ov::element::f32;
+    ov::Shape shape;
+    // TODO FIXME HACK
+    // for some reason TfLite tensor does not have bs dim
+    shape.emplace_back(1);
+    for (int i = 0; i < t.dims->size; ++i) {
+ //       RET_CHECK_GT(t.dims->data[i], 0);
+ //       num_values *= raw_tensor->dims->data[i];
+        shape.emplace_back(t.dims->data[i]);
+    }
+    ov::Tensor result(datatype, shape, data);
+    return result;
+}
 
 static ov::Tensor convertTFLiteTensor2OVTensor(const TfLiteTensor& t) {
     void* data = t.data.f; // TODO probably works only for floats
@@ -482,6 +497,7 @@ public:
                     new ov::Tensor(tensorIt->second),
                     cc->InputTimestamp());
             }
+            LOG(INFO) << "YYYY will process TfLite tensors";
         }
         LOG(INFO) << "Main process end";
         return absl::OkStatus();

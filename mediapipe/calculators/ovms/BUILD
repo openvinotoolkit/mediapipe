@@ -45,6 +45,7 @@ cc_library(
 )
 
 load("@mediapipe//mediapipe/framework/port:build_config.bzl", "mediapipe_cc_proto_library", "mediapipe_proto_library")
+
 # ovms
 mediapipe_proto_library(
     name = "modelapiovmsinferencecalculator_proto",
