@@ -184,4 +184,4 @@ COPY . /mediapipe/
 ENV GLOG_logtostderr=1
 ENV LD_LIBRARY_PATH="/opt/intel/openvino/runtime/lib/intel64/:${LD_LIBRARY_PATH}"
 RUN bash build_desktop_examples.sh -b
-RUN bash build_desktop_examples.sh -t holistic_tracking
+

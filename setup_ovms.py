@@ -33,8 +33,6 @@ class SetupOpenvinoModelServer():
     model_name = os.path.basename(file).replace(".tflite","")
     dir_name = os.path.basename(dst_dir)
     if dir_name != model_name:
-      # we use face_detection_short_range
-      if dir_name != "face_detection":
         dst = dst.replace(dir_name + "/", model_name + "/")
 
     dst_dir = os.path.dirname(dst)
