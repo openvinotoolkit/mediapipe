@@ -61,7 +61,8 @@ class SetupOpenvinoModelServer():
        # 'face_detection/face_detection_full_range_sparse.tflite',
         'face_detection/face_detection_short_range.tflite',
         'face_landmark/face_landmark.tflite',
-        'face_landmark/face_landmark_with_attention.tflite',
+       # Model loading error
+       # 'face_landmark/face_landmark_with_attention.tflite',
         'hand_landmark/hand_landmark_full.tflite',
        # Using full
        # 'hand_landmark/hand_landmark_lite.tflite',
