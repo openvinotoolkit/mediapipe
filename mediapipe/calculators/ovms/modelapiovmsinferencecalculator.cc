@@ -482,7 +482,7 @@ public:
                     new ov::Tensor(tensorIt->second),
                     cc->InputTimestamp());
             }
-            LOG(INFO) << "YYYY will process TfLite tensors";
+            LOG(INFO) << "OVMS calculator will process TfLite tensors";
         }
         LOG(INFO) << "Main process end";
         return absl::OkStatus();
