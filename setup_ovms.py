@@ -18,6 +18,7 @@ import os
 import shutil
 import subprocess
 import sys
+import getopt
 
 __version__ = '1.0'
 
@@ -55,7 +56,42 @@ class SetupOpenvinoModelServer():
       sys.exit(-1)
     self._copy_to_build_lib_dir(self.build_lib, external_file)
 
-  def run(self):
+  def _copy_pbxt_file(self, external_file):
+
+    file_to_copy = os.path.join('mediapipe/modules/', external_file)
+
+    dst = os.path.join(self.build_lib + '/', external_file)
+    dst_dir = os.path.dirname(external_file)
+
+    if dst_dir == "face_detection":
+       new_dst_dir = "face_detection_short_range"
+       dst = dst.replace(dst_dir + "/", new_dst_dir + "/")
+
+    if dst_dir == "pose_landmark":
+       new_dst_dir = "pose_landmark_full"
+       dst = dst.replace(dst_dir + "/", new_dst_dir + "/")
+
+    if dst_dir == "hand_landmark":
+       new_dst_dir = "hand_landmark_full"
+       dst = dst.replace(dst_dir + "/", new_dst_dir + "/")
+       
+    print("Copy to: " + dst)
+    shutil.copyfile(file_to_copy, dst)
+
+  def get_graphs(self):
+    external_files = [
+        'face_detection/face_detection.pbtxt',
+        'face_landmark/face_landmark_cpu.pbtxt',
+        'hand_landmark/hand_landmark_cpu.pbtxt',
+        #Not needed ?'holistic_landmark/hand_recrop_by_roi_cpu.pbtxt',
+        'pose_detection/pose_detection_cpu.pbtxt',
+        'pose_landmark/pose_landmark_by_roi_cpu.pbtxt',
+    ]
+    for elem in external_files:
+      sys.stderr.write('coping file: %s\n' % elem)
+      self._copy_pbxt_file(elem)
+
+  def get_models(self):
     external_files = [
        # Using short range
        # 'face_detection/face_detection_full_range_sparse.tflite',
@@ -82,5 +118,44 @@ class SetupOpenvinoModelServer():
       sys.stderr.write('downloading file: %s\n' % elem)
       self._download_external_file(elem)
 
+def printUsage():
+    """ Prints information about usage of commandline interface """
+
+    print(""" Usage description:
+               
+               python setup_ovms.py --get_models
+               
+               python setup_ovms.py --get_graphs
+        """)
+
+    return
+
+def get_args(argv):
+    """ Processing commandline """
+
+    get_graphs_flag = False
+    get_models_flag = False 
+    try:
+        opts, vals = getopt.getopt(argv, "", ["get_graphs","get_models"])
+    except getopt.GetoptError:
+        print("ERROR: unrecognize option/missing argument/value for known option. Use --help to see list of options")
+        sys.exit(2)
+    for opt, val in opts:
+        if opt in ("--help"):
+            printUsage()
+            sys.exit(0)
+        elif opt in ("--get_graphs"):
+          get_graphs_flag = True
+        elif opt in ("--get_models"):
+          get_models_flag = True
+
+    return get_graphs_flag, get_models_flag
+
 if __name__ == "__main__":
-  SetupOpenvinoModelServer().run()
+  get_graphs_flag, get_models_flag = get_args(sys.argv[1:])
+  if get_models_flag:
+    SetupOpenvinoModelServer().get_models()
+
+  # Needed to call only on starting ovm holistic demo from ovms repository using ovms server standalone instance
+  if get_graphs_flag:
+    SetupOpenvinoModelServer().get_graphs()

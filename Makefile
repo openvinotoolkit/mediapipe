@@ -50,6 +50,6 @@ run_holistic_tracking:
 	rm -rf /mediapipe/output_holistic_tflite.mp4
 	rm -rf video.mp4
 	wget http://s3.toolbox.iotg.sclab.intel.com/dtrawins-tmp/mediapipe/video.mp4
-	python setup_ovms.py
+	python setup_ovms.py --get_models
 	bash build_desktop_examples.sh -t holistic_tracking
 	bazel-bin/mediapipe/examples/desktop/holistic_tracking/holistic_tracking_cpu --calculator_graph_config_file /mediapipe/mediapipe/graphs/holistic_tracking/holistic_tracking_cpu.pbtxt --input_video_path=/mediapipe/video.mp4 --output_video_path=/mediapipe/output_holistic_tflite.mp4
