@@ -74,7 +74,10 @@ class SetupOpenvinoModelServer():
     if dst_dir == "hand_landmark":
        new_dst_dir = "hand_landmark_full"
        dst = dst.replace(dst_dir + "/", new_dst_dir + "/")
-       
+    
+    dst_dir = os.path.dirname(dst)
+    if not os.path.exists(dst_dir):
+      os.makedirs(dst_dir)
     print("Copy to: " + dst)
     shutil.copyfile(file_to_copy, dst)
 
@@ -84,6 +87,7 @@ class SetupOpenvinoModelServer():
         'face_landmark/face_landmark_cpu.pbtxt',
         'hand_landmark/hand_landmark_cpu.pbtxt',
         #Not needed ?'holistic_landmark/hand_recrop_by_roi_cpu.pbtxt',
+        'holistic_landmark/holistic_landmark_cpu.pbtxt',
         'pose_detection/pose_detection_cpu.pbtxt',
         'pose_landmark/pose_landmark_by_roi_cpu.pbtxt',
     ]
@@ -136,7 +140,7 @@ def get_args(argv):
     get_graphs_flag = False
     get_models_flag = False 
     try:
-        opts, vals = getopt.getopt(argv, "", ["get_graphs","get_models"])
+        opts, vals = getopt.getopt(argv, "", ["get_graphs","get_models","help"])
     except getopt.GetoptError:
         print("ERROR: unrecognize option/missing argument/value for known option. Use --help to see list of options")
         sys.exit(2)
