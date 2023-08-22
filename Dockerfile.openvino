@@ -184,5 +184,4 @@ RUN bash build_desktop_examples.sh -b
 RUN pip3 install tflite2tensorflow pandas==1.4.2 gdown tensorflow-datasets
 RUN wget https://github.com/PINTO0309/tflite2tensorflow/raw/main/schema/schema.fbs
 RUN git clone -b v2.0.8 https://github.com/google/flatbuffers.git
-RUN cd flatbuffers && mkdir build && cd build
-RUN cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release .. && make -j$(nproc) && cd ../..
+RUN cd flatbuffers && mkdir build && cd build && cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release .. && make -j$(nproc) && cd ../..
