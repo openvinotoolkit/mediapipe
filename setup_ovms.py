@@ -19,12 +19,18 @@ import shutil
 import subprocess
 import sys
 import getopt
+import traceback
 
 __version__ = '1.0'
 
 class SetupOpenvinoModelServer():
   def __init__(self):
       self.build_lib = "mediapipe/models/ovms"
+
+  def run_command(self, command):
+    print(command)
+    if subprocess.call(command.split()) != 0:
+      sys.exit(-1)
 
   def _copy_to_build_lib_dir(self, build_lib, file):
     """Copy a file from bazel-bin to the build lib dir."""
@@ -81,6 +87,15 @@ class SetupOpenvinoModelServer():
     print("Copy to: " + dst)
     shutil.copyfile(file_to_copy, dst)
 
+  def convert_pose(self):
+    print("Converting pose detection model")
+    self.run_command("cp -r  mediapipe/models/ovms/pose_detection/1/ .")
+    self.run_command("tflite2tensorflow --model_path 1/pose_detection.tflite --flatc_path flatbuffers/build/flatc --schema_path schema.fbs --output_pb")
+    self.run_command("tflite2tensorflow --model_path 1/pose_detection.tflite --flatc_path flatbuffers/build/flatc --schema_path schema.fbs --output_no_quant_float32_tflite   --output_dynamic_range_quant_tflite   --output_weight_quant_tflite   --output_float16_quant_tflite   --output_integer_quant_tflite")
+    self.run_command("cp -rf saved_model/model_float32.tflite mediapipe/models/ovms/pose_detection/1/pose_detection.tflite")
+    self.run_command("rm -rf 1")
+    self.run_command("rm -rf saved_model")
+
   def get_graphs(self):
     external_files = [
         'face_detection/face_detection.pbtxt',
@@ -112,7 +127,7 @@ class SetupOpenvinoModelServer():
        # Using full
        # 'palm_detection/palm_detection_lite.tflite',
        # Need to use OV version
-       # 'pose_detection/pose_detection.tflite',
+        'pose_detection/pose_detection.tflite',
         'pose_landmark/pose_landmark_full.tflite',
        # Not working
        # 'selfie_segmentation/selfie_segmentation.tflite',
@@ -127,9 +142,14 @@ def printUsage():
 
     print(""" Usage description:
                
+               Get models required for ovms inference setup
                python setup_ovms.py --get_models
                
+               Get graphs used in holistic client example from ovms repository
                python setup_ovms.py --get_graphs
+          
+               Convert original pose_detection tflite model - workaround for missing op in ov
+               python setup_ovms.py --convert_pose
         """)
 
     return
@@ -138,9 +158,10 @@ def get_args(argv):
     """ Processing commandline """
 
     get_graphs_flag = False
-    get_models_flag = False 
+    get_models_flag = False
+    convert_pose = False
     try:
-        opts, vals = getopt.getopt(argv, "", ["get_graphs","get_models","help"])
+        opts, vals = getopt.getopt(argv, "", ["convert_pose","get_graphs","get_models","help"])
     except getopt.GetoptError:
         print("ERROR: unrecognize option/missing argument/value for known option. Use --help to see list of options")
         sys.exit(2)
@@ -152,14 +173,19 @@ def get_args(argv):
           get_graphs_flag = True
         elif opt in ("--get_models"):
           get_models_flag = True
+        elif opt in ("--convert_pose"):
+          convert_pose = True
 
-    return get_graphs_flag, get_models_flag
+    return get_graphs_flag, get_models_flag, convert_pose
 
 if __name__ == "__main__":
-  get_graphs_flag, get_models_flag = get_args(sys.argv[1:])
+  get_graphs_flag, get_models_flag, convert_pose = get_args(sys.argv[1:])
   if get_models_flag:
     SetupOpenvinoModelServer().get_models()
 
   # Needed to call only on starting ovm holistic demo from ovms repository using ovms server standalone instance
   if get_graphs_flag:
     SetupOpenvinoModelServer().get_graphs()
+
+  if convert_pose:
+    SetupOpenvinoModelServer().convert_pose()
