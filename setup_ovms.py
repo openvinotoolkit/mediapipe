@@ -89,11 +89,11 @@ class SetupOpenvinoModelServer():
 
   def convert_pose(self):
     print("Converting pose detection model")
-    self.run_command("cp -r  mediapipe/models/ovms/pose_detection/1/ .")
-    self.run_command("tflite2tensorflow --model_path 1/pose_detection.tflite --flatc_path flatbuffers/build/flatc --schema_path schema.fbs --output_pb")
-    self.run_command("tflite2tensorflow --model_path 1/pose_detection.tflite --flatc_path flatbuffers/build/flatc --schema_path schema.fbs --output_no_quant_float32_tflite   --output_dynamic_range_quant_tflite   --output_weight_quant_tflite   --output_float16_quant_tflite   --output_integer_quant_tflite")
+    self.run_command("cp -r  mediapipe/models/ovms/pose_detection/1/pose_detection.tflite .")
+    self.run_command("tflite2tensorflow --model_path pose_detection.tflite --flatc_path flatbuffers/build/flatc --schema_path schema.fbs --output_pb")
+    self.run_command("tflite2tensorflow --model_path pose_detection.tflite --flatc_path flatbuffers/build/flatc --schema_path schema.fbs --output_no_quant_float32_tflite   --output_dynamic_range_quant_tflite   --output_weight_quant_tflite   --output_float16_quant_tflite   --output_integer_quant_tflite")
     self.run_command("cp -rf saved_model/model_float32.tflite mediapipe/models/ovms/pose_detection/1/pose_detection.tflite")
-    self.run_command("rm -rf 1")
+    self.run_command("rm -rf pose_detection.tflite")
     self.run_command("rm -rf saved_model")
 
   def get_graphs(self):
