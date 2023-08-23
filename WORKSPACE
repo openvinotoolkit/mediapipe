@@ -822,6 +822,5 @@ cc_library(
     visibility = ["//visibility:public"],
 )
     """,
-    commit = "7e163416c60ba9ccdf440c6c049d6c7e7137e144"
->>>>>>> Ovms hello world
+    commit = "ca5a91ed5b3dbf428dc4de6b72f0a3da93d2aa0a"
 )
