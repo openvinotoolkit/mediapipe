@@ -23,7 +23,6 @@
 #include <openvino/openvino.hpp>
 
 #include "ovms.h"           // NOLINT
-//#include "stringutils.hpp"  // TODO dispose
 #include "mediapipe/framework/calculator_framework.h"
 #include "mediapipe/framework/port/canonical_errors.h"
 #include "modelapiovmsadapter.hpp"

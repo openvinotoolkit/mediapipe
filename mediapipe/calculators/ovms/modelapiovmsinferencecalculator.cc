@@ -25,7 +25,6 @@
 #include <openvino/openvino.hpp>
 
 #include "ovms.h"  // NOLINT
-// #include "tfs_frontend/tfs_utils.hpp"
 #include "tensorflow/core/framework/tensor.h"
 #include "mediapipe/framework/calculator_framework.h"
 #include "mediapipe/framework/port/canonical_errors.h"
