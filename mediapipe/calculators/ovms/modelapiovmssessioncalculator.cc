@@ -64,6 +64,7 @@ ov::Core UNUSED_OV_CORE;
         }                                                                                   \
     }
 
+// Function from ovms/src/string_utils.h
 void erase_spaces(std::string& str) {
     str.erase(std::remove_if(str.begin(), str.end(),
                   [](char c) -> bool {
@@ -72,6 +73,7 @@ void erase_spaces(std::string& str) {
         str.end());
 }
 
+// Function from ovms/src/string_utils.h
 std::optional<uint32_t> stou32(const std::string& input) {
     std::string str = input;
     erase_spaces(str);
