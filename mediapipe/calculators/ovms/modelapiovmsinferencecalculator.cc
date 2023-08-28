@@ -96,7 +96,6 @@ TFSDataType getPrecisionAsDataType(ov::element::Type_t precision) {
         {ov::element::Type_t::u16, TFSDataType::DT_UINT16},
         {ov::element::Type_t::u8, TFSDataType::DT_UINT8},
         {ov::element::Type_t::boolean, TFSDataType::DT_BOOL}
-        //    {Precision::CUSTOM, TFSDataType::DT_INVALID}
     };
     auto it = precisionMap.find(precision);
     if (it == precisionMap.end()) {
