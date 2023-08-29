@@ -12,6 +12,10 @@ git clone https://github.com/openvinotoolkit/mediapipe.git
 cd mediapipe
 make docker_build
 ```
+# You can check the integrity of the built image by running tests
+```bash
+make tests
+```
 
 # Running demo applications inside mediapipe_ovms container
 ```bash
