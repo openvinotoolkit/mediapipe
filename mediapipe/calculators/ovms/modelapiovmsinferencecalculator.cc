@@ -304,25 +304,25 @@ public:
         for (const std::string& tag : cc->Inputs().GetTags()) {
             // could be replaced with absl::StartsWith when migrated to MP
             if (startsWith(tag, OVTENSORS_TAG)) {
-                LOG(INFO) << "setting input tag:" << tag << " to OVTensor";
+                LOG(INFO) << "setting input tag:" << tag << " to OVTensors";
                 cc->Inputs().Tag(tag).Set<std::vector<ov::Tensor>>();
             } else if (startsWith(tag, OVTENSOR_TAG)) {
                 LOG(INFO) << "setting input tag:" << tag << " to OVTensor";
                 cc->Inputs().Tag(tag).Set<ov::Tensor>();
             } else if (startsWith(tag, MPTENSORS_TAG)) {
-                LOG(INFO) << "setting input tag:" << tag << " to MPTensor";
+                LOG(INFO) << "setting input tag:" << tag << " to MPTensors";
                 cc->Inputs().Tag(tag).Set<std::vector<Tensor>>();
             } else if (startsWith(tag, MPTENSOR_TAG)) {
                 LOG(INFO) << "setting input tag:" << tag << " to MPTensor";
                 cc->Inputs().Tag(tag).Set<Tensor>();
             } else if (startsWith(tag, TFTENSORS_TAG)) {
-                LOG(INFO) << "setting input tag:" << tag << " to TFTensor";
+                LOG(INFO) << "setting input tag:" << tag << " to TFTensors";
                 cc->Inputs().Tag(tag).Set<std::vector<tensorflow::Tensor>>();
             } else if (startsWith(tag, TFTENSOR_TAG)) {
                 LOG(INFO) << "setting input tag:" << tag << " to TFTensor";
                 cc->Inputs().Tag(tag).Set<tensorflow::Tensor>();
             } else if (startsWith(tag, TFLITE_TENSORS_TAG)) {
-                LOG(INFO) << "setting input tag:" << tag << " to TFLITE_Tensor";
+                LOG(INFO) << "setting input tag:" << tag << " to TFLITE_Tensors";
                 cc->Inputs().Tag(tag).Set<std::vector<TfLiteTensor>>();
             } else if (startsWith(tag, TFLITE_TENSOR_TAG)) {
                 LOG(INFO) << "setting input tag:" << tag << " to TFLITE_Tensor";
@@ -449,7 +449,7 @@ public:
                     RET_CHECK(false);                                                                 \
                 }                                                                                     \
                 if (this->input_order_list.size() > 0){                                               \
-                    for (int i = 0; i < this->input_order_list.size(); i++) {                         \
+                    for (size_t i = 0; i < this->input_order_list.size(); i++) {                         \
                         auto& tensor = packet[i];                                                     \
                         input[this->input_order_list[i]] = DESERIALIZE_FUN(tensor);                   \
                     }                                                                                 \
@@ -527,7 +527,7 @@ public:
                     RET_CHECK(false);
                 }
                 if (this->output_order_list.size() > 0) {
-                    for (int i = 0; i < this->output_order_list.size(); i++) {
+                    for (size_t i = 0; i < this->output_order_list.size(); i++) {
                         tensorName = this->output_order_list[i];
                         tensorIt = output.find(tensorName);
                         if (tensorIt == output.end()) {
@@ -556,7 +556,7 @@ public:
                     RET_CHECK(false);
                 }
                 if (this->output_order_list.size() > 0) {
-                    for (int i = 0; i < this->output_order_list.size(); i++) {
+                    for (size_t i = 0; i < this->output_order_list.size(); i++) {
                         tensorName = this->output_order_list[i];
                         tensorIt = output.find(tensorName);
                         if (tensorIt == output.end()) {
