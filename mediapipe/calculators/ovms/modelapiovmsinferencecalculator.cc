@@ -154,7 +154,6 @@ static ov::element::Type_t MPType2OVType(Tensor::ElementType precision) {
 }
 
 static ov::Tensor convertMPTensor2OVTensor(const Tensor& inputTensor) {
-    // TODO FIXME support for other types/perf
     void* data;
     switch(inputTensor.element_type()) {
     case Tensor::ElementType::kFloat32:
@@ -466,25 +465,16 @@ public:
             } else if (startsWith(tag, OVTENSOR_TAG)) {
                 auto& packet = cc->Inputs().Tag(tag).Get<ov::Tensor>();
                 input[realInputName] = packet;
-#if 0
-                ov::Tensor input_tensor(packet);
-                const float* input_tensor_access = reinterpret_cast<float*>(input_tensor.data());
-                std::stringstream ss;
-                ss << "ModelAPICalculator received tensor: [ ";
-                for (int x = 0; x < 10; ++x) {
-                    ss << input_tensor_access[x] << " ";
-                }
-                ss << " ] timestamp: " << cc->InputTimestamp().DebugString() << endl;
-                LOG(INFO) << ss.str();
-#endif
+            } else if (startsWith(tag, TFLITE_TENSOR_TAG)) {
+                auto& packet = cc->Inputs().Tag(tag).Get<TfLiteTensor>();
+                input[realInputName] = convertTFLiteTensor2OVTensor(packet);
+            } else if (startsWith(tag, MPTENSOR_TAG)) {
+                auto& packet = cc->Inputs().Tag(tag).Get<Tensor>();
+                input[realInputName] = convertMPTensor2OVTensor(packet);
             } else if (startsWith(tag, TFTENSOR_TAG)) {
                 auto& packet = cc->Inputs().Tag(tag).Get<tensorflow::Tensor>();
                 input[realInputName] = convertTFTensor2OVTensor(packet);
             } else {
-                /*
-                auto& packet = cc->Inputs().Tag(tag).Get<tensorflow::Tensor>();
-                input[realInputName] = convertTFTensor2OVTensor(packet);
-                */
                 auto& packet = cc->Inputs().Tag(tag).Get<ov::Tensor>();
                 input[realInputName] = packet;
             }
@@ -619,6 +609,11 @@ public:
                 LOG(INFO) << "OVMS calculator will process tensorflow::Tensor";
                 cc->Outputs().Tag(tag).Add(
                     new tensorflow::Tensor(convertOVTensor2TFTensor(tensorIt->second)),
+                    cc->InputTimestamp());
+            } else if (startsWith(tag, MPTENSOR_TAG)) {
+                LOG(INFO) << "OVMS calculator will process tensorflow::Tensor";
+                cc->Outputs().Tag(tag).Add(
+                    new Tensor(convertOVTensor2MPTensor(tensorIt->second)),
                     cc->InputTimestamp());
             } else {
                 LOG(INFO) << "OVMS calculator will process ov::Tensor";
