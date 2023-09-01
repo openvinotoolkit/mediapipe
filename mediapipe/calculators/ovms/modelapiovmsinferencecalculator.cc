@@ -268,8 +268,9 @@ static ov::Tensor convertTFTensor2OVTensor(const tensorflow::Tensor& t) {
     for (const auto& dim : t.shape()) {
         shape.emplace_back(dim.size);
     }
-    ov::Tensor result(datatype, shape, data);
-    return result;
+    if (ov::shape_size(shape) <= 0)
+        return ov::Tensor(datatype, shape);  // OV does not allow nullptr as data
+    return ov::Tensor(datatype, shape, data);
 }
 static ov::Tensor convertTFLiteTensor2OVTensor(const TfLiteTensor& t) {
     void* data = t.data.f; // TODO probably works only for floats
