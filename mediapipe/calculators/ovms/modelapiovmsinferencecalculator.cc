@@ -33,6 +33,9 @@
 #include "mediapipe/framework/formats/tensor.h"
 #include "mediapipe/calculators/ovms/modelapiovmsinferencecalculator.pb.h"
 #include "tensorflow/lite/c/common.h"
+#pragma GCC diagnostic pop
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wall"
 #include "tensorflow/lite/interpreter.h"
 #pragma GCC diagnostic pop
 // here we need to decide if we have several calculators (1 for OVMS repository, 1-N inside mediapipe)
@@ -571,16 +574,23 @@ public:
                 LOG(INFO) << "OVMS calculator will process vector<TfLiteTensor>";
                 auto outputStreamTensors = std::vector<TfLiteTensor>();
                 if (!this->initialized) {
-                    interpreter_->AddTensors(output.size()); // HARDCODE
-                    interpreter_->SetInputs({0,1}); // HARDCODE was 0 for single input
+                    interpreter_->AddTensors(output.size());
+                    std::vector<int> indexes(output.size());
+                    std::iota(indexes.begin(), indexes.end(), 0);
+                    interpreter_->SetInputs(indexes);
+                    RET_CHECK(output.size() == 2);
                     size_t tensorId = 0;
                     for (auto& [name,tensor] : output) {
                         std::vector<int> tfliteshape;
                         for (auto& d : tensor.get_shape()) {
                             tfliteshape.emplace_back(d);
                         }
-                        interpreter_->SetTensorParametersReadWrite(/*tensor_index*/tensorId, kTfLiteFloat32, name.c_str(),
-                                                       tfliteshape, TfLiteQuantization());
+                        interpreter_->SetTensorParametersReadWrite(
+                                        /*tensor_index*/tensorId,
+                                        kTfLiteFloat32, // TODO datatype
+                                        name.c_str(),
+                                        tfliteshape,
+                                        TfLiteQuantization());
                         ++tensorId;
                     }
                     interpreter_->AllocateTensors();
@@ -596,8 +606,6 @@ public:
                     outputStreamTensors.emplace_back(*tflitetensor);
                     ++tensorId;
                 }
-                //std::reverse(outputStreamTensors.begin(), outputStreamTensors.end());
-                const auto raw_box_tensor = &(outputStreamTensors)[0];
                 cc->Outputs().Tag(tag).AddPacket(MakePacket<std::vector<TfLiteTensor>>(std::move(outputStreamTensors)).At( cc->InputTimestamp()));
                 break;
             }else if (startsWith(tag, OVTENSOR_TAG)) {
@@ -611,17 +619,12 @@ public:
                     new tensorflow::Tensor(convertOVTensor2TFTensor(tensorIt->second)),
                     cc->InputTimestamp());
             } else if (startsWith(tag, MPTENSOR_TAG)) {
-                LOG(INFO) << "OVMS calculator will process tensorflow::Tensor";
+                LOG(INFO) << "OVMS calculator will process mediapipe::Tensor";
                 cc->Outputs().Tag(tag).Add(
                     new Tensor(convertOVTensor2MPTensor(tensorIt->second)),
                     cc->InputTimestamp());
             } else {
                 LOG(INFO) << "OVMS calculator will process ov::Tensor";
-                /*
-                cc->Outputs().Tag(tag).Add(
-                    new tensorflow::Tensor(convertOVTensor2TFTensor(tensorIt->second)),
-                    cc->InputTimestamp());
-                    */
                 cc->Outputs().Tag(tag).Add(
                     new ov::Tensor(tensorIt->second),
                     cc->InputTimestamp());
