@@ -72,3 +72,11 @@ run_iris_tracking:
 	bash build_desktop_examples.sh -t iris_tracking
 	bazel-bin/mediapipe/examples/desktop/iris_tracking/iris_tracking_cpu --calculator_graph_config_file /mediapipe/mediapipe/graphs/iris_tracking/iris_tracking_cpu.pbtxt --input_video_path=/mediapipe/video.mp4 --output_video_path=/mediapipe/output_iris_tracking_tflite.mp4
 
+run_pose_tracking:
+	rm -rf /mediapipe/output_face_detection_tflite.mp4
+	rm -rf video.mp4
+	wget http://s3.toolbox.iotg.sclab.intel.com/dtrawins-tmp/mediapipe/video.mp4
+	python setup_ovms.py --get_models
+	bash build_desktop_examples.sh -t pose_tracking
+	bazel-bin/mediapipe/examples/desktop/pose_tracking/pose_tracking_cpu --calculator_graph_config_file /mediapipe/mediapipe/graphs/pose_tracking/pose_tracking_cpu.pbtxt --input_video_path=/mediapipe/video.mp4 --output_video_path=/mediapipe/output_pose_track_ovms.mp4
+
