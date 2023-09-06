@@ -85,8 +85,7 @@ for app in ${apps}; do
         target="${app}:run_${target_name}"
     elif [[ "${target_name}" == "object_detection_3d" ]]; then
         target="${app}:objectron_cpu"
-    elif [[ "${target_name}" == "object_detection" ||
-            "${target_name}" == "face_mesh" ]]; then
+    elif [[ "${target_name}" == "object_detection" ]]; then
         target="${app}:${target_name}_ovms"
     elif [[ "${target_name}" == "template_matching" ]]; then
         target="${app}:template_matching_tflite"
