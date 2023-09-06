@@ -56,9 +56,9 @@ make run_holistic_tracking
 make run_iris_tracking
 ```
 
-# Running pose detection demo inside mediapipe_ovms container
+# Running pose tracking demo inside mediapipe_ovms container
 ```bash
-make run_pose_detection
+make run_pose_tracking
 ```
 
 # Running face detection demo inside mediapipe_ovms container
