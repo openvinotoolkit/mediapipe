@@ -35,15 +35,6 @@ cc_binary(
     ],
 )
 
-cc_binary(
-    name = "face_mesh_ovms",
-    deps = [
-        "@ovms//src:ovms_lib",
-        "//mediapipe/examples/desktop:simple_run_graph_main",
-        "//mediapipe/graphs/face_mesh:desktop_calculators",
-    ],
-)
-
 # Linux only
 cc_binary(
     name = "face_mesh_gpu",
