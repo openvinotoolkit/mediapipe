@@ -101,21 +101,21 @@ node {
 node {
   calculator: "ModelAPISideFeedCalculator"
   input_side_packet: "SESSION:session"
-  input_stream: "TENSORS:input_tensors"
-  output_stream: "TENSORS:output_tensors"
+  input_stream: "TFLITE_TENSORS:image_tensor"
+  output_stream: "TFLITE_TENSORS:output_tensors"
   node_options: {
     [type.googleapis.com / mediapipe.ModelAPIInferenceCalculatorOptions]: {
           output_order_list: ["output_eyes_contours_and_brows", "output_iris"]
           tag_to_input_tensor_names {
-            key: "TENSORS"
+            key: "TFLITE_TENSORS"
             value: "input_1"
           }
           tag_to_output_tensor_names {
-            key: "TENSORS"
+            key: "TFLITE_TENSORS"
             value: "output_eyes_contours_and_brows"
           }
           tag_to_output_tensor_names {
-            key: "TENSORS"
+            key: "TFLITE_TENSORS"
             value: "output_iris"
           }
         }
