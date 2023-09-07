@@ -109,7 +109,7 @@ public:
         RET_CHECK(cc->Inputs().GetTags().empty());
         RET_CHECK(cc->Outputs().GetTags().empty());
         cc->OutputSidePackets().Tag(SESSION_TAG.c_str()).Set<std::shared_ptr<::InferenceAdapter>>();
-        const auto& options = cc->Options<ModelAPIOVMSSessionCalculatorOptions>();
+        const auto& options = cc->Options<OpenVINOModelServerSessionCalculatorOptions>();
         RET_CHECK(!options.servable_name().empty());
         // TODO validate version from string
         // TODO validate service url format
@@ -138,7 +138,7 @@ public:
         }
         cc->SetOffset(TimestampDiff(0));
 
-        const auto& options = cc->Options<ModelAPIOVMSSessionCalculatorOptions>();
+        const auto& options = cc->Options<OpenVINOModelServerSessionCalculatorOptions>();
         // if config is in calc then we start the server
         LOG(INFO) << "Will check if we want to start server";
         if (!options.server_config().empty()) {
