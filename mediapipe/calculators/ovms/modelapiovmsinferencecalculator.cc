@@ -277,16 +277,13 @@ static ov::Tensor convertTFTensor2OVTensor(const tensorflow::Tensor& t) {
 
 
 static ov::Tensor convertTFLiteTensor2OVTensor(const TfLiteTensor& t) {
-    void* data = t.data.f; // TODO probably works only for floats
+    void* data = t.data.f; // probably works only for floats
     auto datatype = ov::element::f32;
     ov::Shape shape;
-    // TODO FIXME HACK
     // for some reason TfLite tensor does not have bs dim
     shape.emplace_back(1);
     // TODO: Support scalars and no data tensors with 0-dim
     for (int i = 0; i < t.dims->size; ++i) {
- //       RET_CHECK_GT(t.dims->data[i], 0);
- //       num_values *= raw_tensor->dims->data[i];
         shape.emplace_back(t.dims->data[i]);
     }
     ov::Tensor result(datatype, shape, data);
@@ -298,9 +295,8 @@ class ModelAPISideFeedCalculator : public CalculatorBase {
     std::unordered_map<std::string, std::string> outputNameToTag;
     std::vector<std::string> input_order_list;
     std::vector<std::string> output_order_list;
-    // TODO create only if required
-  std::unique_ptr<tflite::Interpreter> interpreter_ = absl::make_unique<tflite::Interpreter>();
-  bool initialized = false;
+    std::unique_ptr<tflite::Interpreter> interpreter_ = absl::make_unique<tflite::Interpreter>();
+    bool initialized = false;
 
 public:
     static absl::Status GetContract(CalculatorContract* cc) {
@@ -334,12 +330,6 @@ public:
                 LOG(INFO) << "setting input tag:" << tag << " to TFLITE_Tensor";
                 cc->Inputs().Tag(tag).Set<TfLiteTensor>();
             } else {
-                // TODO decide which will be easier to migrating later
-                // using OV tensor by default will be more performant
-                // but harder to migrate
-                /*
-                cc->Inputs().Tag(tag).Set<tensorflow::Tensor>();
-                */
                 LOG(INFO) << "setting input tag:" << tag << " to OVTensor";
                 cc->Inputs().Tag(tag).Set<ov::Tensor>();
             }
@@ -370,12 +360,6 @@ public:
                 LOG(INFO) << "setting input tag:" << tag << " to TFLITE_Tensor";
                 cc->Outputs().Tag(tag).Set<TfLiteTensor>();
             } else {
-                // TODO decide which will be easier to migrating later
-                // using OV tensor by default will be more performant
-                // but harder to migrate
-                /*    
-                cc->Outputs().Tag(tag).Set<tensorflow::Tensor>();
-                */
                 LOG(INFO) << "setting output tag:" << tag << " to OVTensor";
                 cc->Outputs().Tag(tag).Set<ov::Tensor>();
             }
