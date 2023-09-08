@@ -15,6 +15,7 @@
 //*****************************************************************************
 #include <iostream>
 #include <memory>
+#include <mutex>
 #include <thread>
 #include <chrono>
 #include <sstream>
@@ -150,14 +151,20 @@ public:
             LOG(INFO) << "state config file:" << options.server_config();
             OVMS_ServerSettingsSetLogLevel(_serverSettings, OVMS_LOG_DEBUG);
             bool isServerReady = false;
+            
             ASSERT_CAPI_STATUS_NULL(OVMS_ServerReady(cserver, &isServerReady));
+            std::mutex mtx;
+            
+            // Lock access to server from multiple calculator instances during the model loading phase
+            std::lock_guard<std::mutex> lk(mtx);
             if (!isServerReady) {
                 REPORT_CAPI_STATUS_NULL(OVMS_ServerStartFromConfigurationFile(cserver, _serverSettings, _modelsSettings));
             }
             
-            int timeoutCounter = 100;
+            // Timeout for endless loop - 1000 seconds
+            int timeoutCounter = 100000;
             while (!isServerReady && timeoutCounter) {
-                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                std::this_thread::sleep_for(std::chrono::milliseconds(10));
                 timeoutCounter--;
                 ASSERT_CAPI_STATUS_NULL(OVMS_ServerReady(cserver, &isServerReady));
             }
