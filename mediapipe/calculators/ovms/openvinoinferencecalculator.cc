@@ -31,7 +31,7 @@
 #include "mediapipe/framework/calculator_framework.h"
 #include "mediapipe/framework/port/canonical_errors.h"
 #include "mediapipe/framework/formats/tensor.h"
-#include "mediapipe/calculators/ovms/modelapiovmsinferencecalculator.pb.h"
+#include "mediapipe/calculators/ovms/openvinoinferencecalculator.pb.h"
 #include "tensorflow/lite/c/common.h"
 #pragma GCC diagnostic pop
 #pragma GCC diagnostic push
@@ -290,7 +290,7 @@ static ov::Tensor convertTFLiteTensor2OVTensor(const TfLiteTensor& t) {
     return result;
 }
 
-class ModelAPISideFeedCalculator : public CalculatorBase {
+class OpenVINOInferenceCalculator : public CalculatorBase {
     std::shared_ptr<::InferenceAdapter> session{nullptr};
     std::unordered_map<std::string, std::string> outputNameToTag;
     std::vector<std::string> input_order_list;
@@ -623,5 +623,5 @@ public:
     }
 };
 
-REGISTER_CALCULATOR(ModelAPISideFeedCalculator);
+REGISTER_CALCULATOR(OpenVINOInferenceCalculator);
 }  // namespace mediapipe

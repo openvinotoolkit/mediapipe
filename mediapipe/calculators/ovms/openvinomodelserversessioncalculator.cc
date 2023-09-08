@@ -28,7 +28,7 @@
 #include "mediapipe/framework/calculator_framework.h"
 #include "mediapipe/framework/port/canonical_errors.h"
 #include "modelapiovmsadapter.hpp"
-#include "mediapipe/calculators/ovms/modelapiovmssessioncalculator.pb.h"
+#include "mediapipe/calculators/ovms/openvinomodelserversessioncalculator.pb.h"
 #pragma GCC diagnostic pop
 // here we need to decide if we have several calculators (1 for OVMS repository, 1-N inside mediapipe)
 // for the one inside OVMS repo it makes sense to reuse code from ovms lib
@@ -96,7 +96,7 @@ std::optional<uint32_t> stou32(const std::string& input) {
     }
 }
 
-class ModelAPISessionCalculator : public CalculatorBase {
+class OpenVINOModelServerSessionCalculator : public CalculatorBase {
     std::shared_ptr<::InferenceAdapter> adapter;
     std::unordered_map<std::string, std::string> outputNameToTag;
     // TODO where to place members
@@ -189,5 +189,5 @@ public:
     }
 };
 
-REGISTER_CALCULATOR(ModelAPISessionCalculator);
+REGISTER_CALCULATOR(OpenVINOModelServerSessionCalculator);
 }  // namespace mediapipe
