@@ -154,10 +154,17 @@ public:
             if (!isServerReady) {
                 REPORT_CAPI_STATUS_NULL(OVMS_ServerStartFromConfigurationFile(cserver, _serverSettings, _modelsSettings));
             }
-            while (!isServerReady) {
-                std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            
+            int timeoutCounter = 100;
+            while (!isServerReady && timeoutCounter) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                timeoutCounter--;
                 ASSERT_CAPI_STATUS_NULL(OVMS_ServerReady(cserver, &isServerReady));
             }
+
+            // Make sure server is ready and not timeouted on bad config error for example
+            ASSERT_CAPI_STATUS_NULL(OVMS_ServerReady(cserver, &isServerReady));
+            RET_CHECK(isServerReady);
             LOG(INFO) << "Ensured server is ready";
         }
 
