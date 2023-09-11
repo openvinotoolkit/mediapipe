@@ -108,8 +108,6 @@ class OpenVINOModelServerSessionCalculator : public CalculatorBase {
     std::unordered_map<std::string, std::string> outputNameToTag;
     // TODO where to place members
     OVMS_Server* cserver{nullptr};
-    OVMS_ServerSettings* _serverSettings{nullptr};
-    OVMS_ModelsSettings* _modelsSettings{nullptr};
     static bool triedToStartOVMS;
     static std::mutex loadingMtx;
 public:
@@ -162,14 +160,18 @@ public:
             } else {
                 LOG(INFO) << "Will start new server";
                 triedToStartOVMS = true;
-
-                OVMS_ServerSettingsNew(&_serverSettings);
-                OVMS_ModelsSettingsNew(&_modelsSettings);
-                OVMS_ModelsSettingsSetConfigPath(_modelsSettings, options.server_config().c_str());
+                OVMS_ServerSettings* serverSettings{nullptr};
+                OVMS_ModelsSettings* modelsSettings{nullptr};
+                OVMS_ServerSettingsNew(&serverSettings);
+                OVMS_ModelsSettingsNew(&modelsSettings);
+                OVMS_ModelsSettingsSetConfigPath(modelsSettings, options.server_config().c_str());
                 LOG(INFO) << "state config file:" << options.server_config();
-                OVMS_ServerSettingsSetLogLevel(_serverSettings, OVMS_LOG_DEBUG);
+                OVMS_ServerSettingsSetLogLevel(serverSettings, OVMS_LOG_DEBUG);
 
-                ASSERT_CAPI_STATUS_NULL(OVMS_ServerStartFromConfigurationFile(cserver, _serverSettings, _modelsSettings));
+                ASSERT_CAPI_STATUS_NULL(OVMS_ServerStartFromConfigurationFile(cserver, serverSettings, modelsSettings));
+                OVMS_ServerSettingsDelete(serverSettings);
+                OVMS_ModelsSettingsDelete(modelsSettings);
+
                 ASSERT_CAPI_STATUS_NULL(OVMS_ServerReady(cserver, &isServerReady));
                 RET_CHECK(isServerReady);
                 LOG(INFO) << "Server started";
