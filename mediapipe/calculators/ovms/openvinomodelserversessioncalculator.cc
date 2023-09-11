@@ -104,6 +104,8 @@ class OpenVINOModelServerSessionCalculator : public CalculatorBase {
     OVMS_Server* cserver{nullptr};
     OVMS_ServerSettings* _serverSettings{nullptr};
     OVMS_ModelsSettings* _modelsSettings{nullptr};
+    static bool triedToStartOVMS;
+    static std::mutex loadingMtx;
 public:
     static absl::Status GetContract(CalculatorContract* cc) {
         LOG(INFO) << "Session GetContract start";
@@ -143,36 +145,29 @@ public:
         // if config is in calc then we start the server
         LOG(INFO) << "Will check if we want to start server";
         if (!options.server_config().empty()) {
-            LOG(INFO) << "Will start new server";
-            OVMS_ServerNew(&cserver);
-            OVMS_ServerSettingsNew(&_serverSettings);
-            OVMS_ModelsSettingsNew(&_modelsSettings);
-            OVMS_ModelsSettingsSetConfigPath(_modelsSettings, options.server_config().c_str());
-            LOG(INFO) << "state config file:" << options.server_config();
-            OVMS_ServerSettingsSetLogLevel(_serverSettings, OVMS_LOG_DEBUG);
-            bool isServerReady = false;
-            
-            ASSERT_CAPI_STATUS_NULL(OVMS_ServerReady(cserver, &isServerReady));
-            std::mutex mtx;
-            
             // Lock access to server from multiple calculator instances during the model loading phase
-            std::lock_guard<std::mutex> lk(mtx);
-            if (!isServerReady) {
-                REPORT_CAPI_STATUS_NULL(OVMS_ServerStartFromConfigurationFile(cserver, _serverSettings, _modelsSettings));
-            }
-            
-            // Timeout for endless loop - 1000 seconds
-            int timeoutCounter = 100000;
-            while (!isServerReady && timeoutCounter) {
-                std::this_thread::sleep_for(std::chrono::milliseconds(10));
-                timeoutCounter--;
-                ASSERT_CAPI_STATUS_NULL(OVMS_ServerReady(cserver, &isServerReady));
-            }
+            std::unique_lock<std::mutex> lk(ModelAPISessionCalculator::loadingMtx);
+            bool isServerReady = false;
+            OVMS_ServerNew(&cserver);
 
-            // Make sure server is ready and not timeouted on bad config error for example
-            ASSERT_CAPI_STATUS_NULL(OVMS_ServerReady(cserver, &isServerReady));
-            RET_CHECK(isServerReady);
-            LOG(INFO) << "Ensured server is ready";
+            if (triedToStartOVMS){
+                ASSERT_CAPI_STATUS_NULL(OVMS_ServerReady(cserver, &isServerReady));
+                RET_CHECK(isServerReady);
+            } else {
+                LOG(INFO) << "Will start new server";
+                triedToStartOVMS = true;
+
+                OVMS_ServerSettingsNew(&_serverSettings);
+                OVMS_ModelsSettingsNew(&_modelsSettings);
+                OVMS_ModelsSettingsSetConfigPath(_modelsSettings, options.server_config().c_str());
+                LOG(INFO) << "state config file:" << options.server_config();
+                OVMS_ServerSettingsSetLogLevel(_serverSettings, OVMS_LOG_DEBUG);
+
+                ASSERT_CAPI_STATUS_NULL(OVMS_ServerStartFromConfigurationFile(cserver, _serverSettings, _modelsSettings));
+                ASSERT_CAPI_STATUS_NULL(OVMS_ServerReady(cserver, &isServerReady));
+                RET_CHECK(isServerReady);
+                LOG(INFO) << "Server started";
+            }
         }
 
         const std::string& servableName = options.servable_name();
@@ -203,5 +198,6 @@ public:
     }
 };
 
-REGISTER_CALCULATOR(OpenVINOModelServerSessionCalculator);
+bool OpenVINOModelServerSessionCalculator::triedToStartOVMS = false;
+std::mutex OpenVINOModelServerSessionCalculator::loadingMtx;
 }  // namespace mediapipe
