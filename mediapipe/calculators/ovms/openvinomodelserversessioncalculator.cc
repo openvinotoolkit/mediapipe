@@ -41,14 +41,20 @@ using std::endl;
 const std::string SESSION_TAG{"SESSION"};
 ov::Core UNUSED_OV_CORE;
 
+#define ASSERT_FATAL_ERR(C_API_CALL)    \
+    {                                   \
+        auto* fatalErr = C_API_CALL;    \
+        RET_CHECK(fatalErr == nullptr); \
+    }
+
 #define ASSERT_CAPI_STATUS_NULL(C_API_CALL)                                                 \
     {                                                                                       \
         auto* err = C_API_CALL;                                                             \
         if (err != nullptr) {                                                               \
             uint32_t code = 0;                                                              \
             const char* msg = nullptr;                                                      \
-            OVMS_StatusCode(err, &code);                                                 \
-            OVMS_StatusDetails(err, &msg);                                               \
+            ASSERT_FATAL_ERR(OVMS_StatusCode(err, &code));                                  \
+            ASSERT_FATAL_ERR(OVMS_StatusDetails(err, &msg));                                \
             LOG(INFO) << "Error encountred in OVMSCalculator:" << msg << " code: " << code; \
             OVMS_StatusDelete(err);                                                         \
             RET_CHECK(nullptr == err);                                                      \
@@ -61,8 +67,8 @@ ov::Core UNUSED_OV_CORE;
         if (err != nullptr) {                                                               \
             uint32_t code = 0;                                                              \
             const char* msg = nullptr;                                                      \
-            OVMS_StatusCode(err, &code);                                                 \
-            OVMS_StatusDetails(err, &msg);                                               \
+            ASSERT_FATAL_ERR(OVMS_StatusCode(err, &code));                                  \
+            ASSERT_FATAL_ERR(OVMS_StatusDetails(err, &msg));                                \
             LOG(INFO) << "Error encountred in OVMSCalculator:" << msg << " code: " << code; \
             OVMS_StatusDelete(err);                                                         \
         }                                                                                   \
