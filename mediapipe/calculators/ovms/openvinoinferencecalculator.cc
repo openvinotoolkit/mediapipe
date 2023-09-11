@@ -181,8 +181,10 @@ static ov::Tensor convertMPTensor2OVTensor(const Tensor& inputTensor) {
         break;
     case Tensor::ElementType::kBool:
         data = reinterpret_cast<void*>(const_cast<bool*>(inputTensor.GetCpuReadView().buffer<bool>()));
+        break;
     default:
         data = reinterpret_cast<void*>(const_cast<void*>(inputTensor.GetCpuReadView().buffer<void>()));
+        break;
     }
     auto datatype = MPType2OVType(inputTensor.element_type());;
     ov::Shape shape;
@@ -218,8 +220,10 @@ static Tensor convertOVTensor2MPTensor(const ov::Tensor& inputTensor) {
         break;
     case ov::element::Type_t::boolean:
         data = reinterpret_cast<void*>(const_cast<bool*>(outputTensor.GetCpuWriteView().buffer<bool>()));
+        break;
     default:
         data = reinterpret_cast<void*>(const_cast<void*>(outputTensor.GetCpuWriteView().buffer<void>()));
+        break;
     }
     std::memcpy(data, inputTensor.data(), inputTensor.get_byte_size());
     return outputTensor;
