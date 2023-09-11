@@ -200,4 +200,6 @@ public:
 
 bool OpenVINOModelServerSessionCalculator::triedToStartOVMS = false;
 std::mutex OpenVINOModelServerSessionCalculator::loadingMtx;
+
+REGISTER_CALCULATOR(OpenVINOModelServerSessionCalculator);
 }  // namespace mediapipe
