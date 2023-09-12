@@ -18,7 +18,7 @@ pipeline {
               env
               """
               echo shortCommit
-              build job: "ovmsci/users/rasapala/OpenVinoMediapipe", parameters: [[$class: 'StringParameterValue', name: 'MEDIACOMMIT', value: shortCommit]]
+              build job: "ovmsc/users/rasapala/OpenVinoMediapipe", parameters: [[$class: 'StringParameterValue', name: 'MEDIACOMMIT', value: shortCommit]]
           }    
         }
     }
