@@ -154,10 +154,11 @@ public:
             bool isServerReady = false;
             OVMS_ServerNew(&cserver);
 
-            if (triedToStartOVMS){
-                ASSERT_CAPI_STATUS_NULL(OVMS_ServerReady(cserver, &isServerReady));
+            ASSERT_CAPI_STATUS_NULL(OVMS_ServerReady(cserver, &isServerReady));
+
+            if (triedToStartOVMS) {
                 RET_CHECK(isServerReady);
-            } else {
+            } else if (!isServerReady) {
                 LOG(INFO) << "Will start new server";
                 triedToStartOVMS = true;
                 OVMS_ServerSettings* serverSettings{nullptr};
