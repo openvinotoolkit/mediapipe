@@ -481,7 +481,7 @@ public:
                 } else if (packet.size() == 1) {                                                      \
                     input[realInputName] = DESERIALIZE_FUN(packet[0]);                                \
                 }
-
+            try {
             if (startsWith(tag, OVTENSORS_TAG)) {
                 DESERIALIZE_TENSORS(ov::Tensor,);
             } else if (startsWith(tag, TFLITE_TENSORS_TAG)) {
@@ -503,6 +503,10 @@ public:
             } else {
                 auto& packet = cc->Inputs().Tag(tag).Get<ov::Tensor>();
                 input[realInputName] = packet;
+            }
+            } catch (const std::runtime_error& e) {
+                LOG(INFO) << "Failed to deserialize tensor error:" << e.what();
+                RET_CHECK(false);
             }
         }
         //////////////////
@@ -534,6 +538,7 @@ public:
                 LOG(INFO) << "Could not find: " << tensorName << " in inference output";
                 RET_CHECK(false);
             }
+            try {
             if (startsWith(tag, OVTENSORS_TAG)) {
                 LOG(INFO) << "OVMS calculator will process vector<ov::Tensor>";
                 auto tensors = std::make_unique<std::vector<ov::Tensor>>();
@@ -650,6 +655,10 @@ public:
                 cc->Outputs().Tag(tag).Add(
                     new ov::Tensor(tensorIt->second),
                     cc->InputTimestamp());
+            }
+            } catch (const std::runtime_error& e) {
+                LOG(INFO) << "Failed to deserialize tensor error:" << e.what();
+                RET_CHECK(false);
             }
             LOG(INFO) << "OVMS calculator will process TfLite tensors";
         }
