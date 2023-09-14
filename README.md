@@ -1,7 +1,7 @@
 # OpenVINO&trade; Model Server fork of [MediaPipe](https://google.github.io/mediapipe/).
-This repository is allowing users to take advantage of OpenVINO&trade; Model Serving in mediapipe examples. During the graph execution the inference calls on pretrained models are directed to model server instance initialised and parametrized by the specific inference calculators.
+This repository is allowing users to take advantage of OpenVINO&trade; Model Serving in mediapipe examples. During the graph execution the inference calls on pretrained models are directed to model server instance initialized and parametrized by the specific inference calculators.
 
-- the fork was based on oryginal mediapipe release origin/v0.9.1 (Author: Sebastian Schmidt <mrschmidt@google.com> Date:   Tue Jan 24 12:11:53 2023).
+- the fork was based on original mediapipe release origin/v0.9.1 (Author: Sebastian Schmidt <mrschmidt@google.com> Date:   Tue Jan 24 12:11:53 2023).
 
 # List of main features
 - Dockerfile.openvino dockerfile environment for local runtime execution and development.
@@ -11,13 +11,13 @@ This repository is allowing users to take advantage of OpenVINO&trade; Model Ser
 
 - added Dockerfile.openvino dockerfile that creates runtime and development environment.
 - added Makefile file with build, test and demo targets for the ease of use.
-- modyfied build_desktop_examples.sh script to build new targets.
-- modyfied WORKSPACE file to add OpenVINO&trade; Model Server dependencies.
+- modified build_desktop_examples.sh script to build new targets.
+- modified WORKSPACE file to add OpenVINO&trade; Model Server dependencies.
   Specifically target @ovms//src:ovms_lib as dependency from [OVMS](https://github.com/openvinotoolkit/model_server)
 - added mediapipe/calculators/ovms calculators for model serving inference in mediapipe graphs
   detailed description can be found here (TODO link).
-- modyfied mediapipe/examples/desktop targets to use OpenVINO&trade; Model Server inference calculators (the list of modyfied targets is in the table below).
-- modyfied mediapipe/modules/ graphs and targets to use OpenVINO&trade; Model Server inference instead of Tensorflow inference in examples/desktop targets.
+- modified mediapipe/examples/desktop targets to use OpenVINO&trade; Model Server inference calculators (the list of modified targets is in the table below).
+- modified mediapipe/modules/ graphs and targets to use OpenVINO&trade; Model Server inference instead of TensorFlow inference in examples/desktop targets.
 - added setup_ovms.py script to create models directory setup used in OpenVINO&trade; Model Server inference
 - modified setup_opecv.py to install 4.7.0 OpenCV version instead of previous 3.4.
 
