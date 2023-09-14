@@ -40,46 +40,65 @@ This repository is allowing users to take advantage of OpenVINO&trade; Model Ser
 [MediaSequence](https://google.github.io/mediapipe/solutions/media_sequence)                    |                                                                 |                                                         |                                                        |                                                      |                                                        |
 [YouTube 8M](https://google.github.io/mediapipe/solutions/youtube_8m)                           |                                                                 |                                                         |                                                        |                                                      |                                                        |
 
-# Building docker container with dependencies
+# Deployment instructions
+- Building docker container with dependencies
 ```bash
 git clone https://github.com/openvinotoolkit/mediapipe.git
 cd mediapipe
 make docker_build
 ```
-# You can check the integrity of the built image by running tests
+- You can check the integrity of the built image by running tests
 ```bash
 make tests
 ```
 
-# Running demo applications inside mediapipe_ovms container
+- Running demo applications inside mediapipe_ovms container
 ```bash
 docker run -it mediapipe_ovms:latest bash
 ```
 
-# Running object detection demo inside mediapipe_ovms container
+- Running object detection demo inside mediapipe_ovms container
 ```bash
 make run_object_detection
 ```
 
-# Running holistic tracking demo inside mediapipe_ovms container
+- Running holistic tracking demo inside mediapipe_ovms container
 ```bash
 make run_holistic_tracking
 ```
 
-# Running iris tracking demo inside mediapipe_ovms container
+- Running iris tracking demo inside mediapipe_ovms container
 ```bash
 make run_iris_tracking
 ```
 
-# Running pose tracking demo inside mediapipe_ovms container
+- Running pose tracking demo inside mediapipe_ovms container
 ```bash
 make run_pose_tracking
 ```
 
-# Running face detection demo inside mediapipe_ovms container
+- Running face detection demo inside mediapipe_ovms container
 ```bash
 make run_face_detection
 ```
+
+# Development instructions
+Below instructions are prepared so that you can experiment and develop your own applications with custom graphs taking advantage of OpenVINO&trade; Model Serving inference.
+
+- run the 'make docker_build' command to prepare the development and runtime environment
+- start the 'docker run -it mediapipe_ovms:latest bash'
+- modify the contents of global (config_holistic.json)[mediapipe/models/ovms/config_holistic.json] or specific (object_detection config.json)[mediapipe/calculators/ovms/config.json] to change the models and graphs that are loaded for your example application
+- make sure the new pbtxt and model files are present in the mediapipe/models/ovms/ directory during the application execution and are setup according to the config json file paths ( currently the existing demos setup is prepared automatically with the 'python setup_ovms.py --get_models' command.)
+- modify or create new mediapipe example target with the //mediapipe/graphs/object_detection:desktop_ovms_calculators and @ovms//src:ovms_lib dependencies similar to (object_detection_ovms)[mediapipe/examples/desktop/object_detection/BUILD] target.
+- build your application graph file based on existing examples or (object_detection)[mediapipe/graphs/object_detection/object_detection_desktop_ovms1_graph.pbtxt] making sure that OpenVINOModelServerSessionCalculator and OpenVINOInferenceCalculator are properly placed in the inference pipeline of your graph.
+- build your new application using the bazel command inside the mediapipe_ovms container, for example in object_detection case it is:
+'build -c opt --define MEDIAPIPE_DISABLE_GPU=1 mediapipe/examples/desktop/object_detection:object_detection_openvino'
+- execute your application with the specific input parameters, for example in object_detection case those are:
+'bazel-bin/mediapipe/examples/desktop/object_detection/object_detection_openvino --calculator_graph_config_file mediapipe/graphs/object_detection/object_detection_desktop_openvino_graph.pbtxt --input_side_packets "input_video_path=/mediapipe/mediapipe/examples/desktop/object_detection/test_video.mp4,output_video_path=/mediapipe/tested_video.mp4"'
+- in object_detection example the input video will get all the objects detected by the model and return the tested_video.mp4 output.
+
+
+Below you can find the oryginal Mediapipe repository description.
 
 ![MediaPipe](https://mediapipe.dev/images/mediapipe_small.png)
 
