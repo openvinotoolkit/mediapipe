@@ -1,10 +1,10 @@
 # OpenVINO&trade; Model Server fork of [MediaPipe](https://google.github.io/mediapipe/).
-This repository is allowing users to take advantage of OpenVINO&trade; in mediapipe pipeline. During the graph execution the inference calls on pretrained models are directed to OpenVINO&trade; Model Server instance initialized and parametrized by the specific inference calculators.
+This repository is allowing users to take advantage of OpenVINO&trade; in mediapipe framework. During the graph execution the inference calls on pretrained models are directed to OpenVINO&trade; Model Server instance initialized and parametrized by the specific inference calculators.
 
-- the fork is based on original mediapipe release origin/v0.9.1 (Author: Sebastian Schmidt <mrschmidt@google.com> Date:   Tue Jan 24 12:11:53 2023).
+We show in several demos the full required configuration but any graph with proper adjustements can run with OpenVINO&trade; backend.
 
 # List of main features
-- inference calculators that allow the use of OpenVINO&trade; backend for effective inference inside mediapipe application.
+- inference calculators that allow the use of OpenVINO&trade; backend for effective inference inside mediapipe framework.
 
 # List of changes introduced in this repository fork
 
@@ -20,7 +20,7 @@ This repository is allowing users to take advantage of OpenVINO&trade; in mediap
 - added setup_ovms.py script to create models directory setup used in OpenVINO&trade; inference
 - modified setup_opecv.py to install 4.7.0 OpenCV version instead of previous 3.4.
 
-[]()                                                                                      | C++                                                     | Python                                                        | Oryginal Google demo documentation                                                        |
+[]() OpenVINO&trade; demo                                                    | C++                                                     | Python                                                        | Original Google demo                                                        |
 :---------------------------------------------------------------------------------------- | :-----------------------------------------------------: | :-----------------------------------------------------------: | :---------------------------------------------------------------------------------------: |
 [Face Detection](mediapipe/examples/desktop/face_detection/README.md)                     | ✅                                                      |                                                                |[Face Detection](https://google.github.io/mediapipe/solutions/face_detection)             |
 [Iris](mediapipe/examples/desktop/iris_tracking/README.md)                                | ✅                                                      |                                                                |[Iris](https://google.github.io/mediapipe/solutions/iris)                                 |
@@ -28,7 +28,13 @@ This repository is allowing users to take advantage of OpenVINO&trade; in mediap
 [Holistic](mediapipe/examples/desktop/holistic_tracking/README.md)                        | ✅                                                      |                                                                |[Holistic](https://google.github.io/mediapipe/solutions/holistic)                         |
 [Object Detection](mediapipe/examples/desktop/object_detection/README.md)                 | ✅                                                      |                                                                |[Object Detection](https://google.github.io/mediapipe/solutions/object_detection)         |
 
-# [Development instructions](docs/development.md)
+# Development instructions
+
+The list of instructions and best practises in developing your own application and graphs can be found [here](docs/development.md)
+
+# Deployment fast truck instructions
+
+The list of instructions and best practises in deploying the applications and graphs can be found [here](docs/deployment.md)
 
 ![MediaPipe](https://mediapipe.dev/images/mediapipe_small.png)
 
@@ -51,4 +57,7 @@ Face Detection                                                                  
 :----------------------------------------------------------------------------------------------------------------------------: | :-------------------------------------------------------------------------------------------------------: | :-------------------------------------------------------------------------------------------------------: | :------: | :----------------------------------------------------------------------------------------------------------------------------------: |
 [![face_detection](https://mediapipe.dev/images/mobile/face_detection_android_gpu_small.gif)](https://google.github.io/mediapipe/solutions/face_detection) | [![iris](https://mediapipe.dev/images/mobile/iris_tracking_android_gpu_small.gif)](https://google.github.io/mediapipe/solutions/iris) | [![pose](https://mediapipe.dev/images/mobile/pose_tracking_android_gpu_small.gif)](https://google.github.io/mediapipe/solutions/pose) | [![holistic_tracking](https://mediapipe.dev/images/mobile/holistic_tracking_android_gpu_small.gif)](https://google.github.io/mediapipe/solutions/holistic) | [![object_detection](https://mediapipe.dev/images/mobile/object_detection_android_gpu_small.gif)](https://google.github.io/mediapipe/solutions/object_detection) |
 
-## [Oryginal v0.9.1 Google ML solutions in MediaPipe](https://github.com/google/mediapipe/tree/v0.9.1)
+## Fork baseline
+The fork is based on original mediapipe release origin/v0.9.1 (Author: Sebastian Schmidt <mrschmidt@google.com> Date:   Tue Jan 24 12:11:53 2023).
+
+Original v0.9.1 Google ML solutions in MediaPipe can be found [here](https://github.com/google/mediapipe/tree/v0.9.1)
