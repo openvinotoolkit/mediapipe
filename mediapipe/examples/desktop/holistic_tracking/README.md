@@ -1,4 +1,8 @@
-# OpenVINO&trade; Model Server fork of [MediaPipe](https://google.github.io/mediapipe/) repository allowing users to take advantage of OpenVINO&trade; Model Serving in mediapipe examples.
+# Holistic tracking demo
+
+OpenVINO&trade; Model Server fork of [MediaPipe](https://google.github.io/mediapipe/) repository allowing users to take advantage of OpenVINO&trade; backend in mediapipe framework.
+
+[Original demo documentation](https://google.github.io/mediapipe/solutions/iris)
 
 # Building docker container with dependencies
 ```bash
@@ -6,24 +10,30 @@ git clone https://github.com/openvinotoolkit/mediapipe.git
 cd mediapipe
 make docker_build
 ```
-# You can check the integrity of the built image by running tests
-```bash
-make tests
-```
 
-# Running demo applications inside mediapipe_ovms container
+# Start mediapipe_ovms container
 ```bash
 docker run -it mediapipe_ovms:latest bash
 ```
 
-# Running object detection demo on ovms inside mediapipe_ovms container 
+# Running demo inside mediapipe_ovms container
+
+## Prepare models and build application
 ```bash
-make run_object_detection
+python setup_ovms.py --get_models
+python setup_ovms.py --convert_pose
+build -c opt --define MEDIAPIPE_DISABLE_GPU=1 mediapipe/examples/desktop/holistic_tracking:holistic_tracking_cpu
 ```
 
-# Running object detection demo on ov inside mediapipe_ovms container
+## Download the input video or prepare your own input as 'video.mp4'
 ```bash
-build -c opt --define MEDIAPIPE_DISABLE_GPU=1 mediapipe/examples/desktop/object_detection:object_detection_openvino
-python setup_ovms.py --get_models
-bazel-bin/mediapipe/examples/desktop/object_detection/object_detection_openvino --calculator_graph_config_file mediapipe/graphs/object_detection/object_detection_desktop_openvino_graph.pbtxt --input_side_packets "input_video_path=/mediapipe/mediapipe/examples/desktop/object_detection/test_video.mp4,output_video_path=/mediapipe/tested_video.mp4"
+wget -O video.mp4 "https://www.pexels.com/download/video/3044127/?fps=24.0&h=1080&w=1920"
 ```
+
+## Run the demo
+Execute command with the calculator_graph_config_file, input_video_path and output_video_path:
+```bash
+bazel-bin/mediapipe/examples/desktop/holistic_tracking/holistic_tracking_cpu --calculator_graph_config_file /mediapipe/mediapipe/graphs/holistic_tracking/holistic_tracking_cpu.pbtxt --input_video_path=/mediapipe/video.mp4 --output_video_path=/mediapipe/output_holistic_ovms.mp4
+```
+
+Now you can review the output_holistic_ovms.mp4 output with detections.
