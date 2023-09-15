@@ -59,19 +59,6 @@ node: {
   option_value: "output_tensor_height:options/tensor_height"
 }
 
-# Runs a TensorFlow Lite model on CPU that takes an image tensor and outputs a
-# vector of tensors representing, for instance, detection boxes/keypoints and
-# scores.
-#node {
-#  calculator: "InferenceCalculator"
-#  input_stream: "TENSORS:input_tensors"
-#  output_stream: "TENSORS:detection_tensors"
-#  options: {
-#    [mediapipe.InferenceCalculatorOptions.ext] {}
-#  }
-#  option_value: "delegate:options/delegate"
-#  option_value: "model_path:options/model_path"
-#}
 node {
   calculator: "OpenVINOModelServerSessionCalculator"
   output_side_packet: "SESSION:session"
