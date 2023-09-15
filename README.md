@@ -1,7 +1,7 @@
 # OpenVINO&trade; Model Server fork of [MediaPipe](https://google.github.io/mediapipe/).
-This repository is allowing users to take advantage of OpenVINO&trade; in mediapipe framework. During the graph execution the inference calls on pretrained models are directed to OpenVINO&trade; instance initialized and parametrized by the specific inference calculators.
+This repository allows users to take advantage of OpenVINO&trade; in mediapipe framework. During the graph execution the inference calls on pretrained models are directed to OpenVINO&trade; Model Server instance initialized and parametrized by the specific inference calculators.
 
-We show in several demos the full required configuration but any graph with proper adjustments can run with OpenVINO&trade; backend.
+This repository shows multiple demos and its full configurations. It is also possible to create or adjust your own graphs to work with OpenVINO&trade; backend.
 
 # List of changes introduced in this repository fork
 
