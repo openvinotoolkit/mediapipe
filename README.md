@@ -1,23 +1,20 @@
 # OpenVINO&trade; Model Server fork of [MediaPipe](https://google.github.io/mediapipe/).
-This repository is allowing users to take advantage of OpenVINO&trade; in mediapipe framework. During the graph execution the inference calls on pretrained models are directed to OpenVINO&trade; Model Server instance initialized and parametrized by the specific inference calculators.
+This repository is allowing users to take advantage of OpenVINO&trade; in mediapipe framework. During the graph execution the inference calls on pretrained models are directed to OpenVINO&trade; instance initialized and parametrized by the specific inference calculators.
 
-We show in several demos the full required configuration but any graph with proper adjustements can run with OpenVINO&trade; backend.
-
-# List of main features
-- inference calculators that allow the use of OpenVINO&trade; backend for effective inference inside mediapipe framework.
+We show in several demos the full required configuration but any graph with proper adjustments can run with OpenVINO&trade; backend.
 
 # List of changes introduced in this repository fork
 
-- added Dockerfile.openvino dockerfile that creates runtime and development environment.
-- added Makefile file with build, test and demo targets for the ease of use.
-- modified build_desktop_examples.sh script to build new demos.
-- added [calculators](mediapipe/calculators/ovms)  for OpenVINO&trade; inference in mediapipe graphs
+- added [Dockerfile.openvino](Dockerfile.openvino) dockerfile that creates runtime and development environment.
+- added [Makefile](Makefile) file with build, test and demo targets for the ease of use.
+- modified [build_desktop_examples.sh](build_desktop_examples.sh) script to build new demos.
+- added [calculators](mediapipe/calculators/ovms) and [calculators](mediapipe/calculators/openvino) for OpenVINO&trade; inference in mediapipe graphs
   detailed description can be found here (TODO link).
-- modified [targets](mediapipe/examples/desktop)  to use OpenVINO&trade; inference calculators (the list of available dmeos is in the table below).
+- modified [targets](mediapipe/examples/desktop)  to use OpenVINO&trade; inference calculators (the list of available demos is in the table below).
 - modified WORKSPACE file to add OpenVINO&trade; Model Server dependencies.
   Specifically target @ovms//src:ovms_lib as dependency from [OVMS](https://github.com/openvinotoolkit/model_server)
-- modified [graphs and targets](mediapipe/modules/) to use OpenVINO&trade; inference instead of TensorFlow inference in examples/desktop targets.
-- added setup_ovms.py script to create models directory setup used in OpenVINO&trade; inference
+- modified [graphs and bazel targets](mediapipe/modules/) to use OpenVINO&trade; inference instead of TensorFlow inference.
+- added [setup_ovms.py](setup_ovms.py) script to create models directory setup used in OpenVINO&trade; inference. The script needs to be executed to prepare specific directory structures with tflite models and config.json in the [mediapipe/models/ovms](directory).
 - modified setup_opecv.py to install 4.7.0 OpenCV version instead of previous 3.4.
 
 []() OpenVINO&trade; demo                                                    | C++                                                     | Python                                                        | Original Google demo                                                        |
@@ -28,13 +25,13 @@ We show in several demos the full required configuration but any graph with prop
 [Holistic](mediapipe/examples/desktop/holistic_tracking/README.md)                        | ✅                                                      |                                                                |[Holistic](https://google.github.io/mediapipe/solutions/holistic)                         |
 [Object Detection](mediapipe/examples/desktop/object_detection/README.md)                 | ✅                                                      |                                                                |[Object Detection](https://google.github.io/mediapipe/solutions/object_detection)         |
 
+# Quick start guide
+
+The list of instructions and best practices in deploying the applications and graphs can be found [here](docs/deployment.md)
+
 # Development instructions
 
-The list of instructions and best practises in developing your own application and graphs can be found [here](docs/development.md)
-
-# Deployment fast truck instructions
-
-The list of instructions and best practises in deploying the applications and graphs can be found [here](docs/deployment.md)
+The list of instructions and best practices in developing your own application and graphs can be found [here](docs/development.md)
 
 ![MediaPipe](https://mediapipe.dev/images/mediapipe_small.png)
 
