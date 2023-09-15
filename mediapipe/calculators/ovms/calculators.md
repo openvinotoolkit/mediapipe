@@ -12,7 +12,7 @@ OVMSInferenceAdapter is an implementation of [OpenVINO Model API](https://github
 
 ### OpenVINOInferenceCalculator
 
-This [calculator](https://github.com/openvinotoolkit/mediapipe/blob/main/mediapipe/calculators/ovms/openvinoinferencecalculator.cc) is using OVMS Adapter received as `input_side_packet` to execute inference with OVMS. It has optional options fields `tag_to_input_tensor_names` and `tag_to_output_tensor_names` that can serve as Mediapipe stream names mapping to servable (Model/DAG) inputs and/or outputs. Options `input_order_list` and `output_order_list` can be used in conjuction with packet types using `std::vector<T>` to transform input/output maps to desired order in vector of tensors. Example of usage can be found [here](https://github.com/openvinotoolkit/mediapipe/blob/main/mediapipe/modules/pose_landmark/pose_landmark_by_roi_cpu.pbtxt).
+[OpenVINOInferenceCalculator](openvinoinferencecalculator.cc) is using `OVMSInferenceAdapter` received as `input_side_packet` to execute inference with [OpenVINO Model Server C-API](https://github.com/openvinotoolkit/model_server/blob/main/docs/model_server_c_api.md). It can use `options` field `tag_to_input_tensor_names` and `tag_to_output_tensor_names` to map MediaPipe stream names and servable (Model/DAG) inputs and/or outputs. Options `input_order_list` and `output_order_list` can be used together with packet types using `std::vector<T>` to transform input/output maps to desired order in vector of tensors. This guarantees correct order of inputs and outputs in the pipeline. Example of usage can be found [here](../../modules/pose_landmark/pose_landmark_by_roi_cpu.pbtxt).
 
 Accepted packet types and tags are listed below:
 
