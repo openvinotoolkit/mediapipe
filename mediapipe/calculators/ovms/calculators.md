@@ -1,6 +1,6 @@
 # Mediapipe calculators {#ovms_docs_mediapipe_calculators}
 
-This page documents how to use [OpenVINO Model Server](https://github.com/openvinotoolkit/model_server) calculators in Mediapipe.
+This page documents how to use calculators with OpenVINO backend to run Inference operations in the Mediapipe graph. The OpenVINO calculators follow the setup similar to existing TensorFlow calculators. There is an Inference calculator which employs ModelAPI interface. It can be accompanied by the Session calculator including an adapter to a specific backend type.
 
 ### OVMSInferenceAdapter
 
