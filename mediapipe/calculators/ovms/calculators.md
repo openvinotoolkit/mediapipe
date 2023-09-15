@@ -2,6 +2,8 @@
 
 This page documents how to use calculators with OpenVINO backend to run Inference operations in the Mediapipe graph. The OpenVINO calculators follow the setup similar to existing TensorFlow calculators. There is an Inference calculator which employs ModelAPI interface. It can be accompanied by the Session calculator including an adapter to a specific backend type.
 
+![Graph schema visualization](diagram.png)
+
 ### OVMSInferenceAdapter
 
 OVMSInferenceAdapter is an implementation of [OpenVINO Model API](https://github.com/openvinotoolkit/model_api) Adapter [interface](https://github.com/openvinotoolkit/model_api/blob/master/model_api/cpp/adapters/include/adapters/inference_adapter.h) that executes inference with OVMS [C-API](https://github.com/openvinotoolkit/model_server/blob/main/docs/model_server_c_api.md).
@@ -25,3 +27,6 @@ Accepted packet types and tags are listed below:
 |input_stream: "TENSORS:b"|input|TENSORS|std::vector<mediapipe::Tensor>|b|
 
 In case of missing tag calculator assumes that the packet type is `ov::Tensor'.
+
+## How to adjust existing graphs to perform inference with OpenVINO Model Server
+Please check following [link](https://github.com/openvinotoolkit/mediapipe/compare/master...openvinotoolkit:mediapipe:main) and look up differences in existing MediaPipe pbtxt files.
