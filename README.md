@@ -9,7 +9,7 @@ We show in several demos the full required configuration but any graph with prop
 - added [Makefile](Makefile) file with build, test and demo targets for the ease of use.
 - modified [build_desktop_examples.sh](build_desktop_examples.sh) script to build new demos.
 - added [calculators](mediapipe/calculators/ovms) and [calculators](mediapipe/calculators/openvino) for OpenVINO&trade; inference in mediapipe graphs
-  detailed description can be found here (TODO link).
+  detailed [description](mediapipe/calculators/ovms/calculators.md).
 - modified [targets](mediapipe/examples/desktop)  to use OpenVINO&trade; inference calculators (the list of available demos is in the table below).
 - modified WORKSPACE file to add OpenVINO&trade; Model Server dependencies.
   Specifically target @ovms//src:ovms_lib as dependency from [OVMS](https://github.com/openvinotoolkit/model_server)
