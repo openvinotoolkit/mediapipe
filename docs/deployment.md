@@ -1,4 +1,4 @@
-# Fast deployment instructions
+# Quick start guide
 - Building docker container with dependencies
 ```bash
 git clone https://github.com/openvinotoolkit/mediapipe.git
