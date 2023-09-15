@@ -27,7 +27,7 @@ This repository shows multiple demos and its full configurations. It is also pos
 
 # Quick start guide
 
-The list of instructions and best practices in deploying the applications and graphs can be found [here](docs/deployment.md)
+The list of instructions and best practices in deploying the applications and graphs can be found [here](docs/quickstartguide.md)
 
 # Development instructions
 
