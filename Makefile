@@ -42,6 +42,8 @@ run_hello_world:
 	docker run -it $(OVMS_MEDIA_DOCKER_IMAGE):$(OVMS_MEDIA_IMAGE_TAG) bazel-bin/mediapipe/examples/desktop/hello_world/hello_world | grep "Hello World!"
 
 # Targets to use inside running mediapipe_ovms container
+run_demos: run_object_detection run_holistic_tracking run_face_detection run_iris_tracking run_pose_tracking
+
 run_object_detection:
 	python setup_ovms.py --get_models
 	python setup_ovms.py --convert_pose --force
