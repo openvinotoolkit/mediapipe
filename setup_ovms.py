@@ -121,7 +121,7 @@ class SetupOpenvinoModelServer():
          self._download_external_file('pose_detection/pose_detection.tflite')
       
     else:
-       print("File not downloaded: " + dst + " Run setup_ovms.py --get_models fiest.")
+       print("File not downloaded: " + dst + " Run setup_ovms.py --get_models first.")
        exit(0)
     print("Converting pose detection model")
     self.run_command("cp -r  " + dst +" .")
