@@ -149,7 +149,7 @@ absl::Status RunMPPGraph() {
   float avgFps = (1000000 * (float)(count_frames) / (float)totalTime);
   float avgLatencyms = 1000 / avgFps;
 
-  LOG(INFO) << "Frames:" << count_frames << ", Avg duration [ms]:" << totalTime / 1000 << ", FPS:" << avgFps << ", Avg latency [ms]:" << avgLatencyms;   
+  LOG(INFO) << "Frames:" << count_frames << ", Duration [ms]:" << totalTime / 1000 << ", FPS:" << avgFps << ", Avg latency [ms]:" << avgLatencyms;   
   LOG(INFO) << "Shutting down.";
   if (writer.isOpened()) writer.release();
   MP_RETURN_IF_ERROR(graph.CloseInputStream(kInputStream));
