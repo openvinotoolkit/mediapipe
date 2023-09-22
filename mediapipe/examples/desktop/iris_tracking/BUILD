@@ -47,7 +47,7 @@ cc_binary(
 
 cc_binary(
     name = "iris_tracking_cpu",
-    data = ["//mediapipe/modules/iris_landmark:iris_landmark.tflite"],
+    data = ["//mediapipe/modules/iris_landmark:iris_landmark.tflite","//mediapipe/modules/face_landmark:face_landmark.tflite","//mediapipe/modules/face_detection:face_detection_short_range.tflite"],
     deps = [
         "//mediapipe/examples/desktop:demo_run_graph_main",
         "//mediapipe/graphs/iris_tracking:iris_tracking_cpu_deps",

@@ -69,8 +69,15 @@ azel-${BAZEL_VERSION}-installer-linux-x86_64.sh" && \
     chmod +x /bazel/installer.sh && \
     /bazel/installer.sh  && \
     rm -f /bazel/installer.sh
+####### Build OpenCV
+#COPY setup_opencv.sh /mediapipe/setup_opencv.sh
+#COPY third_party/opencv_linux.BUILD /mediapipe/third_party/opencv_linux.BUILD
+COPY setup_opencv.sh WORKSPACE BUILD.bazel .bazelrc yarn.lock package.json build_desktop_examples.sh /mediapipe/
+COPY third_party /mediapipe/third_party
+RUN bash setup_opencv.sh
+####### End of OpenCV
 
-COPY . /mediapipe/
-
-# If we want the docker image to contain the pre-built object_detection_offline_demo binary, do the following
-# RUN bazel build -c opt --define MEDIAPIPE_DISABLE_GPU=1 mediapipe/examples/desktop/demo:object_detection_tensorflow_demo
+RUN wget https://github.com/bazelbuild/bazelisk/releases/download/v1.17.0/bazelisk-linux-amd64 && \
+    mv bazelisk-linux-amd64 /usr/bin/bazelisk && chmod +x /usr/bin/bazelisk
+RUN  wget -O video.mp4 "https://www.pexels.com/download/video/3044127/?fps=24.0&h=1080&w=1920"
+COPY mediapipe /mediapipe/mediapipe
