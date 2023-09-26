@@ -27,7 +27,7 @@ bazel build -c opt --define MEDIAPIPE_DISABLE_GPU=1 mediapipe/examples/desktop/o
 ## Run the demo
 Execute command with the calculator_graph_config_file, input_video_path and output_video_path:
 ```bash
-bazel-bin/mediapipe/examples/desktop/object_detection/object_detection_ovms --calculator_graph_config_file mediapipe/graphs/object_detection/object_detection_desktop_ovms_graph.pbtxt --input_video_path=/mediapipe/mediapipe/examples/desktop/object_detection/test_video.mp4 --output_video_path=/mediapipe/mediapipe/mediapipe/tested_video.mp4
+bazel-bin/mediapipe/examples/desktop/object_detection/object_detection_ovms --calculator_graph_config_file mediapipe/graphs/object_detection/object_detection_desktop_ovms_graph.pbtxt --input_video_path=/mediapipe/mediapipe/examples/desktop/object_detection/test_video.mp4 --output_video_path=/mediapipe/tested_video.mp4
 
 ```
 
