@@ -168,8 +168,17 @@ public:
                 OVMS_ModelsSettingsNew(&modelsSettings);
                 OVMS_ModelsSettingsSetConfigPath(modelsSettings, options.server_config().c_str());
                 LOG(INFO) << "state config file:" << options.server_config();
-                OVMS_ServerSettingsSetLogLevel(serverSettings, OVMS_LOG_DEBUG);
-
+                if (options.log_level() == "DEBUG"){
+                    OVMS_ServerSettingsSetLogLevel(serverSettings, OVMS_LOG_DEBUG);
+                }else if (options.log_level() == "ERROR"){
+                  OVMS_ServerSettingsSetLogLevel(serverSettings, OVMS_LOG_ERROR);
+                }else if (options.log_level() == "WARN"){
+                    OVMS_ServerSettingsSetLogLevel(serverSettings, OVMS_LOG_WARNING);
+                }else if (options.log_level() == "TRACE"){
+                    OVMS_ServerSettingsSetLogLevel(serverSettings, OVMS_LOG_TRACE);
+                }else if (options.log_level() == "INFO"){
+                    OVMS_ServerSettingsSetLogLevel(serverSettings, OVMS_LOG_INFO);
+                }
                 ASSERT_CAPI_STATUS_NULL(OVMS_ServerStartFromConfigurationFile(cserver, serverSettings, modelsSettings));
                 OVMS_ServerSettingsDelete(serverSettings);
                 OVMS_ModelsSettingsDelete(modelsSettings);
