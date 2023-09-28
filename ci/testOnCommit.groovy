@@ -27,9 +27,6 @@ pipeline {
               sh 'make run_demos_in_docker OVMS_MEDIA_IMAGE_TAG=$(shortCommit)'
           }
         }
-
-
-tests
     }
 }
 
