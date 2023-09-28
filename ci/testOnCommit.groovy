@@ -19,7 +19,7 @@ pipeline {
         }
         stage("unit tests") {
           steps {
-              sh 'make tests OVMS_MEDIA_IMAGE_TAG=$(shortCommit)'
+              sh 'make tests OVMS_MEDIA_IMAGE_TAG=${shortCommit}'
           }
         }
         stage("test demos") {
