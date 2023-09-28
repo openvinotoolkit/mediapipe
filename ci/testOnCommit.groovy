@@ -14,7 +14,7 @@ pipeline {
         }   
         stage("build image") {
           steps {
-              sh 'make docker_build OVMS_MEDIA_IMAGE_TAG=$(shortCommit)'
+              sh 'make docker_build OVMS_MEDIA_IMAGE_TAG=${shortCommit}'
           }    
         }
         stage("unit tests") {
@@ -24,7 +24,7 @@ pipeline {
         }
         stage("test demos") {
           steps {
-              sh 'make run_demos_in_docker OVMS_MEDIA_IMAGE_TAG=$(shortCommit)'
+              sh 'make run_demos_in_docker OVMS_MEDIA_IMAGE_TAG=${shortCommit}'
           }
         }
     }
