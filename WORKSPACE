@@ -632,7 +632,7 @@ load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 git_repository(
     name = "ovms",
     remote = "https://github.com/openvinotoolkit/model_server",
-    commit = "bb10298bbd27bf4c2ac5effd1715a01b7d35d931", # branch with fix:  Move to ovms_dependencies
+    commit = "f7b9461989a57db5aa1cb04079d74ab7e7b5bf2a", # branch with fix:  Move to ovms_dependencies
 )
 
 # DEV ovms - adjust local repository path for build
@@ -799,7 +799,7 @@ new_local_repository(
 
 git_repository(
     name = "oneTBB",
-    branch = "v2021.8.0",
+    branch = "v2021.10.0",
     remote = "https://github.com/oneapi-src/oneTBB/",
     patch_args = ["-p1"],
     patches = ["@ovms//external:mwaitpkg.patch",]
