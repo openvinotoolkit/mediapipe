@@ -14,17 +14,17 @@ pipeline {
         }   
         stage("build image") {
           steps {
-              sh 'make docker_build OVMS_MEDIA_IMAGE_TAG=${shortCommit}'
+              sh script: "make docker_build OVMS_MEDIA_IMAGE_TAG=${shortCommit}"
           }    
         }
         stage("unit tests") {
           steps {
-              sh 'make tests OVMS_MEDIA_IMAGE_TAG=${shortCommit}'
+              sh script: "make tests OVMS_MEDIA_IMAGE_TAG=${shortCommit}"
           }
         }
         stage("test demos") {
           steps {
-              sh 'make run_demos_in_docker OVMS_MEDIA_IMAGE_TAG=${shortCommit}'
+              sh script: "make run_demos_in_docker OVMS_MEDIA_IMAGE_TAG=${shortCommit}"
           }
         }
     }
