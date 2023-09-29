@@ -33,16 +33,16 @@ docker_build:
 
 tests: run_unit_tests run_hello_world run_hello_ovms
 run_hello_ovms:
-	docker run -it $(OVMS_MEDIA_DOCKER_IMAGE):$(OVMS_MEDIA_IMAGE_TAG) bazel-bin/mediapipe/examples/desktop/hello_ovms/hello_ovms | grep "Output tensor data: 9 - 11"
+	docker run $(OVMS_MEDIA_DOCKER_IMAGE):$(OVMS_MEDIA_IMAGE_TAG) bazel-bin/mediapipe/examples/desktop/hello_ovms/hello_ovms | grep "Output tensor data: 9 - 11"
 
 run_unit_tests:
-	docker run -it $(OVMS_MEDIA_DOCKER_IMAGE):$(OVMS_MEDIA_IMAGE_TAG) bazel test --define=MEDIAPIPE_DISABLE_GPU=1 //mediapipe/framework/... | grep "Build completed successfully"
+	docker run  $(OVMS_MEDIA_DOCKER_IMAGE):$(OVMS_MEDIA_IMAGE_TAG) bazel test --define=MEDIAPIPE_DISABLE_GPU=1 //mediapipe/framework/... | grep "Build completed successfully"
 
 run_hello_world:
-	docker run -it $(OVMS_MEDIA_DOCKER_IMAGE):$(OVMS_MEDIA_IMAGE_TAG) bazel-bin/mediapipe/examples/desktop/hello_world/hello_world | grep "Hello World!"
+	docker run  $(OVMS_MEDIA_DOCKER_IMAGE):$(OVMS_MEDIA_IMAGE_TAG) bazel-bin/mediapipe/examples/desktop/hello_world/hello_world | grep "Hello World!"
 
 run_demos_in_docker:
-	docker run -it $(OVMS_MEDIA_DOCKER_IMAGE):$(OVMS_MEDIA_IMAGE_TAG) make run_demos
+	docker run $(OVMS_MEDIA_DOCKER_IMAGE):$(OVMS_MEDIA_IMAGE_TAG) make run_demos
 	cat test_demos.log | grep -a FPS | grep -v echo
 	if [ `cat test_demos.log | grep FPS: | wc -l` != "5" ]; then echo "Some demo was not executed correctly. Check the logs"; fi
 	# report error if performance reported for less then 5 demos
