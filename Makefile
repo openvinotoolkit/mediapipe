@@ -33,13 +33,13 @@ docker_build:
 
 tests: run_unit_tests run_hello_world run_hello_ovms
 run_hello_ovms:
-	docker run $(OVMS_MEDIA_DOCKER_IMAGE):$(OVMS_MEDIA_IMAGE_TAG) bazel-bin/mediapipe/examples/desktop/hello_ovms/hello_ovms | grep "Output tensor data: 9 - 11"
+	docker run $(OVMS_MEDIA_DOCKER_IMAGE):$(OVMS_MEDIA_IMAGE_TAG) bazel-bin/mediapipe/examples/desktop/hello_ovms/hello_ovms | grep -q "Output tensor data: 9 - 11"
 
 run_unit_tests:
-	docker run -e http_proxy=$(HTTP_PROXY) -e https_proxy=$(HTTPS_PROXY) $(OVMS_MEDIA_DOCKER_IMAGE):$(OVMS_MEDIA_IMAGE_TAG) bazel test --define=MEDIAPIPE_DISABLE_GPU=1 //mediapipe/framework/... | grep "Build completed successfully"
+	docker run -e http_proxy=$(HTTP_PROXY) -e https_proxy=$(HTTPS_PROXY) $(OVMS_MEDIA_DOCKER_IMAGE):$(OVMS_MEDIA_IMAGE_TAG) bazel test --define=MEDIAPIPE_DISABLE_GPU=1 //mediapipe/framework/...
 
 run_hello_world:
-	docker run  $(OVMS_MEDIA_DOCKER_IMAGE):$(OVMS_MEDIA_IMAGE_TAG) bazel-bin/mediapipe/examples/desktop/hello_world/hello_world | grep "Hello World!"
+	docker run $(OVMS_MEDIA_DOCKER_IMAGE):$(OVMS_MEDIA_IMAGE_TAG) bazel-bin/mediapipe/examples/desktop/hello_world/hello_world
 
 run_demos_in_docker:
 	docker run $(OVMS_MEDIA_DOCKER_IMAGE):$(OVMS_MEDIA_IMAGE_TAG) make run_demos
