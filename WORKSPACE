@@ -499,6 +499,7 @@ http_archive(
 
 # TensorFlow repo should always go after the other external dependencies.
 # TF on 2023-06-13.
+#_TENSORFLOW_GIT_COMMIT = "491681a5620e41bf079a582ac39c585cc86878b9"
 _TENSORFLOW_GIT_COMMIT = "491681a5620e41bf079a582ac39c585cc86878b9"
 # curl -L https://github.com/tensorflow/tensorflow/archive/<TENSORFLOW_GIT_COMMIT>.tar.gz | shasum -a 256
 _TENSORFLOW_SHA256 = "9f76389af7a2835e68413322c1eaabfadc912f02a76d71dc16be507f9ca3d3ac"
@@ -632,7 +633,7 @@ load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 git_repository(
     name = "ovms",
     remote = "https://github.com/openvinotoolkit/model_server",
-    commit = "04cc209a7eb05d47b308f14b67d9fc2ee7ce37b0", # branch with fix:  Move to ovms_dependencies
+    commit = "f45e3aa751696e5d7182a8a732691f789b624bd3", # branch with fix:  Move to ovms_dependencies
 )
 
 # DEV ovms - adjust local repository path for build
@@ -665,7 +666,7 @@ cc_library(
 git_repository(
     name = "tensorflow_serving",
     remote = "https://github.com/tensorflow/serving.git",
-    tag = "2.6.5",
+    tag = "2.13.0",
     patch_args = ["-p1"],
     patches = ["@ovms//external:net_http.patch", "@ovms//external:listen.patch"]
     #                             ^^^^^^^^^^^^
