@@ -641,7 +641,7 @@ load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 git_repository(
     name = "ovms",
     remote = "https://github.com/openvinotoolkit/model_server",
-    commit = "25dcb5273bcf656c81e21fd56767b1535079b6b4", # branch with fix:  Move to ovms_dependencies
+    commit = "557eb3300b399bf52d02c0f596be3d832e3535ef", # branch with fix:  Move to ovms_dependencies
 )
 
 # DEV ovms - adjust local repository path for build
