@@ -14,7 +14,7 @@ pipeline {
         }   
         stage("build image") {
           steps {
-              sh script: "make docker_build OVMS_MEDIA_IMAGE_TAG=${shortCommit}"
+              sh script: "make docker_build OVMS_MEDIA_IMAGE_TAG=${shortCommit}" SAMPLE_VIDEO=http://s3.toolbox.iotg.sclab.intel.com/video-samples/video.mp4
           }    
         }
         stage("unit tests") {

@@ -182,8 +182,8 @@ RUN cd flatbuffers && mkdir build && cd build && cmake -G "Unix Makefiles" -DCMA
 ## End of base image
 
 FROM base as build
-
-RUN wget -O video.mp4 "https://www.pexels.com/download/video/3044127/?fps=24.0&h=1080&w=1920"
+ARG SAMPLE_VIDEO=https://www.pexels.com/download/video/3044127/?fps=24.0&h=1080&w=1920
+RUN wget -O video.mp4 "$(SAMPLE_VIDEO)"
 COPY . /mediapipe/
 
 # BUILD examples
