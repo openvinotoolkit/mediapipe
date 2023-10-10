@@ -30,7 +30,7 @@ docker_build:
 	--build-arg DLDT_PACKAGE_URL=$(DLDT_PACKAGE_URL) \
 	--build-arg JOBS=$(JOBS) . \
 	--build-arg OVMS_BRANCH=$(OVMS_BRANCH) \
-	--build-arg SAMPLE_VIDEO=$(SAMPLE_VIDEO) \
+	--build-arg SAMPLE_VIDEO="$(SAMPLE_VIDEO)" \
 	-t $(OVMS_MEDIA_DOCKER_IMAGE):$(OVMS_MEDIA_IMAGE_TAG)
 
 tests: run_unit_tests run_hello_world run_hello_ovms
