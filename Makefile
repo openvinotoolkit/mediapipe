@@ -18,7 +18,7 @@ HTTP_PROXY := "$(http_proxy)"
 HTTPS_PROXY := "$(https_proxy)"
 OVMS_MEDIA_DOCKER_IMAGE ?= mediapipe_ovms
 OVMS_MEDIA_IMAGE_TAG ?= latest
-OVMS_BRANCH ?= "mediapipe_integration"
+OVMS_BRANCH ?= main
 SAMPLE_VIDEO ?= https://www.pexels.com/download/video/3044127/?fps=24.0&h=1080&w=1920
 JOBS ?= $(shell python3 -c 'import multiprocessing as mp; print(mp.cpu_count())')
 DLDT_PACKAGE_URL ?= https://storage.openvinotoolkit.org/repositories/openvino/packages/2023.0/linux/l_openvino_toolkit_ubuntu20_2023.0.0.10926.b4452d56304_x86_64.tgz
