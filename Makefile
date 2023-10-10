@@ -16,6 +16,7 @@
 
 HTTP_PROXY := "$(http_proxy)"
 HTTPS_PROXY := "$(https_proxy)"
+NO_PROXY := "$(no_proxy)"
 OVMS_MEDIA_DOCKER_IMAGE ?= mediapipe_ovms
 OVMS_MEDIA_IMAGE_TAG ?= latest
 OVMS_BRANCH ?= main
@@ -26,7 +27,7 @@ DLDT_PACKAGE_URL ?= https://storage.openvinotoolkit.org/repositories/openvino/pa
 # Targets to use outside running mediapipe_ovms container
 docker_build:
 	docker build -f Dockerfile.openvino \
-	--build-arg http_proxy=$(HTTP_PROXY) --build-arg https_proxy=$(HTTPS_PROXY) \
+	--build-arg http_proxy=$(HTTP_PROXY) --build-arg https_proxy=$(HTTPS_PROXY) --build-arg no_proxy=$(NO_PROXY) \
 	--build-arg DLDT_PACKAGE_URL=$(DLDT_PACKAGE_URL) \
 	--build-arg JOBS=$(JOBS) . \
 	--build-arg OVMS_BRANCH=$(OVMS_BRANCH) \
