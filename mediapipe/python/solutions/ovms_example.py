@@ -25,7 +25,7 @@ from mediapipe.python.solution_base import SolutionBase
 
 _FULL_GRAPH_FILE_PATH = 'mediapipe/modules/object_detection_ovms/object_detection_ovms.binarypb'
 
-class FaceDetection(SolutionBase):
+class OvmsObjectDetection(SolutionBase):
   """MediaPipe Face Detection.
 
   MediaPipe Face Detection processes an RGB image and returns a list of the
