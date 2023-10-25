@@ -638,18 +638,20 @@ http_archive(
     build_file = "@//third_party:halide.BUILD",
 )
 
-git_repository(
-    name = "ovms",
-    remote = "https://github.com/openvinotoolkit/model_server",
-    commit = "77c30dc3f153b3ee78336a3a75c09af4e23c14a4", # MP update to 10.3 in OVMS
-)
+load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
+
+#git_repository(
+#    name = "ovms",
+#    remote = "https://github.com/openvinotoolkit/model_server",
+#    commit = "7db8f3d53c6627ea42ba6b90a3441a48593c7337", # MP update to 10.3 in OVMS
+#)
 
 # DEV ovms - adjust local repository path for build
-#new_local_repository(
-#    name = "ovms",
-#    path = "/ovms/",
-#    build_file = "/ovms/BUILD.bazel",
-#)
+new_local_repository(
+    name = "ovms",
+    path = "/ovms/",
+    build_file = "/ovms/BUILD.bazel",
+)
 
 load("@bazel_tools//tools/build_defs/repo:git.bzl", "new_git_repository")
 

@@ -34,5 +34,6 @@ mediapipe_simple_subgraph(
     register_as = "ObjectDetectionOvms",
     deps = [
         "//mediapipe/graphs/object_detection:desktop_ovms_calculators",
+        "@ovms//src:ovms_lib",
     ],
 )
