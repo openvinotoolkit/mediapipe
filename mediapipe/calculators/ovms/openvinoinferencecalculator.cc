@@ -634,6 +634,40 @@ public:
                 }
                 cc->Outputs().Tag(tag).AddPacket(MakePacket<std::vector<TfLiteTensor>>(std::move(outputStreamTensors)).At( cc->InputTimestamp()));
                 break;
+            } else if (startsWith(tag, TFLITE_TENSOR_TAG)) {
+                // TODO FIXME use output_order_list
+                LOG(INFO) << "OVMS calculator will process TfLiteTensor";
+                auto outputStreamTensors = TfLiteTensor();
+                if (!this->initialized) {
+                    interpreter_->AddTensors(output.size());
+                    std::vector<int> indexes(output.size());
+                    std::iota(indexes.begin(), indexes.end(), 0);
+                    interpreter_->SetInputs(indexes);
+                    size_t tensorId = 0;
+                    for (auto& [name,tensor] : output) {
+                        std::vector<int> tfliteshape;
+                        for (auto& d : tensor.get_shape()) {
+                            tfliteshape.emplace_back(d);
+                        }
+                        interpreter_->SetTensorParametersReadWrite(
+                                        tensorId,
+                                        kTfLiteFloat32, // TODO datatype
+                                        name.c_str(),
+                                        tfliteshape,
+                                        TfLiteQuantization());
+                        ++tensorId;
+                    }
+                    interpreter_->AllocateTensors();
+                    this->initialized = true;
+                }
+                size_t tensorId = 0;
+                const int interpreterTensorId = interpreter_->inputs()[0];
+                TfLiteTensor* tflitetensor = interpreter_->tensor(interpreterTensorId);
+                void* tensor_ptr = tflitetensor->data.f;
+                std::memcpy(tensor_ptr, tensorIt->second.data(), tensorIt->second.get_byte_size());
+                TfLiteTensor outputStreamTensor(*tflitetensor);
+                cc->Outputs().Tag(tag).AddPacket(MakePacket<TfLiteTensor>(std::move(outputStreamTensor)).At( cc->InputTimestamp())); // TODO
+                break;
             } else if (startsWith(tag, OVTENSOR_TAG)) {
                 LOG(INFO) << "OVMS calculator will process ov::Tensor";
                 cc->Outputs().Tag(tag).Add(
