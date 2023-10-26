@@ -325,12 +325,12 @@ static ov::Tensor convertTFLiteTensor2OVTensor(const TfLiteTensor& t) {
     return result;
 }
 
+std::unique_ptr<tflite::Interpreter> interpreter_;;
 class OpenVINOInferenceCalculator : public CalculatorBase {
     std::shared_ptr<::InferenceAdapter> session{nullptr};
     std::unordered_map<std::string, std::string> outputNameToTag;
     std::vector<std::string> input_order_list;
     std::vector<std::string> output_order_list;
-    std::unique_ptr<tflite::Interpreter> interpreter_ = absl::make_unique<tflite::Interpreter>();
     bool initialized = false;
 
 public:
@@ -409,6 +409,8 @@ public:
         return absl::OkStatus();
     }
     absl::Status Open(CalculatorContext* cc) final {
+        interpreter_.reset();
+        std::unique_ptr<tflite::Interpreter> interpreter_ = absl::make_unique<tflite::Interpreter>();
         LOG(INFO) << "OpenVINOInferenceCalculator Open start";
         session = cc->InputSidePackets()
                       .Tag(SESSION_TAG.c_str())
