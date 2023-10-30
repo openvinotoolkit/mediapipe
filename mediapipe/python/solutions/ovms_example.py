@@ -19,8 +19,8 @@ from typing import NamedTuple, Union
 import numpy as np
 from mediapipe.framework.formats import detection_pb2
 from mediapipe.framework.formats import location_data_pb2
-from mediapipe.calculators.ovms import modelapiovmsinferencecalculator_pb2
-from mediapipe.calculators.ovms import modelapiovmssessioncalculator_pb2
+from mediapipe.calculators.ovms import openvinoinferencecalculator_pb2
+from mediapipe.calculators.ovms import openvinomodelserversessioncalculator_pb2
 from mediapipe.python.solution_base import SolutionBase
 
 _FULL_GRAPH_FILE_PATH = 'mediapipe/modules/object_detection_ovms/object_detection_ovms.binarypb'
@@ -38,7 +38,8 @@ class OvmsObjectDetection(SolutionBase):
   """
   Oryginal params in desktop example
   --calculator_graph_config_file mediapipe/graphs/object_detection/object_detection_desktop_ovms1_graph.pbtxt
-  --input_side_packets "input_video_path=/mediapipe/mediapipe/examples/desktop/object_detection/test_video.mp4,output_video_path=/mediapipe/tested_video.mp4""""
+  --input_side_packets "input_video_path=/mediapipe/mediapipe/examples/desktop/object_detection/test_video.mp4,output_video_path=/mediapipe/tested_video.mp4
+  """
   def __init__(self):
     """Initializes a MediaPipe Object Detection object.
 
@@ -75,4 +76,4 @@ class OvmsObjectDetection(SolutionBase):
       detected face location data.
     """
 
-    return super().process(input_data={'image': image})
+    return None

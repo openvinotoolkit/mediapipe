@@ -31,11 +31,12 @@ pybind_extension(
             "-lopencv_features2d",
             "-lopencv_calib3d",
             "-lopencv_imgcodecs",
-            "-llibboost_log_setup",
-            "-llibboost_log",
-            "-llibboost_thread",
-            "-llibboost_date_time",
-            "-llibboost_system",
+            "-L/usr/local/lib",
+            "-lboost_log_setup.a",
+            "-lboost_log.a",
+            "-lboost_thread.a",
+            "-lboost_date_time.a",
+            "-lboost_system.a",
         ],
     }),
     module_name = "_framework_bindings",
@@ -65,7 +66,6 @@ pybind_extension(
         "//mediapipe/tasks/cc/vision/face_geometry/proto:face_geometry_registration",
         # OVMS lib
         "@ovms//src:ovms_lib",
-        alwayslink = 1,
     ],
 )
 
