@@ -643,7 +643,7 @@ load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 #git_repository(
 #    name = "ovms",
 #    remote = "https://github.com/openvinotoolkit/model_server",
-#    commit = "7db8f3d53c6627ea42ba6b90a3441a48593c7337", # MP update to 10.3 in OVMS
+#    commit = "ad1381fde838f2ac2d23117df78c186a96134fcc", # Fix azure patch (#2107)
 #)
 
 # DEV ovms - adjust local repository path for build
