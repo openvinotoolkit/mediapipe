@@ -17,7 +17,7 @@ from mediapipe.calculators.ovms import openvinoinferencecalculator_pb2
 from mediapipe.calculators.ovms import openvinomodelserversessioncalculator_pb2
 from mediapipe.python.solution_base import SolutionBase
 
-_FULL_GRAPH_FILE_PATH = 'mediapipe/modules/object_detection_ovms/object_detection_ovms.binarypb'
+_FULL_GRAPH_FILE_PATH = 'mediapipe/modules/ovms_modules/object_detection_ovms.binarypb'
 
 class OvmsObjectDetection(SolutionBase):
   """Ovms Object Detection.
