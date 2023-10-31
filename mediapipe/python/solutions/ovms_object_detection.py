@@ -30,17 +30,15 @@ class OvmsObjectDetection(SolutionBase):
   --calculator_graph_config_file mediapipe/graphs/object_detection/object_detection_desktop_ovms1_graph.pbtxt
   --input_side_packets "input_video_path=/mediapipe/mediapipe/examples/desktop/object_detection/test_video.mp4,output_video_path=/mediapipe/tested_video.mp4
   """
-  def __init__(self):
+  def __init__(self,
+              side_inputs=
+              {'input_video_path':'/mediapipe/mediapipe/examples/desktop/object_detection/test_video.mp4',
+              'output_video_path':'/mediapipe/tested_video.mp4'}):
     """Initializes a Ovms Object Detection object.
     """
-
-    binary_graph_path = _FULL_GRAPH_FILE_PATH
-
     super().__init__(
-        binary_graph_path=binary_graph_path,
-        side_inputs=
-        {'input_video_path':'/mediapipe/mediapipe/examples/desktop/object_detection/test_video.mp4',
-         'output_video_path':'/mediapipe/tested_video.mp4'})
+        binary_graph_path=_FULL_GRAPH_FILE_PATH,
+        side_inputs=side_inputs)
 
   def process(self):
     self._graph.wait_until_done()
