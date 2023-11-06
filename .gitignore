@@ -21,4 +21,4 @@ node_modules/
 .user.bazelrc
 .vscode/
 .vs/
-tested_video.mp4
+*.mp4
