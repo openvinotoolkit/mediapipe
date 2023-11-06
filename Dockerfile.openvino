@@ -124,7 +124,7 @@ tar xvf boost_1_69_0.tar.gz && cd boost_1_69_0 && ./bootstrap.sh && \
 --with-log --with-locale \
 install
 
-ARG OVMS_BRANCH="mediapipe_integration"
+ARG OVMS_BRANCH="storage_lib_fix"
 RUN mkdir /opt/ovms
 RUN wget -nv -P /opt/ovms https://raw.githubusercontent.com/openvinotoolkit/model_server/${OVMS_BRANCH}/third_party/cpprest/rest_sdk_v2.10.16.patch
 RUN wget -nv -P /opt/ovms https://raw.githubusercontent.com/openvinotoolkit/model_server/${OVMS_BRANCH}/third_party/azure/azure_sdk.patch
@@ -186,5 +186,8 @@ ENV LD_LIBRARY_PATH="/opt/intel/openvino/runtime/lib/intel64/:${LD_LIBRARY_PATH}
 RUN python setup_ovms.py --get_models && python setup_ovms.py --convert_pose --force
 RUN bash build_desktop_examples.sh -b
 RUN curl https://storage.googleapis.com/mediapipe-assets/ssdlite_object_detection_labelmap.txt -o mediapipe/models/ssdlite_object_detection_labelmap.txt
+
+# BUILD python framework
+RUN python setup.py install
 
 

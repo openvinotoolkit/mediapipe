@@ -18,7 +18,7 @@ HTTP_PROXY := "$(http_proxy)"
 HTTPS_PROXY := "$(https_proxy)"
 OVMS_MEDIA_DOCKER_IMAGE ?= mediapipe_ovms
 OVMS_MEDIA_IMAGE_TAG ?= latest
-OVMS_BRANCH ?= "mediapipe_integration"
+OVMS_BRANCH ?= "storage_lib_fix"
 JOBS ?= $(shell python3 -c 'import multiprocessing as mp; print(mp.cpu_count())')
 DLDT_PACKAGE_URL ?= https://storage.openvinotoolkit.org/repositories/openvino/packages/2023.0/linux/l_openvino_toolkit_ubuntu20_2023.0.0.10926.b4452d56304_x86_64.tgz
 
@@ -50,7 +50,7 @@ run_demos_in_docker:
 	cat test_demos.log | grep -a FPS: | wc -l | grep -q "5"
 
 # Targets to use inside running mediapipe_ovms container
-run_demos: run_holistic_tracking run_face_detection run_iris_tracking run_object_detection run_pose_tracking
+run_demos: run_holistic_tracking run_face_detection run_iris_tracking run_object_detection run_pose_tracking run_python_object_detection
 
 run_object_detection:
 	echo "Running FPS test for object_detection demo"
@@ -80,4 +80,9 @@ run_pose_tracking:
 	rm -rf /mediapipe/output_pose_track_ovms.mp4
 	if [ ! -f video.mp4 ]; then wget -O video.mp4 "https://www.pexels.com/download/video/3044127/?fps=24.0&h=1080&w=1920"; fi
 	bazel-bin/mediapipe/examples/desktop/pose_tracking/pose_tracking_cpu --calculator_graph_config_file /mediapipe/mediapipe/graphs/pose_tracking/pose_tracking_cpu.pbtxt --input_video_path=/mediapipe/video.mp4 --output_video_path=/mediapipe/output_pose_track_ovms.mp4
+
+run_python_object_detection:
+	echo "Running python ovms object detection demo"
+	cp build/lib.linux-x86_64-cpython-38/mediapipe/examples/python/ovms_object_detection.py build/lib.linux-x86_64-cpython-38
+	python build/lib.linux-x86_64-cpython-38/ovms_object_detection.py
 
