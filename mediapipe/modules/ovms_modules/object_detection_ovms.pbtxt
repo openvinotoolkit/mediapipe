@@ -1,4 +1,4 @@
-# MediaPipe graph that performs object detection on desktop with TensorFlow Lite
+# MediaPipe graph that performs object detection on desktop with OpenVINO Model Server
 # on CPU.
 # Used in the example in
 # mediapipe/examples/desktop/object_detection:object_detection_openvino.
