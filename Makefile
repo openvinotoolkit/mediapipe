@@ -18,7 +18,8 @@ HTTP_PROXY := "$(http_proxy)"
 HTTPS_PROXY := "$(https_proxy)"
 OVMS_MEDIA_DOCKER_IMAGE ?= mediapipe_ovms
 OVMS_MEDIA_IMAGE_TAG ?= latest
-OVMS_BRANCH ?= "storage_lib_fix"
+# Main at Fix building without MediaPipe (#2129)
+OVMS_COMMIT ?="7f372bc9b0a94cf546ef5f1a43e4a9bf768d6f85"
 JOBS ?= $(shell python3 -c 'import multiprocessing as mp; print(mp.cpu_count())')
 DLDT_PACKAGE_URL ?= https://storage.openvinotoolkit.org/repositories/openvino/packages/2023.0/linux/l_openvino_toolkit_ubuntu20_2023.0.0.10926.b4452d56304_x86_64.tgz
 
@@ -28,7 +29,7 @@ docker_build:
 	--build-arg http_proxy=$(HTTP_PROXY) --build-arg https_proxy=$(HTTPS_PROXY) \
 	--build-arg DLDT_PACKAGE_URL=$(DLDT_PACKAGE_URL) \
 	--build-arg JOBS=$(JOBS) . \
-	--build-arg OVMS_BRANCH=$(OVMS_BRANCH) \
+	--build-arg OVMS_COMMIT=$(OVMS_COMMIT) \
 	-t $(OVMS_MEDIA_DOCKER_IMAGE):$(OVMS_MEDIA_IMAGE_TAG)
 
 tests: run_unit_tests run_hello_world run_hello_ovms
