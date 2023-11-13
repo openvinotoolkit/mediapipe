@@ -37,3 +37,13 @@ mediapipe_simple_subgraph(
         "@ovms//src:ovms_lib",
     ],
 )
+
+mediapipe_simple_subgraph(
+    name = "holistic_tracking_ovms",
+    graph = "holistic_tracking_ovms.pbtxt",
+    register_as = "HolisticTrackingOvms",
+    deps = [
+        "//mediapipe/graphs/object_detection:desktop_ovms_calculators",
+        "@ovms//src:ovms_lib",
+    ],
+)
