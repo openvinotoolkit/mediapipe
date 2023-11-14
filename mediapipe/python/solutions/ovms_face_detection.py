@@ -19,22 +19,16 @@ from mediapipe.calculators.ovms import openvinoinferencecalculator_pb2
 from mediapipe.calculators.ovms import openvinomodelserversessioncalculator_pb2
 from mediapipe.python.solution_base import SolutionBase
 
-_FULL_GRAPH_FILE_PATH = 'mediapipe/modules/ovms_modules/holistic_tracking_ovms.binarypb'
+_FULL_GRAPH_FILE_PATH = 'mediapipe/modules/ovms_modules/face_detection_ovms.binarypb'
 
-class OvmsHolisticTracking(SolutionBase):
-  """Ovms Holistic Tracking.
+class OvmsFaceDetection(SolutionBase):
+  """Ovms Face Detection.
 
-  Ovms Holistic Tracking processes an input image frame returns output image frame
+  Ovms Face Detection processes an input image frame returns output image frame
   with detected objects.
   """
-  """
-  Oryginal params in desktop example
-  --calculator_graph_config_file /mediapipe/mediapipe/graphs/holistic_tracking/holistic_tracking_cpu.pbtxt
-  --input_video_path=/mediapipe/video.mp4
-  --output_video_path=/mediapipe/output_holistic_ovms.mp4
-  """
   def __init__(self):
-    """Initializes a Ovms Holistic Tracking object.
+    """Initializes a Ovms Face Detection object.
     """
     super().__init__(
         binary_graph_path=_FULL_GRAPH_FILE_PATH)

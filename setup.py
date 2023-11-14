@@ -277,7 +277,8 @@ class BuildModules(build_ext.build_ext):
         'pose_landmark/pose_landmark_cpu',
         'selfie_segmentation/selfie_segmentation_cpu',
         'ovms_modules/object_detection_ovms',
-        'ovms_modules/holistic_tracking_ovms'
+        'ovms_modules/holistic_tracking_ovms',
+        'ovms_modules/face_detection_ovms',
     ]
     for elem in binary_graphs:
       binary_graph = os.path.join('mediapipe/modules/', elem)

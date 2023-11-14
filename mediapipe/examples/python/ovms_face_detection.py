@@ -61,8 +61,8 @@ class RequestingThread(threading.Thread):
     def run(self):
         print(f"Launching requesting thread index: {self.index}")
         global force_exit
-        ovms_holistic_tracking = mp.solutions.ovms_holistic_tracking
-        with ovms_holistic_tracking.OvmsHolisticTracking() as ovms_holistic_tracking:
+        ovms_face_detection = mp.solutions.ovms_face_detection
+        with ovms_face_detection.OvmsFaceDetection() as ovms_face_detection:
             while (True):
                 self.wait_for_input()
                 if force_exit:
@@ -71,7 +71,7 @@ class RequestingThread(threading.Thread):
                 
                 image = cv2.cvtColor(self.input_frame, cv2.COLOR_BGR2RGB)
                 predict_start_time = time.time()
-                result = ovms_holistic_tracking.process(image)
+                result = ovms_face_detection.process(image)
                 
                 predict_duration = time.time() - predict_start_time
                 predict_duration *= 1000
@@ -89,7 +89,7 @@ class RequestingThread(threading.Thread):
 parser = argparse.ArgumentParser()
 parser.add_argument('--num_threads', required=False, default=4, type=int, help='Number of threads for parallel service requesting')
 parser.add_argument('--input_video_path', required=False, default="/mediapipe/video.mp4", type=str, help='Camera ID number or path to a video file')
-parser.add_argument('--output_video_path', required=False, default="holistic_output.mp4", type=str, help='Output path to a video file')
+parser.add_argument('--output_video_path', required=False, default="face_output.mp4", type=str, help='Output path to a video file')
 args = parser.parse_args()
 
 try:
