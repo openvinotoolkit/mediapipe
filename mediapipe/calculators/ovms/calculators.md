@@ -65,6 +65,7 @@ If there were LocalFileContentsCalculators or ModelLoaderCalculators that passed
 
 ![LocalFileContent](LocalFileContent.png)
 ![Loader](Loader.png)
+
 4. Check packet types that were passed into InferenceCalculator as input or outputs streams. In MediaPipe repository those are commonly either `std::vector<TfLiteTensor>` or `std::vector<mediapipe::Tensor>`.
 Then declare input and output tags for OpenVINOInferenceCalculator.
 5. Map node inputs and outputs to model using `tag_to_input_tensor_names` and `tag_to_output_tensor_names` options. In case model has more than one input/output and you need to pass vector of tensors into calculator you may need to use `input_order_list` and `output_order_list` to declare order of tensors.
