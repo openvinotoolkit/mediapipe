@@ -88,16 +88,16 @@ class RequestingThread(threading.Thread):
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--num_threads', required=False, default=4, type=int, help='Number of threads for parallel service requesting')
-parser.add_argument('--video_source', required=False, default="/mediapipe/video.mp4", type=str, help='Camera ID number or path to a video file')
-parser.add_argument('--video_output', required=False, default="output.mp4", type=str, help='Output path to a video file')
+parser.add_argument('--input_video_path', required=False, default="/mediapipe/video.mp4", type=str, help='Camera ID number or path to a video file')
+parser.add_argument('--output_video_path', required=False, default="holistic_output.mp4", type=str, help='Output path to a video file')
 args = parser.parse_args()
 
 try:
-    source = int(args.video_source)
+    source = int(args.input_video_path)
 except ValueError:
-    source = args.video_source
+    source = args.input_video_path
 
-output = args.video_output
+output = args.output_video_path
 
 cap = cv2.VideoCapture(source)
 out = cv2.VideoWriter()
