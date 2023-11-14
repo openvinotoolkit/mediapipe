@@ -56,6 +56,6 @@ Face Detection                                                                  
 [![face_detection](https://mediapipe.dev/images/mobile/face_detection_android_gpu_small.gif)](https://google.github.io/mediapipe/solutions/face_detection) | [![iris](https://mediapipe.dev/images/mobile/iris_tracking_android_gpu_small.gif)](https://google.github.io/mediapipe/solutions/iris) | [![pose](https://mediapipe.dev/images/mobile/pose_tracking_android_gpu_small.gif)](https://google.github.io/mediapipe/solutions/pose) | [![holistic_tracking](https://mediapipe.dev/images/mobile/holistic_tracking_android_gpu_small.gif)](https://google.github.io/mediapipe/solutions/holistic) | [![object_detection](https://mediapipe.dev/images/mobile/object_detection_android_gpu_small.gif)](https://google.github.io/mediapipe/solutions/object_detection) |
 
 ## Fork baseline
-The fork is based on original mediapipe release origin/v0.9.1 (Author: Sebastian Schmidt <mrschmidt@google.com> Date:   Tue Jan 24 12:11:53 2023).
+The fork is based on original mediapipe release origin/v0.10.3.
 
-Original v0.9.1 Google ML solutions in MediaPipe can be found [here](https://github.com/google/mediapipe/tree/v0.9.1)
+Original v0.10.3 Google ML solutions in MediaPipe can be found [here](https://github.com/google/mediapipe/tree/v0.10.3)
