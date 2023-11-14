@@ -49,19 +49,27 @@ servables/
 Where `servables` directory will be mounted to OVMS container. If you plan to reuse models with the same configuration it is better to keep all models configuration in main config.json file.
 
 2. Prepare OVMS configuration files. In main config file setup MediaPipe graph:
+
 ![MainConfig](MainConfig.png)
+
 Then in subconfig file prepare configuration for models
+
 ![Subconfig](Subconfig.png)
+
 Check OpenVINO Model Server [documentation](https://docs.openvino.ai/canonical/ovms_docs_parameters.html#model-configuration-options) for more detailed configuration options.
-3. Adjust original graph.pbtxt file. You need to replace InferenceCalculator node with OpenVINOInferenceCalculator and need to add OpenVINOModelServerSessionCalculator nodes. Set OpenVINOModelServerSessionCalculator `servable_name` and `servable_version` if necessary.
+3. Adjust original graph.pbtxt file. You need to replace InferenceCalculator node with OpenVINOInferenceCalculator and need to add OpenVINOModelServerSessionCalculator nodes. Set OpenVINOModelServerSessionCalculator `servable_name` and `servable_version` if necessary. On the left is part of old pbtxt file that was converted to use OVMS for inference.
+
 ![Simple](Simple.png)
+
 If there were LocalFileContentsCalculators or ModelLoaderCalculators that passed model blob directly to InferenceCalculator as side input packet you can remove those from graph. Examples:
+
 ![LocalFileContent](LocalFileContent.png)
 ![Loader](Loader.png)
 4. Check packet types that were passed into InferenceCalculator as input or outputs streams. In MediaPipe repository those are commonly either `std::vector<TfLiteTensor>` or `std::vector<mediapipe::Tensor>`.
 Then declare input and output tags for OpenVINOInferenceCalculator.
 5. Map node inputs and outputs to model using `tag_to_input_tensor_names` and `tag_to_output_tensor_names` options. In case model has more than one input/output and you need to pass vector of tensors into calculator you may need to use `input_order_list` and `output_order_list` to declare order of tensors.
-Example conversion where there are multiple outputs
+Example of conversion where there are multiple outputs:
+
 ![OutputsOrdering](Ordering.png)
 
 
