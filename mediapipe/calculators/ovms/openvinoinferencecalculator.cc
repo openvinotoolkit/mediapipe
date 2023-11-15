@@ -312,15 +312,35 @@ static ov::Tensor convertTFTensor2OVTensor(const tensorflow::Tensor& t) {
 
 
 static ov::Tensor convertTFLiteTensor2OVTensor(const TfLiteTensor& t) {
-    void* data = t.data.f; // probably works only for floats
     auto datatype = ov::element::f32;
     ov::Shape shape;
+    LOG(INFO) << "tensor is variable: " << t.is_variable;
+    LOG(INFO) << "tensor bytes: " << t.bytes;
+    if (nullptr == t.dims) {
+        LOG(INFO) << " tensor dims is nullptr";
+        return ov::Tensor(datatype, shape);
+    }
+    if (0 >= t.dims->size) {
+        LOG(INFO) << "t dims size:" << t.dims->size;
+        return ov::Tensor(datatype, shape);
+    }
+        LOG(INFO) << "non 0 size:" << t.dims->size;
     // for some reason TfLite tensor does not have bs dim
-    shape.emplace_back(1);
     // TODO: Support scalars and no data tensors with 0-dim
+    if (t.dims->data == nullptr) {
+        LOG(INFO) << " tensor dims data is nullptr";
+        return ov::Tensor(datatype, shape);
+    }
+    shape.emplace_back(1);
     for (int i = 0; i < t.dims->size; ++i) {
         shape.emplace_back(t.dims->data[i]);
     }
+    auto calcBytes = std::accumulate(shape.begin(), shape.end(), 0, std::multiplies<uint64_t>{});
+    if (t.bytes != calcBytes) {
+        LOG(INFO) << "brzydka zabawa mediapipea: " << calcBytes;
+        return ov::Tensor(datatype, shape);
+    }
+    void* data = t.data.f; // probably works only for floats
     ov::Tensor result(datatype, shape, data);
     return result;
 }
