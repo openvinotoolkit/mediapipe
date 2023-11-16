@@ -314,8 +314,10 @@ static ov::Tensor convertTFTensor2OVTensor(const tensorflow::Tensor& t) {
 static ov::Tensor convertTFLiteTensor2OVTensor(const TfLiteTensor& t) {
     auto datatype = ov::element::f32;
     ov::Shape shape;
-    LOG(INFO) << "tensor is variable: " << t.is_variable;
-    LOG(INFO) << "tensor bytes: " << t.bytes;
+    LOG(INFO) << "tensor: " << &t
+            << " tensor is variable: " << t.is_variable
+            << " bytes: " << t.bytes
+            << " dims: " << t.dims;
     if (nullptr == t.dims) {
         LOG(INFO) << " tensor dims is nullptr";
         return ov::Tensor(datatype, shape);
@@ -324,7 +326,8 @@ static ov::Tensor convertTFLiteTensor2OVTensor(const TfLiteTensor& t) {
         LOG(INFO) << "t dims size:" << t.dims->size;
         return ov::Tensor(datatype, shape);
     }
-        LOG(INFO) << "non 0 size:" << t.dims->size;
+        LOG(INFO) << "non 0 size:" << t.dims->size
+                  << " addr: " << &(t.dims->size);
     // for some reason TfLite tensor does not have bs dim
     // TODO: Support scalars and no data tensors with 0-dim
     if (t.dims->data == nullptr) {

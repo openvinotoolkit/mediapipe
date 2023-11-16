@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -254,6 +255,7 @@ absl::Status TfLiteConverterCalculator::Open(CalculatorContext* cc) {
 }
 
 absl::Status TfLiteConverterCalculator::Process(CalculatorContext* cc) {
+        LOG(INFO) << "PROCESS";
   if (use_gpu_) {
     if (cc->Inputs().Tag(kGpuBufferTag).IsEmpty()) {
       return absl::OkStatus();
@@ -282,6 +284,7 @@ absl::Status TfLiteConverterCalculator::Close(CalculatorContext* cc) {
 }
 
 absl::Status TfLiteConverterCalculator::ProcessCPU(CalculatorContext* cc) {
+        LOG(INFO) << "CPU";
   if (cc->Inputs().HasTag(kImageFrameTag)) {
     if (cc->Inputs().Tag(kImageFrameTag).IsEmpty()) {
       return absl::OkStatus();
@@ -365,6 +368,24 @@ absl::Status TfLiteConverterCalculator::ProcessCPU(CalculatorContext* cc) {
       }
     }
 
+    LOG(INFO) << "tensor: " << tensor
+            << " interpreter: " << interpreter_.get()
+            << " this: " << this
+            << " tensor is variable: " << tensor->is_variable
+            << " bytes: " << tensor->bytes
+            << " dims: " << tensor->dims
+            << " dsize: " << tensor->dims->size
+            << " dsize addr: " << &(tensor->dims->size)
+            << " dims data: " << tensor->dims->data;
+    std::stringstream ss;
+    for (auto i = 0; i < tensor->dims->size; ++i) {
+        ss << " " << tensor->dims->data[i];
+    }
+    LOG(INFO) << ss.str();
+    auto calcBytes = std::accumulate(tensor->dims->data, tensor->dims->data + tensor->dims->size, 1, std::multiplies<uint64_t>{});
+    if (tensor->bytes != calcBytes) {
+        LOG(INFO) << "brzydka zabawa mediapipea: " << calcBytes;
+    }
     auto output_tensors = absl::make_unique<std::vector<TfLiteTensor>>();
     output_tensors->emplace_back(*tensor);
     cc->Outputs()
@@ -397,6 +418,23 @@ absl::Status TfLiteConverterCalculator::ProcessCPU(CalculatorContext* cc) {
 
     MP_RETURN_IF_ERROR(CopyMatrixToTensor(matrix, tensor_ptr));
 
+    LOG(INFO) << "tensor: " << tensor
+            << " interpreter: " << interpreter_.get()
+            << " this: " << this
+            << " tensor is variable: " << tensor->is_variable
+            << " bytes: " << tensor->bytes
+            << " dims: " << tensor->dims
+            << " dsize: " << tensor->dims->size
+            << " dims data: " << tensor->dims->data;
+    std::stringstream ss;
+    for (auto i = 0; i < tensor->dims->size; ++i) {
+        ss << " " << tensor->dims->data[i];
+    }
+    LOG(INFO) << ss.str();
+    auto calcBytes = std::accumulate(tensor->dims->data, tensor->dims->data + tensor->dims->size, 1, std::multiplies<uint64_t>{});
+    if (tensor->bytes != calcBytes) {
+        LOG(INFO) << "brzydka zabawa mediapipea: " << calcBytes;
+    }
     auto output_tensors = absl::make_unique<std::vector<TfLiteTensor>>();
     output_tensors->emplace_back(*tensor);
     cc->Outputs()
@@ -408,6 +446,7 @@ absl::Status TfLiteConverterCalculator::ProcessCPU(CalculatorContext* cc) {
 }
 
 absl::Status TfLiteConverterCalculator::ProcessGPU(CalculatorContext* cc) {
+        LOG(INFO) << "GPU";
 #if MEDIAPIPE_TFLITE_GL_INFERENCE
   // GpuBuffer to tflite::gpu::GlBuffer conversion.
   const auto& input =
