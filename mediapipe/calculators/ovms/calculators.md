@@ -22,9 +22,9 @@ Accepted packet types and tags are listed below:
 |:---|:---|:---|:---|:---|
 |input_stream: "a"|input|none|ov::Tensor|a|
 |output_stream: "OVTENSOR:b"|output|OVTENSOR|ov::Tensor|b|
-|output_stream: "OVTENSORS:b"|output|OVTENSORS|std::vector<ov::Tensor>|b|
+|output_stream: "OVTENSORS:b"|output|OVTENSORS|std::vector\<ov::Tensor\>|b|
 |output_stream: "TENSOR:b"|output|TENSOR|mediapipe::Tensor|b|
-|input_stream: "TENSORS:b"|input|TENSORS|std::vector<mediapipe::Tensor>|b|
+|input_stream: "TENSORS:b"|input|TENSORS|std::vector\<mediapipe::Tensor\>|b|
 
 In case of missing tag calculator assumes that the packet type is `ov::Tensor'.
 
@@ -156,7 +156,7 @@ node {
   }
 }
 ```
-This tells us which model is used (hand_recrop) and what type of packets are send to inference calculator (vector<mediapipe::Tensor>). We also need information what are model names inputs. This could be checked f.e. using OVMS logs or metadata request calls. With that information we would replace that part of a graph with:
+This tells us which model is used (hand_recrop) and what type of packets are send to inference calculator (vector\<mediapipe::Tensor\>). We also need information what are model names inputs. This could be checked f.e. using OVMS logs or metadata request calls. With that information we would replace that part of a graph with:
 ```
 node {
   calculator: "OpenVINOModelServerSessionCalculator"
@@ -187,7 +187,7 @@ node {
   }
 }
 ```
-In OpenVINOModelServerSessionCalculator we set servable_name with the model name we found earlier. In OpenVINOInferenceCalculator we set input & output tags names to start with TENSORS. We then need to map out those tags to actual model names in `mediapipe.OpenVINOInferenceCalculatorOptions` `tag_to_input_tensor_names` and `tag_to_output_tensor_names` fields.
+In `OpenVINOModelServerSessionCalculator1 we set 1servable_name1 with the model name we found earlier. In `OpenVINOInferenceCalculator` we set input & output tags names to start with `TENSORS`. We then need to map out those tags to actual model names in `mediapipe.OpenVINOInferenceCalculatorOptions` `tag_to_input_tensor_names` and `tag_to_output_tensor_names` fields.
 
 3) Third step is *optional* but may be required if model has multiple inputs/outputs and is using vector of some types as input/output packet types. Lets assume model produces several outputs - we have to figure out the correct ordering of tensors - expected by the graph. When we do that we need to add following section to `OpenVINOInferenceCalculatorOptions`:
 ```
