@@ -30,12 +30,12 @@ In case of missing tag calculator assumes that the packet type is `ov::Tensor'.
 
 # How to reuse existing graph from MediaPipe in OpenVINO Model Server
 ## How to get models used in MediaPipe demos
-To get the model used in MediaPipe demo you can either trigger build target that depends upon that model and then search in bazel cache or download directly from locations below
+To get the model used in MediaPipe demo you can either trigger build target that depends upon that model and then search in bazel cache or download directly from locations below.
 * https://storage.googleapis.com/mediapipe-models/
 * https://storage.googleapis.com/mediapipe-assets/
 
 ## How to prepare OpenVINO Model Server deployment with Mediapipe
-We have to prepare OVMS configuration files and models repository. There are two ways that would have different benefits:
+We must prepare OVMS configuration files and models repository. There are two ways that would have different benefits:
 1) First one would be better if you want to have just one model server service containing all servables. This may be especially useful if you will reuse models between several pipelines in the same deployment. In this case servables directory structure would look like:
 ```
 servables/
@@ -75,7 +75,7 @@ And the config.json:
   ]
 }
 ```
-2) Second would be better if you would have several services each containig separate mediapipe. Using this way it can be easier to perform updates to the deployments, and keep mediapipes self contained. In this case you would prepare directories as shown below
+2) Second would be better if you would have several services each containing separate mediapipe. This way can make for easier updates to the deployments and keep mediapipes configurations self-contained. In this case you would prepare directories as shown below
 ```
 servables/
 ├── config.json
@@ -129,7 +129,7 @@ To make already prepared graphs use OpenVINO Model Server for inferences there a
 Now we will show steps that are required or may be optional to convert existing graph to use OV for inference.
 1) First step is *optional*.
 Let's assume we start with graph like [this](https://github.com/google/mediapipe/blob/v0.10.3/mediapipe/graphs/holistic_tracking/holistic_tracking_cpu.pbtxt).
-We can't find direct usage of inference calculators in this graph and that is because it is using `subgraph` concept from MediaPipe framework. It allows you to register existing graph as a single calculator. We have to search for such nodes in graph and find out each subgraph that is directly using inference calculators. We can grep the MediaPipe code for:
+We can't find direct usage of inference calculators in this graph and that is because it is using `subgraph` concept from MediaPipe framework. It allows you to register existing graph as a single calculator. We must search for such nodes in graph and find out each subgraph that is directly using inference calculators. We can grep the MediaPipe code for:
 ```
 grep -R -n "register_as = \"HolisticLandmarkCpu"
 ```
@@ -187,13 +187,13 @@ node {
   }
 }
 ```
-In `OpenVINOModelServerSessionCalculator1 we set 1servable_name1 with the model name we found earlier. In `OpenVINOInferenceCalculator` we set input & output tags names to start with `TENSORS`. We then need to map out those tags to actual model names in `mediapipe.OpenVINOInferenceCalculatorOptions` `tag_to_input_tensor_names` and `tag_to_output_tensor_names` fields.
+In `OpenVINOModelServerSessionCalculator` we set `servable_name` with the model's name we found earlier. In `OpenVINOInferenceCalculator` we set input & output tags names to start with `TENSORS`. We then need to map out those tags to actual model names in `mediapipe.OpenVINOInferenceCalculatorOptions` `tag_to_input_tensor_names` and `tag_to_output_tensor_names` fields.
 
-3) Third step is *optional* but may be required if model has multiple inputs/outputs and is using vector of some types as input/output packet types. Lets assume model produces several outputs - we have to figure out the correct ordering of tensors - expected by the graph. When we do that we need to add following section to `OpenVINOInferenceCalculatorOptions`:
+3) Third step is *optional* but may be required if model has multiple inputs/outputs and is using vector of some types as input/output packet types. Let's assume model produces several outputs - we must figure out the correct ordering of tensors - expected by the graph. When we do that, we need to add following section to `OpenVINOInferenceCalculatorOptions`:
 ```
 output_order_list: ["Identity","Identity_1","Identity_2","Identity_3"]
 ```
-In case of multiple inputs we have to do similar steps.
+In case of multiple inputs, we must do similar steps.
 
 
 
