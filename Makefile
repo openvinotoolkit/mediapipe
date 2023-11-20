@@ -60,7 +60,7 @@ run_demos: run_holistic_tracking run_face_detection run_iris_tracking run_object
 run_python_demos: run_python_object_detection run_python_holistic_tracking run_python_face_detection
 
 run_object_detection:
-	echo "Running FPS test for objectpexels_detection demo"
+	echo "Running FPS test for object_detection demo"
 	rm -rf /mediapipe/output_object_detection_ovms.mp4
 	bazel-bin/mediapipe/examples/desktop/object_detection/object_detection_ovms --calculator_graph_config_file mediapipe/graphs/object_detection/object_detection_desktop_ovms_graph.pbtxt --input_video_path=/mediapipe/mediapipe/examples/desktop/object_detection/test_video.mp4 --output_video_path=/mediapipe/object_detection_ovms.mp4
 	
