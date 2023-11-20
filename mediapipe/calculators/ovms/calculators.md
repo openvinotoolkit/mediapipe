@@ -122,19 +122,18 @@ and the subconfig.json:
 }
 ```
 In both cases `servables` directory will be mounted to OVMS container. You can find more details about OVMS configuration in [documentation](https://docs.openvino.ai/2023.1/ovms_docs_serving_model.html#serving-multiple-models).
-To make already prepared graphs use OpenVINO Model Server for inferences there are following steps involved:
 
-*Note* base paths in config.json are relative to the file path of config.json.
+*Note*: base paths in config.json are relative to the file path of config.json.
 ## How to adjust existing graphs to perform inference with OpenVINO Model Server
-Now we will show steps that are required or may be optional to convert existing graph to use OV for inference.
-1) First step is *optional*.
+Now we will show steps that are required or optional to convert existing graph to use OV for inference.
+### 1) First step is *optional*.
 Let's assume we start with graph like [this](https://github.com/google/mediapipe/blob/v0.10.3/mediapipe/graphs/holistic_tracking/holistic_tracking_cpu.pbtxt).
 We can't find direct usage of inference calculators in this graph and that is because it is using `subgraph` concept from MediaPipe framework. It allows you to register existing graph as a single calculator. We must search for such nodes in graph and find out each subgraph that is directly using inference calculators. We can grep the MediaPipe code for:
 ```
 grep -R -n "register_as = \"HolisticLandmarkCpu"
 ```
 We will find that in using bazel `mediapipe_simple_subgraph` function another `pbtxt` file was registered as a graph. Since in that file there is no inference calculator we need to repeat the procedure until we find all inference calculators used directly or indirectly using subgraphs.
-2) We need to start with basic replacement of inference calculator. Existing configuration could look like:
+### 2) We need to start with basic replacement of inference calculator. Existing configuration could look like:
 ```
 node {
   calculator: "HandLandmarkModelLoader"
@@ -189,7 +188,7 @@ node {
 ```
 In `OpenVINOModelServerSessionCalculator` we set `servable_name` with the model's name we found earlier. In `OpenVINOInferenceCalculator` we set input & output tags names to start with `TENSORS`. We then need to map out those tags to actual model names in `mediapipe.OpenVINOInferenceCalculatorOptions` `tag_to_input_tensor_names` and `tag_to_output_tensor_names` fields.
 
-3) Third step is *optional* but may be required if model has multiple inputs/outputs and is using vector of some types as input/output packet types. Let's assume model produces several outputs - we must figure out the correct ordering of tensors - expected by the graph. When we do that, we need to add following section to `OpenVINOInferenceCalculatorOptions`:
+### 3) Third step is *optional* but may be required if model has multiple inputs/outputs and is using vector of some types as input/output packet types. Let's assume model produces several outputs - we must figure out the correct ordering of tensors - expected by the graph. When we do that, we need to add following section to `OpenVINOInferenceCalculatorOptions`:
 ```
 output_order_list: ["Identity","Identity_1","Identity_2","Identity_3"]
 ```
