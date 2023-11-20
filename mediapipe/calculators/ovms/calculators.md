@@ -125,7 +125,7 @@ In both cases `servables` directory will be mounted to OVMS container. You can f
 
 *Note*: base paths in config.json are relative to the file path of config.json.
 ## How to adjust existing graphs to perform inference with OpenVINO Model Server
-Now we will show steps that are required or optional to convert existing graph to use OV for inference.
+Now we will show steps that to convert existing graph to use OpenVINO for inference.
 ### 1) First step is *optional*.
 Let's assume we start with graph like [this](https://github.com/google/mediapipe/blob/v0.10.3/mediapipe/graphs/holistic_tracking/holistic_tracking_cpu.pbtxt).
 We can't find direct usage of inference calculators in this graph and that is because it is using `subgraph` concept from MediaPipe framework. It allows you to register existing graph as a single calculator. We must search for such nodes in graph and find out each subgraph that is directly using inference calculators. We can grep the MediaPipe code for:
