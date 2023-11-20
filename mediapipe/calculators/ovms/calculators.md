@@ -133,7 +133,8 @@ We can't find direct usage of inference calculators in this graph and that is be
 grep -R -n "register_as = \"HolisticLandmarkCpu"
 ```
 We will find that in using bazel `mediapipe_simple_subgraph` function another `pbtxt` file was registered as a graph. Since in that file there is no inference calculator we need to repeat the procedure until we find all inference calculators used directly or indirectly using subgraphs.
-### 2. We need to start with basic replacement of inference calculator. Existing configuration could look like:
+### 2. We need to start with basic replacement of inference calculator.
+Existing configuration could look like:
 ```
 node {
   calculator: "HandLandmarkModelLoader"
@@ -188,11 +189,15 @@ node {
 ```
 In `OpenVINOModelServerSessionCalculator` we set `servable_name` with the model's name we found earlier. In `OpenVINOInferenceCalculator` we set input & output tags names to start with `TENSORS`. We then need to map out those tags to actual model names in `mediapipe.OpenVINOInferenceCalculatorOptions` `tag_to_input_tensor_names` and `tag_to_output_tensor_names` fields.
 
-### 3. Third step is *optional* but may be required if model has multiple inputs/outputs and is using vector of some types as input/output packet types. Let's assume model produces several outputs - we must figure out the correct ordering of tensors - expected by the graph. When we do that, we need to add following section to `OpenVINOInferenceCalculatorOptions`:
+### 3. Third step is *optional* but may be required if model has multiple inputs/outputs.
+If input/output packet types are vector of some type - we must figure out the correct ordering of tensors - expected by the graph. Assuming that model produces several outputs we may need to add following section to `OpenVINOInferenceCalculatorOptions`:
 ```
 output_order_list: ["Identity","Identity_1","Identity_2","Identity_3"]
 ```
-In case of multiple inputs, we must do similar steps.
+In case of multiple inputs, we must do similar steps, and add:
+```
+input_order_list: ["Identity","Identity_1","Identity_2","Identity_3"]
+```
 
 
 
