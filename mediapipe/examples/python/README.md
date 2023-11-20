@@ -44,14 +44,31 @@ This execution will produce holistic_output.mp4 vide with object detection resul
 /mediapipe/video.mp4
 ```
 
-You can manipulate the input and output video file paths as well as the number of threads used to execute the graph with command line arguments:
+You can manipulate the input and output video file paths used to execute the graph with command line arguments:
 ```bash
-python build/lib.linux-x86_64-cpython-38/ovms_holistic_tracking.py --input_video_path /my/path --output_video_path /my/output/path --num_threads 2
+python build/lib.linux-x86_64-cpython-38/ovms_holistic_tracking.py --input_video_path /my/path --output_video_path /my/output/path
 ```
 
 - This script will run holistic tracking on input video, frame by frame as described in this c++ example
 [OVMS Object Detection](../desktop/holistic_tracking/README.md)
 [Original demo documentation](https://google.github.io/mediapipe/solutions/holistic)
+
+# Holistic Tracking Multithread
+- Run example ovms python script for holistic tracking - frame by frame execution
+```bash
+cp mediapipe/examples/python/ovms_holistic_tracking_multithread.py build/lib.linux-x86_64-cpython-38/
+python build/lib.linux-x86_64-cpython-38/ovms_holistic_tracking_multithread.py
+```
+
+This execution will produce holistic_output.mp4 vide with object detection results found in the input video file:
+```bash
+/mediapipe/video.mp4
+```
+
+You can manipulate the input and output video file paths as well as the number of threads used to execute the graph with command line arguments:
+```bash
+python build/lib.linux-x86_64-cpython-38/ovms_holistic_tracking_multithread.py --input_video_path /my/path --output_video_path /my/output/path --num_threads 2
+```
 
 # Face Detection
 - Run example ovms python script for face detection - frame by frame execution
@@ -65,9 +82,9 @@ This execution will produce face_output.mp4 vide with object detection results f
 /mediapipe/video.mp4
 ```
 
-You can manipulate the input and output video file paths as well as the number of threads used to execute the graph with command line arguments:
+You can manipulate the input and output video file paths used to execute the graph with command line arguments:
 ```bash
-python build/lib.linux-x86_64-cpython-38/ovms_face_detection.py --input_video_path /my/path --output_video_path /my/output/path --num_threads 2
+python build/lib.linux-x86_64-cpython-38/ovms_face_detection.py --input_video_path /my/path --output_video_path /my/output/path
 ```
 
 - This script will run face detection on input video, frame by frame as described in this c++ example

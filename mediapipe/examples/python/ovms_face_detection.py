@@ -20,74 +20,7 @@ import time
 import numpy as np
 import threading
 
-class RequestingThread(threading.Thread):
-    def __init__(self, index):
-        print(f"Initializing requesting thread index: {index}")
-        super().__init__()
-        self.index = index
-        self.input_frame = None
-        self.output_frame = None
-        self.predict_durations = []
-        self.input_ready_event = threading.Event()
-        self.output_ready_event = threading.Event()
-
-    def is_initialized(self):
-        return not (self.input_frame is None and self.output_frame is None)
-
-    def wait_for_input(self):
-        self.input_ready_event.wait()
-        self.input_ready_event.clear()
-
-    def wait_for_result(self):
-        self.output_ready_event.wait()
-        self.output_ready_event.clear()
-
-    def notify_input_ready(self):
-        self.input_ready_event.set()
-
-    def notify_output_ready(self):
-        self.output_ready_event.set()
-
-    def set_input(self, frame):
-        self.input_frame = frame
-        self.notify_input_ready()
-
-    def get_output(self):
-        return self.output_frame
-
-    def get_average_latency(self):
-        return np.average(np.array(self.predict_durations))
-
-    def run(self):
-        print(f"Launching requesting thread index: {self.index}")
-        global force_exit
-        ovms_face_detection = mp.solutions.ovms_face_detection
-        with ovms_face_detection.OvmsFaceDetection() as ovms_face_detection:
-            while (True):
-                self.wait_for_input()
-                if force_exit:
-                        print("Detected exit signal...")
-                        break
-                
-                image = cv2.cvtColor(self.input_frame, cv2.COLOR_BGR2RGB)
-                predict_start_time = time.time()
-                result = ovms_face_detection.process(image)
-                
-                predict_duration = time.time() - predict_start_time
-                predict_duration *= 1000
-                self.predict_durations.append(predict_duration)
-
-                if result is None:
-                    self.output_frame = np.array(self.input_frame, copy=True)
-                else:
-                    # output_video is the output_stream name from the graph
-                    self.output_frame = result.output_video
-
-                self.notify_output_ready()
-                print(f"Stopping requesting thread index: {self.index}")
-
 parser = argparse.ArgumentParser()
-parser.add_argument('--num_threads', required=False, default=4, type=int, help='Number of threads for parallel service requesting')
 parser.add_argument('--input_video_path', required=False, default="/mediapipe/video.mp4", type=str, help='Camera ID number or path to a video file')
 parser.add_argument('--output_video_path', required=False, default="face_output.mp4", type=str, help='Output path to a video file')
 args = parser.parse_args()
@@ -111,69 +44,36 @@ if not out.isOpened():
     exit()
 
 print("Output file opened for writing: " + str(out.isOpened()))
-force_exit = False
-    
-threads = [RequestingThread(i) for i in range(args.num_threads)]
-
-for thread in threads:
-    thread.start()
-
-def finish():
-    global force_exit
-    force_exit = True
-    for thread in threads:
-        thread.notify_input_ready()
-        thread.join()
 
 def grab_frame(cap):
     success, frame = cap.read()
     if not success:
         print("[WARNING] No Input frame")
-        finish()
         return None
     return frame
 
-i = 0
-frames_processed = 0
-last_display_time = time.time()
-app_start_time = time.time()
+input_frame = grab_frame(cap)
+if  input_frame is None:
+    print("[ERROR] Check camera or file input...")
+    exit(-1)
 
-if grab_frame(cap) is None:
-    print("[ERROR] Check camera input...")
-    force_exit = True
+ovms_face_detection = mp.solutions.ovms_face_detection
+with ovms_face_detection.OvmsFaceDetection() as ovms_face_detection:
+    while input_frame is not None:      
+        result = ovms_face_detection.process(input_frame)
+        if result is None:
+            output_frame = np.array(input_frame, copy=True)
+        else:
+            # output_video is the output_stream name from the graph
+            output_frame = result.output_video
 
-while not force_exit:
-    if not threads[i].is_initialized():
-        threads[i].set_input(grab_frame(cap))
-        i = (i + 1) % args.num_threads
-        continue
+        out.write(output_frame)
 
-    threads[i].wait_for_result()
-    avg_latency_for_thread = threads[i].get_average_latency()
-    frame_to_display = threads[i].get_output()
-    threads[i].set_input(grab_frame(cap))
+        input_frame = grab_frame(cap)
 
-    cv2frame = cv2.cvtColor(frame_to_display, cv2.COLOR_BGR2RGB)
-    out.write(cv2frame)
-    now = time.time()
-    time_since_last_display = now - last_display_time
-    last_display_time = now
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
 
-    frames_processed += 1
-
-    current_fps = 1 / (time_since_last_display if time_since_last_display > 0 else 1)
-    avg_fps = 1 / ((now - app_start_time) / frames_processed)
-    
-    print(f"ThreadID: {i:3}; Current FPS: {current_fps:8.2f}; Average FPS: {avg_fps:8.2f}; Average latency: {avg_latency_for_thread:8.2f}ms")
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        finish()
-        break
-
-    i = (i + 1) % args.num_threads
-
-total_time = time.time() - app_start_time
-print(f"Total processing time: {total_time:8.2f}s")
-finish()
 # When everything done, release the capture
 cap.release()
 out.release()
