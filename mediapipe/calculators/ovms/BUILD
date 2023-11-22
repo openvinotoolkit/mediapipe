@@ -73,6 +73,7 @@ cc_library(
         "@org_tensorflow//tensorflow/lite/c:c_api",
     ],
     copts = ["-Iexternal/ovms/src","-Isrc"],
+    alwayslink = 1,
 )
 
 cc_library(
@@ -90,6 +91,7 @@ cc_library(
         "@linux_openvino//:openvino",
     ],
     copts = ["-Iexternal/ovms/src","-Isrc"],
+    alwayslink = 1,
 )
 
 load("@mediapipe//mediapipe/framework/port:build_config.bzl", "mediapipe_cc_proto_library", "mediapipe_proto_library")
