@@ -28,8 +28,10 @@ Accepted packet types and tags are listed below:
 
 In case of missing tag calculator assumes that the packet type is `ov::Tensor'.
 
-# How to reuse existing graph from MediaPipe in OpenVINO Model Server
+# How to deploy existing graphs from MediaPipe framework with OpenVINO inference calculator
 ## How to get models used in MediaPipe demos
+When you build mediapipe applications or solutions, typically the bazel configuration would download the needed models as a dependency. When the graph is to be deployed via the OpenVINO Model Server or when the mediapipe application would use OpenVINO Model Server as the inference executor, the models needs to be stored in the [models repository](https://docs.openvino.ai/2023.2/ovms_docs_models_repository.html).
+That way you can take advantage of the model versioning feature and store the models on the local or the cloud storage. The OpenVINO calculator is using as a parameter the path to the [config.json](https://docs.openvino.ai/2023.2/ovms_docs_serving_model.html#serving-multiple-models) file with models configuration with the specific model name.
 To get the model used in MediaPipe demo you can either trigger build target that depends upon that model and then search in bazel cache or download directly from locations below.
 * https://storage.googleapis.com/mediapipe-models/
 * https://storage.googleapis.com/mediapipe-assets/
@@ -124,9 +126,12 @@ and the subconfig.json:
 In both cases `servables` directory will be mounted to OVMS container. You can find more details about OVMS configuration in [documentation](https://docs.openvino.ai/2023.1/ovms_docs_serving_model.html#serving-multiple-models).
 
 *Note*: base paths in config.json are relative to the file path of config.json.
+
 ## How to adjust existing graphs to perform inference with OpenVINO Model Server
-Now we will show steps that to convert existing graph to use OpenVINO for inference.
-### 1. First step is *optional*.
+Below are presented steps to adjust existing graph using TensorFlow or TensorFlowLite calculators to use OpenVINO as the inference engine. That way the inference execution can be optimized while preserving the overall graph structure.
+
+### 1. Identify all used subgraphs with inference calculators. This steps is not needed if there are no subgraphs.
+
 Let's assume we start with graph like [this](https://github.com/google/mediapipe/blob/v0.10.3/mediapipe/graphs/holistic_tracking/holistic_tracking_cpu.pbtxt).
 We can't find direct usage of inference calculators in this graph and that is because it is using `subgraph` concept from MediaPipe framework. It allows you to register existing graph as a single calculator. We must search for such nodes in graph and find out each subgraph that is directly using inference calculators. We can grep the MediaPipe code for:
 ```
@@ -156,7 +161,7 @@ node {
   }
 }
 ```
-This tells us which model is used (hand_recrop) and what type of packets are send to inference calculator (vector\<mediapipe::Tensor\>). We also need information what are model names inputs. This could be checked f.e. using OVMS logs or metadata request calls. With that information we would replace that part of a graph with:
+This tells us which model is used (hand_recrop) and what type of packets are send to inference calculator (vector\<mediapipe::Tensor\>). We also need information what are model names inputs. This could be checked f.e. using OVMS logs from model loading or metadata request calls. With that information we would replace that part of a graph with:
 ```
 node {
   calculator: "OpenVINOModelServerSessionCalculator"
@@ -189,7 +194,7 @@ node {
 ```
 In `OpenVINOModelServerSessionCalculator` we set `servable_name` with the model's name we found earlier. In `OpenVINOInferenceCalculator` we set input & output tags names to start with `TENSORS`. We then need to map out those tags to actual model names in `mediapipe.OpenVINOInferenceCalculatorOptions` `tag_to_input_tensor_names` and `tag_to_output_tensor_names` fields.
 
-### 3. Third step is *optional* but may be required if model has multiple inputs/outputs.
+### 3. Third step may be required if model has multiple inputs or outputs.
 If input/output packet types are vector of some type - we must figure out the correct ordering of tensors - expected by the graph. Assuming that model produces several outputs we may need to add following section to `OpenVINOInferenceCalculatorOptions`:
 ```
 output_order_list: ["Identity","Identity_1","Identity_2","Identity_3"]
