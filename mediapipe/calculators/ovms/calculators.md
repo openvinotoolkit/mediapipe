@@ -14,7 +14,7 @@ OVMSInferenceAdapter is an implementation of [OpenVINO Model API](https://github
 
 ### OpenVINOInferenceCalculator
 
-[OpenVINOInferenceCalculator](openvinoinferencecalculator.cc) is using `OVMSInferenceAdapter` received as `input_side_packet` to execute inference with [OpenVINO Model Server C-API](https://github.com/openvinotoolkit/model_server/blob/main/docs/model_server_c_api.md). It can use `options` field `tag_to_input_tensor_names` and `tag_to_output_tensor_names` to map MediaPipe stream names and servable (Model/DAG) inputs and/or outputs. Options `input_order_list` and `output_order_list` can be used together with packet types using `std::vector<T>` to transform input/output maps to desired order in vector of tensors. This guarantees correct order of inputs and outputs in the pipeline. Example of usage can be found [here](../../modules/pose_landmark/pose_landmark_by_roi_cpu.pbtxt).
+[OpenVINOInferenceCalculator](openvinoinferencecalculator.cc) is using `OVMSInferenceAdapter` received as `input_side_packet` to execute inference with [OpenVINO Model Server C-API](https://github.com/openvinotoolkit/model_server/blob/main/docs/model_server_c_api.md). It can use `options` field `tag_to_input_tensor_names` and `tag_to_output_tensor_names` to map MediaPipe stream names and servable (Model/DAG) inputs and/or outputs. Options `input_order_list` and `output_order_list` can be used together with packet types using `std::vector<T>` to transform input/output maps to desired order in vector of tensors. This guarantees correct order of inputs and outputs in the pipeline. 
 
 Accepted packet types and tags are listed below:
 
@@ -27,6 +27,83 @@ Accepted packet types and tags are listed below:
 |input_stream: "TENSORS:b"|input|TENSORS|std::vector<mediapipe::Tensor>|b|
 
 In case of missing tag calculator assumes that the packet type is `ov::Tensor'.
+
+## Example of the graph with OpenVINO calculators:
+
+The example below includes two models in the pipeline.
+Each model is associated with one OpenVINOInferenceCalculator calculator which takes one side packet which is the Session from OpenVINOModelServerSessionCalculator.
+
+
+```
+input_stream: "in1"
+input_stream: "in2"
+output_stream: "out"
+node {
+  calculator: "OpenVINOModelServerSessionCalculator"
+  output_side_packet: "SESSION:increment"
+
+  node_options: {
+    [type.googleapis.com/mediapipe.OpenVINOModelServerSessionCalculatorOptions]: {
+      servable_name: "increment"
+      servable_version: "1"
+      server_config: "/config/config.json"
+    }
+  }
+}
+node {
+  calculator: "OpenVINOModelServerSessionCalculator"
+  output_side_packet: "SESSION:add"
+  node_options: {
+    [type.googleapis.com/mediapipe.OpenVINOModelServerSessionCalculatorOptions]: {
+      servable_name: "add"
+      servable_version: "1"
+      server_config: "/config/config.json"
+    }
+  }
+}
+node {
+  calculator: "OpenVINOInferenceCalculator"
+  input_side_packet: "SESSION:increment"
+  input_stream: "INCREMENT_IN:in1"
+  output_stream: "iNCREMENT_OUT:increment_output"
+  node_options: {
+    [type.googleapis.com/mediapipe.OpenVINOInferenceCalculatorOptions]: {
+        tag_to_input_tensor_names {
+          key: "INCREMENT_IN"
+          value: "b"
+        }
+        tag_to_output_tensor_names {
+          key: "INCREMENT_OUT"
+          value: "a"
+        }
+    }
+  }
+}
+node {
+  calculator: "OpenVINOInferenceCalculator"
+  input_side_packet: "SESSION:add"
+  input_stream: "ADD_INPUT1:increment_output"
+  input_stream: "ADD_INPUT2:in2"
+  output_stream: "SUM:out"
+  node_options: {
+    [type.googleapis.com/mediapipe.OpenVINOInferenceCalculatorOptions]: {
+        tag_to_input_tensor_names {
+          key: "ADD_INPUT1"
+          value: "input1"
+        }
+        tag_to_input_tensor_names {
+          key: "ADD_INPUT2"
+          value: "input2"
+        }
+        tag_to_output_tensor_names {
+          key: "SUM"
+          value: "sum"
+        }
+    }
+  }
+}
+```
+![example](./example.png)
 
 ## How to adjust existing graphs to perform inference with OpenVINO Model Server
 Please check following [link](https://github.com/openvinotoolkit/mediapipe/compare/master...openvinotoolkit:mediapipe:main) and look up differences in existing MediaPipe pbtxt files.
