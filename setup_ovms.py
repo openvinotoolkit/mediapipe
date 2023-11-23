@@ -103,29 +103,6 @@ class SetupOpenvinoModelServer():
     print("Copy to: " + dst)
     shutil.copyfile(file_to_copy, dst)
 
-  def convert_pose(self):
-    dst = "mediapipe/models/ovms/pose_detection/1/pose_detection.tflite"
-    
-    if os.path.exists(dst):
-      if not self.force:
-        print("File exists , not converting: " + dst + " use --force argument to overwrite.\n")
-        return
-      else:
-         print("Re downloading pose model for conversion.")
-         self._download_external_file('pose_detection/pose_detection.tflite')
-      
-    else:
-       print("File not downloaded: " + dst + " Run setup_ovms.py --get_models first.")
-       exit(0)
-       
-    print("Converting pose detection model")
-    self.run_command("cp -r  " + dst +" .")
-    self.run_command("tflite2tensorflow --model_path pose_detection.tflite --flatc_path flatbuffers/build/flatc --schema_path schema.fbs --output_pb")
-    self.run_command("tflite2tensorflow --model_path pose_detection.tflite --flatc_path flatbuffers/build/flatc --schema_path schema.fbs --output_no_quant_float32_tflite   --output_dynamic_range_quant_tflite   --output_weight_quant_tflite   --output_float16_quant_tflite   --output_integer_quant_tflite")
-    self.run_command("cp -rf saved_model/model_float32.tflite " + dst)
-    self.run_command("rm -rf pose_detection.tflite")
-    self.run_command("rm -rf saved_model")
-
   def get_graphs(self):
     external_files = [
         'face_detection/face_detection.pbtxt',
@@ -183,8 +160,6 @@ def printUsage():
                Get graphs used in holistic client example from ovms repository
                python setup_ovms.py --get_graphs
           
-               Convert original pose_detection tflite model - workaround for missing op in ov
-               python setup_ovms.py --convert_pose
         """)
 
     return
@@ -209,8 +184,6 @@ def get_args(argv):
           get_graphs_flag = True
         elif opt in ("--get_models"):
           get_models_flag = True
-        elif opt in ("--convert_pose"):
-          convert_pose = True
         elif opt in ("--force"):
           force = True
 
@@ -225,5 +198,3 @@ if __name__ == "__main__":
   if get_graphs_flag:
     SetupOpenvinoModelServer(force).get_graphs()
 
-  if convert_pose:
-    SetupOpenvinoModelServer(force).convert_pose()
