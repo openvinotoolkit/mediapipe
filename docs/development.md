@@ -19,7 +19,7 @@ python setup_ovms.py --get_models'
 
 - modify or create new mediapipe example target with the 
 ```bash
-//mediapipe/graphs/object_detection:desktop_ovms_calculators
+@mediapipe/graphs/object_detection:desktop_ovms_calculators
 ```
  and 
  ```bash

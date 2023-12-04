@@ -33,7 +33,7 @@ mediapipe_simple_subgraph(
     graph = "object_detection_ovms.pbtxt",
     register_as = "ObjectDetectionOvms",
     deps = [
-        "//mediapipe/graphs/object_detection:desktop_ovms_calculators",
+        "@mediapipe/graphs/object_detection:desktop_ovms_calculators",
         "@ovms//src:ovms_lib",
     ],
 )
@@ -43,7 +43,7 @@ mediapipe_simple_subgraph(
     graph = "holistic_tracking_ovms.pbtxt",
     register_as = "HolisticTrackingOvms",
     deps = [
-        "//mediapipe/graphs/object_detection:desktop_ovms_calculators",
+        "@mediapipe/graphs/object_detection:desktop_ovms_calculators",
         "@ovms//src:ovms_lib",
     ],
 )
@@ -53,7 +53,7 @@ mediapipe_simple_subgraph(
     graph = "face_detection_ovms.pbtxt",
     register_as = "FaceDetectionOvms",
     deps = [
-        "//mediapipe/graphs/object_detection:desktop_ovms_calculators",
+        "@mediapipe/graphs/object_detection:desktop_ovms_calculators",
         "@ovms//src:ovms_lib",
     ],
 )
@@ -63,7 +63,7 @@ mediapipe_simple_subgraph(
     graph = "iris_tracking_ovms.pbtxt",
     register_as = "IrisTrackingOvms",
     deps = [
-        "//mediapipe/graphs/object_detection:desktop_ovms_calculators",
+        "@mediapipe/graphs/object_detection:desktop_ovms_calculators",
         "@ovms//src:ovms_lib",
     ],
 )
@@ -99,7 +99,7 @@ mediapipe_simple_subgraph(
     graph = "pose_tracking_ovms.pbtxt",
     register_as = "PoseTrackingOvms",
     deps = [
-        "//mediapipe/graphs/object_detection:desktop_ovms_calculators",
+        "@mediapipe/graphs/object_detection:desktop_ovms_calculators",
         ":pose_renderer_cpu",
         "@ovms//src:ovms_lib",
     ],
