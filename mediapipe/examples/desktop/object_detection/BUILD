@@ -43,34 +43,6 @@ cc_binary(
 )
 
 cc_binary(
-    name = "object_detection_openvino",
-    data = [
-        "//mediapipe/models:ssdlite_object_detection_labelmap.txt",
-    ],
-    deps = [
-        "//mediapipe/examples/desktop:simple_run_graph_main",
-        "//mediapipe/graphs/object_detection:desktop_openvino_calculators",
-    ],
-)
-
-cc_binary(
-    name = "object_detection_ovms",
-    data = [
-        "//mediapipe/models:ssdlite_object_detection_labelmap.txt",
-	],
-    deps = [
-        "@ovms//src:ovms_lib",
-        "//mediapipe/examples/desktop:demo_run_graph_main",
-        "//mediapipe/graphs/object_detection:desktop_ovms_calculators",
-        # here we declare dependencies on tflite as we can support 2 types
-        # of graphs:
-        # 1) using tflite converters & tensors as packet streams
-        # 2) using openvino converters & tensors as packet streams
-        #"//mediapipe/graphs/object_detection:desktop_tflite_calculators",
-    ],
-)
-
-cc_binary(
     name = "object_detection_cpu",
     data = [
         "//mediapipe/models:ssdlite_object_detection.tflite",
