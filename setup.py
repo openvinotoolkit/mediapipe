@@ -30,11 +30,14 @@ from setuptools.command import build_ext
 from setuptools.command import build_py
 from setuptools.command import install
 
+#MP_ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
+MP_ROOT_PATH = '/root/.cache/bazel/_bazel_root/4884d566396e9b67b62185751879ad14/execroot/ai.applications/external/mediapipe'
+
 MP_DISABLE_GPU = os.environ.get('MEDIAPIPE_DISABLE_GPU') != '0'
 __version__ = '1.0'
 IS_WINDOWS = (platform.system() == 'Windows')
 IS_MAC = (platform.system() == 'Darwin')
-MP_ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
+
 MP_DIR_INIT_PY = os.path.join(MP_ROOT_PATH, 'mediapipe/__init__.py')
 MP_THIRD_PARTY_BUILD = os.path.join(MP_ROOT_PATH, 'third_party/BUILD')
 MP_ROOT_INIT_PY = os.path.join(MP_ROOT_PATH, '__init__.py')
@@ -49,6 +52,15 @@ GPU_OPTIONS_ENBALED = [
 GPU_OPTIONS = GPU_OPTIONS_DISBALED if MP_DISABLE_GPU else GPU_OPTIONS_ENBALED
 
 OVMS_OPTIONS = ['--define=MEDIAPIPE_DISABLE=1 --define=PYTHON_DISABLE=1 --cxxopt=-DPYTHON_DISABLE=1 --cxxopt=-DMEDIAPIPE_DISABLE=1']
+
+logfile = open(os.path.join(os.path.dirname(os.path.abspath(__file__)),"python.log"), "w")
+logfile.write("Starting log\n")
+
+def _log(line):
+  logfile.write(line + "\n")
+
+def _make_path_external(path):
+  return path.replace("//mediapipe","@mediapipe//mediapipe")
 
 def _normalize_path(path):
   return path.replace('\\', '/') if IS_WINDOWS else path
@@ -167,6 +179,7 @@ class GeneratePyProtos(build_ext.build_ext):
   """Generate MediaPipe Python protobuf files by Protocol Compiler."""
 
   def run(self):
+    _log("GenerateProtos")
     if 'PROTOC' in os.environ and os.path.exists(os.environ['PROTOC']):
       self._protoc = os.environ['PROTOC']
     else:
@@ -246,6 +259,7 @@ class BuildModules(build_ext.build_ext):
     build_ext.build_ext.finalize_options(self)
 
   def run(self):
+    _log("BUILD_MODULES")
     _check_bazel()
     external_files = [
         'face_detection/face_detection_full_range_sparse.tflite',
@@ -305,7 +319,7 @@ class BuildModules(build_ext.build_ext):
         '--compilation_mode=opt',
         '--copt=-DNDEBUG',
         '--action_env=PYTHON_BIN_PATH=' + _normalize_path(sys.executable),
-        binary_graph_target,
+        _make_path_external(binary_graph_target),
     ] + GPU_OPTIONS + OVMS_OPTIONS
 
     if not self.link_opencv and not IS_WINDOWS:
@@ -319,6 +333,7 @@ class GenerateMetadataSchema(build_ext.build_ext):
   """Generate metadata python schema files."""
 
   def run(self):
+    _log("GENERATE_METADATA")
     for target in [
         'image_segmenter_metadata_schema_py',
         'metadata_schema_py',
@@ -331,7 +346,7 @@ class GenerateMetadataSchema(build_ext.build_ext):
           'build',
           '--compilation_mode=opt',
           '--action_env=PYTHON_BIN_PATH=' + _normalize_path(sys.executable),
-          '//mediapipe/tasks/metadata:' + target,
+          _make_path_external('//mediapipe/tasks/metadata:') + target,
       ] + GPU_OPTIONS + OVMS_OPTIONS
 
       _invoke_shell_command(bazel_command)
@@ -351,6 +366,7 @@ class BazelExtension(setuptools.Extension):
   """A C/C++ extension that is defined as a Bazel BUILD target."""
 
   def __init__(self, bazel_target, target_name=''):
+    _log("BAZEL EXTENSION")
     self.bazel_target = bazel_target
     self.relpath, self.target_name = (
         posixpath.relpath(bazel_target, '//').split(':'))
@@ -377,6 +393,7 @@ class BuildExtension(build_ext.build_ext):
     build_ext.build_ext.finalize_options(self)
 
   def run(self):
+    _log("BUILD_EXTENSION")
     _check_bazel()
     if IS_MAC:
       for ext in self.extensions:
@@ -418,7 +435,7 @@ class BuildExtension(build_ext.build_ext):
         '--compilation_mode=opt',
         '--copt=-DNDEBUG',
         '--action_env=PYTHON_BIN_PATH=' + _normalize_path(sys.executable),
-        str(ext.bazel_target + '.so'),
+        _make_path_external(str(ext.bazel_target + '.so')),
     ] + GPU_OPTIONS + OVMS_OPTIONS
 
     if extra_args:
@@ -427,7 +444,7 @@ class BuildExtension(build_ext.build_ext):
       bazel_command.append('--define=OPENCV=source')
 
     _invoke_shell_command(bazel_command)
-    ext_bazel_bin_path = os.path.join('bazel-bin', ext.relpath,
+    ext_bazel_bin_path = os.path.join('bazel-bin/external/mediapipe', ext.relpath,
                                       ext.target_name + '.so')
     ext_dest_path = self.get_ext_fullpath(ext.name)
     ext_dest_dir = os.path.dirname(ext_dest_path)
@@ -456,8 +473,10 @@ class BuildPy(build_py.build_py):
     build_py.build_py.finalize_options(self)
 
   def run(self):
+    _log("BUILD PY")
     _modify_opencv_cmake_rule(self.link_opencv)
     _add_mp_init_files()
+    _log("PACKAGES: " + str(self.packages))
     build_modules_obj = self.distribution.get_command_obj('build_modules')
     build_modules_obj.link_opencv = self.link_opencv
     build_ext_obj = self.distribution.get_command_obj('build_ext')
@@ -486,6 +505,7 @@ class Install(install.install):
     install.install.finalize_options(self)
 
   def run(self):
+    _log("INSTALL")
     build_py_obj = self.distribution.get_command_obj('build_py')
     build_py_obj.link_opencv = self.link_opencv
     install.install.run(self)
@@ -503,6 +523,7 @@ class Restore(setuptools.Command):
     pass
 
   def run(self):
+    _log("RESTORE")
     # Restore the original init file from the backup.
     if os.path.exists(_get_backup_file(MP_DIR_INIT_PY)):
       os.remove(MP_DIR_INIT_PY)
@@ -568,3 +589,5 @@ setuptools.setup(
     license='Apache 2.0',
     keywords='mediapipe',
 )
+
+logfile.close()

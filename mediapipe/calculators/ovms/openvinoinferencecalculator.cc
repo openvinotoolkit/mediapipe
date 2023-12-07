@@ -338,7 +338,6 @@ public:
         LOG(INFO) << "OpenVINOInferenceCalculator GetContract start";
         RET_CHECK(!cc->Inputs().GetTags().empty());
         RET_CHECK(!cc->Outputs().GetTags().empty());
-        RET_CHECK(cc->InputSidePackets().HasTag(SESSION_TAG));
         for (const std::string& tag : cc->Inputs().GetTags()) {
             // could be replaced with absl::StartsWith when migrated to MP
             if (startsWith(tag, OVTENSORS_TAG)) {
@@ -516,10 +515,10 @@ public:
         try {
             output = session->infer(input);
         } catch (const std::exception& e) {
-            LOG(INFO) << "Caught exception from session infer():" << e.what();
+            LOG(INFO) << "Catched exception from session infer():" << e.what();
             RET_CHECK(false);
         } catch (...) {
-            LOG(INFO) << "Caught unknown exception from session infer()";
+            LOG(INFO) << "Catched unknown exception from session infer()";
             RET_CHECK(false);
         }
         auto outputsCount = output.size();
@@ -660,6 +659,7 @@ public:
                 LOG(INFO) << "Failed to deserialize tensor error:" << e.what();
                 RET_CHECK(false);
             }
+            LOG(INFO) << "OVMS calculator will process TfLite tensors";
         }
         LOG(INFO) << "OpenVINOInferenceCalculator process end";
         return absl::OkStatus();
