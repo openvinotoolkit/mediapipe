@@ -26,10 +26,10 @@ cc_binary(
     deps = [
         "@ovms//src:ovms_lib",
         "//mediapipe/calculators/ovms:ovms_calculator",
-        "//mediapipe/framework:calculator_graph",
-        "//mediapipe/framework/port:logging",
-        "//mediapipe/framework/port:parse_text_proto",
-        "//mediapipe/framework/port:status",
+        "@mediapipe//mediapipe/framework:calculator_framework",
+        "@mediapipe//mediapipe/framework/port:logging",
+        "@mediapipe//mediapipe/framework/port:parse_text_proto",
+        "@mediapipe//mediapipe/framework/port:status",
     ],
     linkopts = [
         "-lxml2",

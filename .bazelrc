@@ -120,3 +120,11 @@ test --define=PYTHON_DISABLE=1
 build --cxxopt=-DPYTHON_DISABLE=1
 coverage --cxxopt=-DPYTHON_DISABLE=1
 test --cxxopt=-DPYTHON_DISABLE=1
+
+build --define=MEDIAPIPE_DISABLE_GPU=1
+coverage --define=MEDIAPIPE_DISABLE_GPU=1
+test --define=MEDIAPIPE_DISABLE_GPU=1
+
+build --cxxopt=-DMEDIAPIPE_DISABLE_GPU=1
+coverage --cxxopt=-DMEDIAPIPE_DISABLE_GPU=1
+test --cxxopt=-DMEDIAPIPE_DISABLE_GPU=1

@@ -13,7 +13,6 @@ mediapipe/models/ovms/palm_detection_full/
 mediapipe/models/ovms/pose_detection/
 mediapipe/models/ovms/pose_landmark_full/
 mediapipe/models/ovms/ssdlite_object_detection/
-mediapipe/models/ssdlite_object_detection_labelmap.txt
 mediapipe/provisioning_profile.mobileprovision
 mediapipe/python/__pycache__/
 node_modules/

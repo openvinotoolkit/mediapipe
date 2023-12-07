@@ -14,44 +14,7 @@
 
 licenses(["notice"])
 
-package(default_visibility = ["//mediapipe/examples:__subpackages__"])
-
-cc_binary(
-    name = "object_detection_tensorflow",
-    data = [
-        "//mediapipe/models:ssdlite_object_detection.tflite",
-        "//mediapipe/models:ssdlite_object_detection_labelmap.txt",
-    ],
-    deps = [
-        "//mediapipe/examples/desktop:simple_run_graph_main",
-        "//mediapipe/graphs/object_detection:desktop_tensorflow_calculators",
-        "@org_tensorflow//tensorflow/core:all_kernels",
-        "@org_tensorflow//tensorflow/core:direct_session",
-    ],
-)
-
-cc_binary(
-    name = "object_detection_tflite",
-    data = [
-        "//mediapipe/models:ssdlite_object_detection.tflite",
-        "//mediapipe/models:ssdlite_object_detection_labelmap.txt",
-    ],
-    deps = [
-        "//mediapipe/examples/desktop:simple_run_graph_main",
-        "//mediapipe/graphs/object_detection:desktop_tflite_calculators",
-    ],
-)
-
-cc_binary(
-    name = "object_detection_openvino",
-    data = [
-        "//mediapipe/models:ssdlite_object_detection_labelmap.txt",
-    ],
-    deps = [
-        "//mediapipe/examples/desktop:simple_run_graph_main",
-        "//mediapipe/graphs/object_detection:desktop_openvino_calculators",
-    ],
-)
+package(default_visibility = ["//visibility:public"])
 
 cc_binary(
     name = "object_detection_ovms",
@@ -60,7 +23,7 @@ cc_binary(
 	],
     deps = [
         "@ovms//src:ovms_lib",
-        "//mediapipe/examples/desktop:demo_run_graph_main",
+        "@mediapipe//mediapipe/examples/desktop:demo_run_graph_main",
         "//mediapipe/graphs/object_detection:desktop_ovms_calculators",
         # here we declare dependencies on tflite as we can support 2 types
         # of graphs:
@@ -69,16 +32,3 @@ cc_binary(
         #"//mediapipe/graphs/object_detection:desktop_tflite_calculators",
     ],
 )
-
-cc_binary(
-    name = "object_detection_cpu",
-    data = [
-        "//mediapipe/models:ssdlite_object_detection.tflite",
-        "//mediapipe/models:ssdlite_object_detection_labelmap.txt",
-    ],
-    deps = [
-        "//mediapipe/examples/desktop:demo_run_graph_main",
-        "//mediapipe/graphs/object_detection:desktop_tflite_calculators",
-    ],
-)
-

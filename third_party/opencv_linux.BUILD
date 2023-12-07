@@ -30,6 +30,7 @@ cc_library(
     ],
     linkopts = [
         "-L/usr/local/lib",
+        "-L/usr/local/lib",
         "-l:libopencv_core.so",
         "-l:libopencv_calib3d.so",
         "-l:libopencv_features2d.so",
@@ -40,5 +41,6 @@ cc_library(
         "-l:libopencv_videoio.so",
         "-l:libopencv_optflow.so",
     ],
+    strip_include_prefix = "include/opencv4",
     visibility = ["//visibility:public"],
 )

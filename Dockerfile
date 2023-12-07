@@ -1,4 +1,5 @@
-# Copyright 2019 The MediaPipe Authors.
+#
+# Copyright (c) 2021 Intel Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,19 +12,23 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
 
-FROM ubuntu:20.04
+ARG BASE_IMAGE
+FROM ubuntu:20.04 as base
 
-MAINTAINER <mediapipe@google.com>
-
-WORKDIR /io
-WORKDIR /mediapipe
-
+LABEL version="0.0.1"
+ARG JOBS=16
+SHELL ["/bin/bash", "-xo", "pipefail", "-c"]
+#######
+# Install dependencies
+#######
+# # to avoid question for continent
 ENV DEBIAN_FRONTEND=noninteractive
 
+# Install unit tests and examples requierments
 RUN apt-get update && apt-get install -y --no-install-recommends \
         build-essential \
-        gcc-8 g++-8 \
         ca-certificates \
         curl \
         ffmpeg \
@@ -49,16 +54,45 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 100 --slave /usr/bin/g++ g++ /usr/bin/g++-8
+# python setup.py requirements
 RUN pip3 install --upgrade setuptools
-RUN pip3 install wheel
-RUN pip3 install future
-RUN pip3 install absl-py numpy opencv-contrib-python protobuf==3.20.1
-RUN pip3 install six==1.14.0
-RUN pip3 install tensorflow
-RUN pip3 install tf_slim
+RUN pip3 install attrs matplotlib wheel future absl-py numpy opencv-contrib-python tensorflow==2.9.0 protobuf==3.20.1 six==1.14.0 tf_slim
 
 RUN ln -s /usr/bin/python3 /usr/bin/python
+RUN apt-get update && apt-get install -y protobuf-compiler
+    
+# Install unit tests and examples requierments
+RUN wget https://github.com/bazelbuild/bazelisk/releases/download/v1.17.0/bazelisk-linux-amd64 && \
+    mv bazelisk-linux-amd64 /usr/bin/bazelisk && chmod +x /usr/bin/bazelisk
+
+RUN apt-get update && apt-get install --no-install-recommends -y \
+    cmake \
+    automake \
+    autoconf \
+    curl \
+    libcurl4-openssl-dev \
+    git \
+    wget \
+    vim \
+    ca-certificates \
+    python3 \
+    python3-numpy \
+    pip \
+    libopencv-core-dev \
+    libopencv-highgui-dev \
+    libopencv-calib3d-dev \
+    libopencv-features2d-dev \
+    libopencv-imgproc-dev \
+    libopencv-video-dev \
+    build-essential \
+    libjson-c4 \
+    unzip
+
+# install ovms_lib requirements
+# xml2, uuid for azure
+RUN apt-get install -y curl libpugixml1v5 libtbb2 libxml2-dev uuid-dev uuid libssl-dev --no-install-recommends
+
+RUN apt-get update && apt-get install --no-install-recommends -y libtool
 
 # Install bazel
 ARG BAZEL_VERSION=6.1.1
@@ -70,7 +104,91 @@ azel-${BAZEL_VERSION}-installer-linux-x86_64.sh" && \
     /bazel/installer.sh  && \
     rm -f /bazel/installer.sh
 
+#OPENVINO
+ARG DLDT_PACKAGE_URL=https://storage.openvinotoolkit.org/repositories/openvino/packages/2023.0/linux/l_openvino_toolkit_ubuntu20_2023.0.0.10926.b4452d56304_x86_64.tgz
+# OV toolkit package
+RUN wget -nv $DLDT_PACKAGE_URL && \
+    mkdir /opt/intel && \
+    tar -zxf l_openvino_toolkit*.tgz -C /opt/intel && \
+    ln -s /opt/intel/l_openvino_toolkit* /opt/intel/openvino && \
+    ln -s /opt/intel/l_openvino_toolkit* /opt/intel/openvino_2022
+
+####### Azure SDK needs new boost:
+WORKDIR /boost
+# hadolint ignore=DL3003
+RUN wget -nv https://sourceforge.net/projects/boost/files/boost/1.69.0/boost_1_69_0.tar.gz && \
+tar xvf boost_1_69_0.tar.gz && cd boost_1_69_0 && ./bootstrap.sh && \
+./b2 -j ${JOBS} cxxstd=17 link=static cxxflags='-fPIC' cflags='-fPIC' \
+--with-chrono --with-date_time --with-filesystem --with-program_options --with-system \
+--with-random --with-thread --with-atomic --with-regex \
+--with-log --with-locale \
+install
+
+# Main at Fix building without MediaPipe (#2129)
+# Update SHA in two places here and in WORKSPACE ovms git repository
+ARG OVMS_COMMIT="7f372bc9b0a94cf546ef5f1a43e4a9bf768d6f85"
+RUN mkdir /opt/ovms
+RUN wget -nv -P /opt/ovms https://raw.githubusercontent.com/openvinotoolkit/model_server/${OVMS_COMMIT}/third_party/cpprest/rest_sdk_v2.10.16.patch
+RUN wget -nv -P /opt/ovms https://raw.githubusercontent.com/openvinotoolkit/model_server/${OVMS_COMMIT}/third_party/azure/azure_sdk.patch
+RUN wget -nv -P /opt/ovms https://raw.githubusercontent.com/openvinotoolkit/model_server/${OVMS_COMMIT}/third_party/build_bazel_rules_apple/bazel_rules_apple.patch
+RUN mkdir -p /root/ovms/dummy/1
+RUN wget -nv -O /root/ovms/config.json https://raw.githubusercontent.com/openvinotoolkit/model_server/${OVMS_COMMIT}/src/test/mediapipe/config_standard_dummy.json
+RUN sed -i 's:/ovms/src/test/dummy:/root/ovms/dummy:g' /root/ovms/config.json
+RUN wget -nv -O /root/ovms/dummy/1/dummy.xml https://raw.githubusercontent.com/openvinotoolkit/model_server/${OVMS_COMMIT}/src/test/dummy/1/dummy.xml
+RUN wget -nv -O /root/ovms/dummy/1/dummy.bin https://raw.githubusercontent.com/openvinotoolkit/model_server/${OVMS_COMMIT}/src/test/dummy/1/dummy.bin
+
+####### Azure SDK
+WORKDIR /azure
+RUN apt-get update && apt-get install --no-install-recommends -y uuid uuid-dev && rm -rf /var/lib/apt/lists/*
+RUN git clone --recurse-submodules --depth 1 --branch v2.10.16 https://github.com/Microsoft/cpprestsdk.git && \
+    git clone --depth 1 --branch v7.5.0 https://github.com/Azure/azure-storage-cpp.git && \
+    patch -d /azure/cpprestsdk/ -p1 < /opt/ovms/rest_sdk_v2.10.16.patch && \
+    patch -d /azure/azure-storage-cpp/ -p1 < /opt/ovms/azure_sdk.patch
+
+WORKDIR /azure/cpprestsdk/Release/build.release
+RUN cmake .. -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_CXX_FLAGS="-fPIC" -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON -DBoost_USE_STATIC_RUNTIME=ON -DBoost_USE_STATIC_LIBS=ON -DWERROR=OFF -DBUILD_SAMPLES=OFF -DBUILD_TESTS=OFF && make --jobs=$JOBS install
+
+WORKDIR /azure/azure-storage-cpp/Microsoft.WindowsAzure.Storage/build.release
+RUN CASABLANCA_DIR=/azure/cpprestsdk cmake .. -DCMAKE_CXX_FLAGS="-fPIC" -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON -DBoost_USE_STATIC_RUNTIME=ON -DBoost_USE_STATIC_LIBS=ON -DCMAKE_VERBOSE_MAKEFILE=ON && make --jobs=$JOBS && make --jobs=$JOBS install
+####### End of Azure SDK
+
+# Build AWS S3 SDK
+RUN git clone https://github.com/aws/aws-sdk-cpp.git --branch 1.7.129 --single-branch --depth 1 /awssdk
+WORKDIR /awssdk/build
+RUN cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_ONLY=s3 -DENABLE_TESTING=OFF -DBUILD_SHARED_LIBS=OFF -DMINIMIZE_SIZE=ON -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DFORCE_SHARED_CRT=OFF -DSIMPLE_INSTALL=OFF -DCMAKE_CXX_FLAGS=" -D_GLIBCXX_USE_CXX11_ABI=1 " .. && make --jobs=$JOBS
+
+####### End of AWS S3 SDK
+
+####### Build OpenCV
+COPY setup_opencv.sh /mediapipe/setup_opencv.sh
+COPY third_party/opencv_linux.BUILD /mediapipe/third_party/opencv_linux.BUILD
+COPY WORKSPACE /mediapipe/WORKSPACE
+
+WORKDIR /mediapipe
+
+RUN ./setup_opencv.sh
+####### End of OpenCV
+
+# tools for pose_detection model convertion for missing tflite densify op nodes support workaround
+RUN pip3 install tflite2tensorflow pandas==1.4.2 gdown tensorflow-datasets
+RUN wget https://github.com/PINTO0309/tflite2tensorflow/raw/main/schema/schema.fbs
+RUN git clone -b v2.0.8 https://github.com/google/flatbuffers.git
+RUN cd flatbuffers && mkdir build && cd build && cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release .. && make -j$(nproc) && cd ../..
+
+## End of base image
+
+FROM base as build
+
+RUN wget -O video.mp4 "https://www.pexels.com/download/video/3044127/?fps=24.0&h=1080&w=1920"
 COPY . /mediapipe/
 
-# If we want the docker image to contain the pre-built object_detection_offline_demo binary, do the following
-# RUN bazel build -c opt --define MEDIAPIPE_DISABLE_GPU=1 mediapipe/examples/desktop/demo:object_detection_tensorflow_demo
+# BUILD examples
+ENV GLOG_logtostderr=1
+ENV LD_LIBRARY_PATH="/opt/intel/openvino/runtime/lib/intel64/:${LD_LIBRARY_PATH}"
+RUN ./prepare_server.sh
+RUN bazel build -c opt mediapipe/examples/desktop/hello_ovms:hello_ovms
+RUN bazel build -c opt mediapipe/examples/desktop/object_detection:object_detection_ovms
+RUN bazel build -c opt @mediapipe//mediapipe/examples/desktop/holistic_tracking:holistic_tracking_cpu
+RUN bazel build -c opt @mediapipe//mediapipe/examples/desktop/face_detection:face_detection_cpu
+RUN bazel build -c opt @mediapipe//mediapipe/examples/desktop/iris_tracking:iris_tracking_cpu
+RUN bazel build -c opt @mediapipe//mediapipe/examples/desktop/pose_tracking:pose_tracking_cpu

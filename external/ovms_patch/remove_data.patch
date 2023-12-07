@@ -1,0 +1,360 @@
+diff --git a/mediapipe/examples/desktop/autoflip/BUILD b/mediapipe/examples/desktop/autoflip/BUILD
+index fe994e2e..fbaea0f3 100644
+--- a/mediapipe/examples/desktop/autoflip/BUILD
++++ b/mediapipe/examples/desktop/autoflip/BUILD
+@@ -32,9 +32,6 @@ mediapipe_proto_library(
+ 
+ cc_binary(
+     name = "run_autoflip",
+-    data = [
+-        "//mediapipe/modules/face_detection:face_detection_full_range_sparse.tflite",
+-    ],
+     deps = [
+         "//mediapipe/calculators/core:packet_thinner_calculator",
+         "//mediapipe/calculators/image:scale_image_calculator",
+diff --git a/mediapipe/examples/desktop/autoflip/quality/BUILD b/mediapipe/examples/desktop/autoflip/quality/BUILD
+index 20e28610..44cae699 100644
+--- a/mediapipe/examples/desktop/autoflip/quality/BUILD
++++ b/mediapipe/examples/desktop/autoflip/quality/BUILD
+@@ -221,9 +221,6 @@ cc_test(
+ cc_test(
+     name = "scene_camera_motion_analyzer_test",
+     srcs = ["scene_camera_motion_analyzer_test.cc"],
+-    data = [
+-        "//mediapipe/examples/desktop/autoflip/quality/testdata:camera_motion_tracking_scene_frame_results.csv",
+-    ],
+     deps = [
+         ":focus_point_cc_proto",
+         ":piecewise_linear_function",
+@@ -241,21 +238,6 @@ cc_test(
+ cc_test(
+     name = "padding_effect_generator_test",
+     srcs = ["padding_effect_generator_test.cc"],
+-    data = [
+-        "//mediapipe/examples/desktop/autoflip/quality/testdata:google.jpg",
+-        "//mediapipe/examples/desktop/autoflip/quality/testdata:result_0.3.jpg",
+-        "//mediapipe/examples/desktop/autoflip/quality/testdata:result_0.3_solid_background.jpg",
+-        "//mediapipe/examples/desktop/autoflip/quality/testdata:result_0.6.jpg",
+-        "//mediapipe/examples/desktop/autoflip/quality/testdata:result_0.6_solid_background.jpg",
+-        "//mediapipe/examples/desktop/autoflip/quality/testdata:result_1.6.jpg",
+-        "//mediapipe/examples/desktop/autoflip/quality/testdata:result_1.6_solid_background.jpg",
+-        "//mediapipe/examples/desktop/autoflip/quality/testdata:result_1.jpg",
+-        "//mediapipe/examples/desktop/autoflip/quality/testdata:result_1_solid_background.jpg",
+-        "//mediapipe/examples/desktop/autoflip/quality/testdata:result_2.5.jpg",
+-        "//mediapipe/examples/desktop/autoflip/quality/testdata:result_2.5_solid_background.jpg",
+-        "//mediapipe/examples/desktop/autoflip/quality/testdata:result_3.4.jpg",
+-        "//mediapipe/examples/desktop/autoflip/quality/testdata:result_3.4_solid_background.jpg",
+-    ],
+     deps = [
+         ":padding_effect_generator",
+         "//mediapipe/framework/deps:file_path",
+diff --git a/mediapipe/examples/desktop/face_detection/BUILD b/mediapipe/examples/desktop/face_detection/BUILD
+index cf647e0d..5e50afd7 100644
+--- a/mediapipe/examples/desktop/face_detection/BUILD
++++ b/mediapipe/examples/desktop/face_detection/BUILD
+@@ -18,7 +18,6 @@ package(default_visibility = ["//mediapipe/examples:__subpackages__"])
+ 
+ cc_binary(
+     name = "face_detection_full_range_cpu",
+-    data = ["//mediapipe/modules/face_detection:face_detection_full_range.tflite"],
+     deps = [
+         "//mediapipe/examples/desktop:demo_run_graph_main",
+         "//mediapipe/graphs/face_detection:face_detection_full_range_desktop_live_deps",
+@@ -27,7 +26,6 @@ cc_binary(
+ 
+ cc_binary(
+     name = "face_detection_cpu",
+-    data = ["//mediapipe/modules/face_detection:face_detection_short_range.tflite"],
+     deps = [
+         "@ovms//src:ovms_lib",
+         "//mediapipe/examples/desktop:demo_run_graph_main",
+@@ -38,7 +36,6 @@ cc_binary(
+ # Linux only
+ cc_binary(
+     name = "face_detection_gpu",
+-    data = ["//mediapipe/modules/face_detection:face_detection_short_range.tflite"],
+     deps = [
+         "//mediapipe/examples/desktop:demo_run_graph_main_gpu",
+         "//mediapipe/graphs/face_detection:desktop_live_gpu_calculators",
+diff --git a/mediapipe/examples/desktop/face_mesh/BUILD b/mediapipe/examples/desktop/face_mesh/BUILD
+index a3c7d007..3fa3ca7f 100644
+--- a/mediapipe/examples/desktop/face_mesh/BUILD
++++ b/mediapipe/examples/desktop/face_mesh/BUILD
+@@ -18,7 +18,6 @@ package(default_visibility = ["//mediapipe/examples:__subpackages__"])
+ 
+ cc_binary(
+     name = "face_mesh_tflite",
+-    data = ["//mediapipe/modules/face_landmark:face_landmark_with_attention.tflite"],
+     deps = [
+         "//mediapipe/examples/desktop:simple_run_graph_main",
+         "//mediapipe/graphs/face_mesh:desktop_calculators",
+@@ -27,7 +26,6 @@ cc_binary(
+ 
+ cc_binary(
+     name = "face_mesh_cpu",
+-    data = ["//mediapipe/modules/face_landmark:face_landmark_with_attention.tflite"],
+     deps = [
+         "@ovms//src:ovms_lib",
+         "//mediapipe/examples/desktop:demo_run_graph_main",
+@@ -38,7 +36,6 @@ cc_binary(
+ # Linux only
+ cc_binary(
+     name = "face_mesh_gpu",
+-    data = ["//mediapipe/modules/face_landmark:face_landmark_with_attention.tflite"],
+     deps = [
+         "//mediapipe/examples/desktop:demo_run_graph_main_gpu",
+         "//mediapipe/graphs/face_mesh:desktop_live_gpu_calculators",
+diff --git a/mediapipe/examples/desktop/hand_tracking/BUILD b/mediapipe/examples/desktop/hand_tracking/BUILD
+index fe623ed3..6d9712d8 100644
+--- a/mediapipe/examples/desktop/hand_tracking/BUILD
++++ b/mediapipe/examples/desktop/hand_tracking/BUILD
+@@ -18,10 +18,6 @@ package(default_visibility = ["//mediapipe/examples:__subpackages__"])
+ 
+ cc_binary(
+     name = "hand_tracking_tflite",
+-    data = [
+-        "//mediapipe/modules/hand_landmark:hand_landmark_full.tflite",
+-        "//mediapipe/modules/palm_detection:palm_detection_full.tflite",
+-    ],
+     deps = [
+         "//mediapipe/examples/desktop:simple_run_graph_main",
+         "//mediapipe/graphs/hand_tracking:desktop_tflite_calculators",
+@@ -30,10 +26,6 @@ cc_binary(
+ 
+ cc_binary(
+     name = "hand_tracking_cpu",
+-    data = [
+-        "//mediapipe/modules/hand_landmark:hand_landmark_full.tflite",
+-        "//mediapipe/modules/palm_detection:palm_detection_full.tflite",
+-    ],
+     deps = [
+         "@ovms//src:ovms_lib",
+         "//mediapipe/examples/desktop:demo_run_graph_main",
+@@ -44,10 +36,6 @@ cc_binary(
+ # Linux only
+ cc_binary(
+     name = "hand_tracking_gpu",
+-    data = [
+-        "//mediapipe/modules/hand_landmark:hand_landmark_full.tflite",
+-        "//mediapipe/modules/palm_detection:palm_detection_full.tflite",
+-    ],
+     deps = [
+         "//mediapipe/examples/desktop:demo_run_graph_main_gpu",
+         "//mediapipe/graphs/hand_tracking:mobile_calculators",
+diff --git a/mediapipe/examples/desktop/holistic_tracking/BUILD b/mediapipe/examples/desktop/holistic_tracking/BUILD
+index 69e7338a..bdfe5001 100644
+--- a/mediapipe/examples/desktop/holistic_tracking/BUILD
++++ b/mediapipe/examples/desktop/holistic_tracking/BUILD
+@@ -18,14 +18,6 @@ package(default_visibility = ["//mediapipe/examples:__subpackages__"])
+ 
+ cc_binary(
+     name = "holistic_tracking_cpu",
+-    data = [
+-        "//mediapipe/modules/face_landmark:face_landmark.tflite",
+-        "//mediapipe/modules/hand_landmark:hand_landmark_full.tflite",
+-        "//mediapipe/modules/holistic_landmark:hand_recrop.tflite",
+-        "//mediapipe/modules/pose_detection:pose_detection.tflite",
+-        "//mediapipe/modules/pose_landmark:pose_landmark_full.tflite",
+-        "//mediapipe/modules/face_landmark:face_landmark_with_attention.tflite"
+-    ],
+     deps = [
+         "@ovms//src:ovms_lib",
+         "//mediapipe/examples/desktop:demo_run_graph_main",
+@@ -36,13 +28,6 @@ cc_binary(
+ # Linux only
+ cc_binary(
+     name = "holistic_tracking_gpu",
+-    data = [
+-        "//mediapipe/modules/face_landmark:face_landmark.tflite",
+-        "//mediapipe/modules/hand_landmark:hand_landmark_full.tflite",
+-        "//mediapipe/modules/holistic_landmark:hand_recrop.tflite",
+-        "//mediapipe/modules/pose_detection:pose_detection.tflite",
+-        "//mediapipe/modules/pose_landmark:pose_landmark_full.tflite",
+-    ],
+     deps = [
+         "//mediapipe/examples/desktop:demo_run_graph_main_gpu",
+         "//mediapipe/graphs/holistic_tracking:holistic_tracking_gpu_deps",
+diff --git a/mediapipe/examples/desktop/iris_tracking/BUILD b/mediapipe/examples/desktop/iris_tracking/BUILD
+index 0463fa10..44448842 100644
+--- a/mediapipe/examples/desktop/iris_tracking/BUILD
++++ b/mediapipe/examples/desktop/iris_tracking/BUILD
+@@ -19,7 +19,6 @@ package(default_visibility = ["//mediapipe/examples:__subpackages__"])
+ cc_binary(
+     name = "iris_depth_from_image_desktop",
+     srcs = ["iris_depth_from_image_desktop.cc"],
+-    data = ["//mediapipe/modules/iris_landmark:iris_landmark.tflite"],
+     deps = [
+         "//mediapipe/framework:calculator_framework",
+         "//mediapipe/framework/formats:image_frame",
+@@ -38,7 +37,6 @@ cc_binary(
+ 
+ cc_binary(
+     name = "iris_tracking_cpu_video_input",
+-    data = ["//mediapipe/modules/iris_landmark:iris_landmark.tflite"],
+     deps = [
+         "//mediapipe/examples/desktop:simple_run_graph_main",
+         "//mediapipe/graphs/iris_tracking:iris_tracking_cpu_video_input_deps",
+@@ -47,7 +45,6 @@ cc_binary(
+ 
+ cc_binary(
+     name = "iris_tracking_cpu",
+-    data = ["//mediapipe/modules/iris_landmark:iris_landmark.tflite"],
+     deps = [
+         "@ovms//src:ovms_lib",
+         "//mediapipe/examples/desktop:demo_run_graph_main",
+@@ -58,7 +55,6 @@ cc_binary(
+ # Linux only
+ cc_binary(
+     name = "iris_tracking_gpu",
+-    data = ["//mediapipe/modules/iris_landmark:iris_landmark.tflite"],
+     deps = [
+         "//mediapipe/examples/desktop:demo_run_graph_main_gpu",
+         "//mediapipe/graphs/iris_tracking:iris_tracking_gpu_deps",
+diff --git a/mediapipe/examples/desktop/object_detection/BUILD b/mediapipe/examples/desktop/object_detection/BUILD
+index f443f76d..9a65c907 100644
+--- a/mediapipe/examples/desktop/object_detection/BUILD
++++ b/mediapipe/examples/desktop/object_detection/BUILD
+@@ -18,10 +18,6 @@ package(default_visibility = ["//mediapipe/examples:__subpackages__"])
+ 
+ cc_binary(
+     name = "object_detection_tensorflow",
+-    data = [
+-        "//mediapipe/models:ssdlite_object_detection.tflite",
+-        "//mediapipe/models:ssdlite_object_detection_labelmap.txt",
+-    ],
+     deps = [
+         "//mediapipe/examples/desktop:simple_run_graph_main",
+         "//mediapipe/graphs/object_detection:desktop_tensorflow_calculators",
+@@ -32,10 +28,6 @@ cc_binary(
+ 
+ cc_binary(
+     name = "object_detection_tflite",
+-    data = [
+-        "//mediapipe/models:ssdlite_object_detection.tflite",
+-        "//mediapipe/models:ssdlite_object_detection_labelmap.txt",
+-    ],
+     deps = [
+         "//mediapipe/examples/desktop:simple_run_graph_main",
+         "//mediapipe/graphs/object_detection:desktop_tflite_calculators",
+@@ -44,10 +36,6 @@ cc_binary(
+ 
+ cc_binary(
+     name = "object_detection_cpu",
+-    data = [
+-        "//mediapipe/models:ssdlite_object_detection.tflite",
+-        "//mediapipe/models:ssdlite_object_detection_labelmap.txt",
+-    ],
+     deps = [
+         "//mediapipe/examples/desktop:demo_run_graph_main",
+         "//mediapipe/graphs/object_detection:desktop_tflite_calculators",
+diff --git a/mediapipe/examples/desktop/object_detection_3d/BUILD b/mediapipe/examples/desktop/object_detection_3d/BUILD
+index eaac8ac4..8a58e112 100644
+--- a/mediapipe/examples/desktop/object_detection_3d/BUILD
++++ b/mediapipe/examples/desktop/object_detection_3d/BUILD
+@@ -27,15 +27,6 @@ package(default_visibility = ["//mediapipe/examples:__subpackages__"])
+ # Cup: box_landmark_model_path=mediapipe/modules/objectron/object_detection_3d_cup.tflite,allowed_labels=Mug
+ cc_binary(
+     name = "objectron_cpu",
+-    data = [
+-        "//mediapipe/modules/objectron:object_detection_3d_camera.tflite",
+-        "//mediapipe/modules/objectron:object_detection_3d_chair.tflite",
+-        "//mediapipe/modules/objectron:object_detection_3d_chair_1stage.tflite",
+-        "//mediapipe/modules/objectron:object_detection_3d_cup.tflite",
+-        "//mediapipe/modules/objectron:object_detection_3d_sneakers.tflite",
+-        "//mediapipe/modules/objectron:object_detection_3d_sneakers_1stage.tflite",
+-        "//mediapipe/modules/objectron:object_detection_ssd_mobilenetv2_oidv4_fp16.tflite",
+-    ],
+     deps = [
+         "//mediapipe/examples/desktop:simple_run_graph_main",
+         "//mediapipe/graphs/object_detection_3d:desktop_cpu_calculators",
+diff --git a/mediapipe/examples/desktop/object_tracking/BUILD b/mediapipe/examples/desktop/object_tracking/BUILD
+index 5cc4fe48..8a87c5bb 100644
+--- a/mediapipe/examples/desktop/object_tracking/BUILD
++++ b/mediapipe/examples/desktop/object_tracking/BUILD
+@@ -18,10 +18,6 @@ package(default_visibility = ["//mediapipe/examples:__subpackages__"])
+ 
+ cc_binary(
+     name = "object_tracking_cpu",
+-    data = [
+-        "//mediapipe/models:ssdlite_object_detection.tflite",
+-        "//mediapipe/models:ssdlite_object_detection_labelmap.txt",
+-    ],
+     deps = [
+         "//mediapipe/examples/desktop:demo_run_graph_main",
+         "//mediapipe/graphs/tracking:desktop_calculators",
+diff --git a/mediapipe/examples/desktop/pose_tracking/BUILD b/mediapipe/examples/desktop/pose_tracking/BUILD
+index 571562ce..764ae6ce 100644
+--- a/mediapipe/examples/desktop/pose_tracking/BUILD
++++ b/mediapipe/examples/desktop/pose_tracking/BUILD
+@@ -18,10 +18,6 @@ package(default_visibility = ["//mediapipe/examples:__subpackages__"])
+ 
+ cc_binary(
+     name = "pose_tracking_cpu",
+-    data = [
+-        "//mediapipe/modules/pose_detection:pose_detection.tflite",
+-        "//mediapipe/modules/pose_landmark:pose_landmark_full.tflite",
+-    ],
+     deps = [
+         "@ovms//src:ovms_lib",
+         "//mediapipe/examples/desktop:demo_run_graph_main",
+@@ -32,10 +28,6 @@ cc_binary(
+ # Linux only
+ cc_binary(
+     name = "pose_tracking_gpu",
+-    data = [
+-        "//mediapipe/modules/pose_detection:pose_detection.tflite",
+-        "//mediapipe/modules/pose_landmark:pose_landmark_full.tflite",
+-    ],
+     deps = [
+         "//mediapipe/examples/desktop:demo_run_graph_main_gpu",
+         "//mediapipe/graphs/pose_tracking:pose_tracking_gpu_deps",
+diff --git a/mediapipe/examples/desktop/selfie_segmentation/BUILD b/mediapipe/examples/desktop/selfie_segmentation/BUILD
+index d64eadea..ae93aa94 100644
+--- a/mediapipe/examples/desktop/selfie_segmentation/BUILD
++++ b/mediapipe/examples/desktop/selfie_segmentation/BUILD
+@@ -18,7 +18,6 @@ package(default_visibility = ["//mediapipe/examples:__subpackages__"])
+ 
+ cc_binary(
+     name = "selfie_segmentation_cpu",
+-    data = ["//mediapipe/modules/selfie_segmentation:selfie_segmentation.tflite"],
+     deps = [
+         "//mediapipe/examples/desktop:demo_run_graph_main",
+         "//mediapipe/graphs/selfie_segmentation:selfie_segmentation_cpu_deps",
+@@ -28,7 +27,6 @@ cc_binary(
+ # Linux only
+ cc_binary(
+     name = "selfie_segmentation_gpu",
+-    data = ["//mediapipe/modules/selfie_segmentation:selfie_segmentation.tflite"],
+     deps = [
+         "//mediapipe/examples/desktop:demo_run_graph_main_gpu",
+         "//mediapipe/graphs/selfie_segmentation:selfie_segmentation_gpu_deps",
+diff --git a/mediapipe/examples/ios/facedetectioncpu/BUILD b/mediapipe/examples/ios/facedetectioncpu/BUILD
+index 30090190..d05f09ca 100644
+--- a/mediapipe/examples/ios/facedetectioncpu/BUILD
++++ b/mediapipe/examples/ios/facedetectioncpu/BUILD
+@@ -53,10 +53,6 @@ ios_application(
+ 
+ objc_library(
+     name = "FaceDetectionCpuAppLibrary",
+-    data = [
+-        "//mediapipe/graphs/face_detection:face_detection_mobile_cpu.binarypb",
+-        "//mediapipe/modules/face_detection:face_detection_short_range.tflite",
+-    ],
+     deps = [
+         "//mediapipe/examples/ios/common:CommonMediaPipeAppLibrary",
+     ] + select({
+diff --git a/mediapipe/examples/ios/facedetectiongpu/BUILD b/mediapipe/examples/ios/facedetectiongpu/BUILD
+index d3725aa3..59600e74 100644
+--- a/mediapipe/examples/ios/facedetectiongpu/BUILD
++++ b/mediapipe/examples/ios/facedetectiongpu/BUILD
+@@ -53,10 +53,6 @@ ios_application(
+ 
+ objc_library(
+     name = "FaceDetectionGpuAppLibrary",
+-    data = [
+-        "//mediapipe/graphs/face_detection:face_detection_mobile_gpu.binarypb",
+-        "//mediapipe/modules/face_detection:face_detection_short_range.tflite",
+-    ],
+     deps = [
+         "//mediapipe/examples/ios/common:CommonMediaPipeAppLibrary",
+     ] + select({
