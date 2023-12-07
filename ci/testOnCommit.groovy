@@ -27,11 +27,6 @@ pipeline {
               sh script: "make run_demos_in_docker OVMS_MEDIA_IMAGE_TAG=${shortCommit}"
           }
         }
-        stage("test python demos") {
-          steps {
-              sh script: "make run_python_demos_in_docker OVMS_MEDIA_IMAGE_TAG=${shortCommit}"
-          }
-        }
     }
 }
 

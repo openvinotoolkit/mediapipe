@@ -33,6 +33,17 @@ docker_build:
 	--build-arg OVMS_COMMIT=$(OVMS_COMMIT) \
 	-t $(OVMS_MEDIA_DOCKER_IMAGE):$(OVMS_MEDIA_IMAGE_TAG)
 
+run_demos_in_docker:
+	docker run $(OVMS_MEDIA_DOCKER_IMAGE):$(OVMS_MEDIA_IMAGE_TAG) make run_demos 2>&1 | tee test_demos.log 
+	cat test_demos.log | grep -a FPS | grep -v echo
+	if [ `cat test_demos.log | grep -a FPS: | wc -l` != "5" ]; then echo "Some demo was not executed correctly. Check the logs"; fi
+
+	# report error if performance reported for less then 5 demos
+	cat test_demos.log | grep -a FPS: | wc -l | grep -q "5"
+
+# Targets to use inside running mediapipe_ovms container
+run_demos: run_holistic_tracking run_face_detection run_iris_tracking run_object_detection run_pose_tracking
+
 tests: run_hello_ovms
 run_hello_ovms:
 	docker run $(OVMS_MEDIA_DOCKER_IMAGE):$(OVMS_MEDIA_IMAGE_TAG) bazel-bin/mediapipe/examples/desktop/hello_ovms/hello_ovms | grep -q "Output tensor data: 9 - 11"

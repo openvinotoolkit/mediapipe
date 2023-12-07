@@ -192,4 +192,3 @@ RUN bazel build -c opt @mediapipe//mediapipe/examples/desktop/holistic_tracking:
 RUN bazel build -c opt @mediapipe//mediapipe/examples/desktop/face_detection:face_detection_cpu
 RUN bazel build -c opt @mediapipe//mediapipe/examples/desktop/iris_tracking:iris_tracking_cpu
 RUN bazel build -c opt @mediapipe//mediapipe/examples/desktop/pose_tracking:pose_tracking_cpu
-RUN python setup.py install
