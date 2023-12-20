@@ -14,13 +14,13 @@
  * License.
  */
 
-#include "serialization/serialization_calculators.h"
+#include "serialization_calculators.h"
 
 #include <nlohmann/json_fwd.hpp>
 
 #include "kserve.h"
 #include "nlohmann/json.hpp"
-#include "serialization/result_serialization.h"
+#include "result_serialization.h"
 #include "mediapipe/calculators/geti/utils/data_structures.h"
 #include "ocv_common.hpp"
 
