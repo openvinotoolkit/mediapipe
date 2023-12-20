@@ -24,7 +24,7 @@
 #include "mediapipe/calculators/core/begin_loop_calculator.h"
 #include "mediapipe/calculators/core/end_loop_calculator.h"
 #include "mediapipe/framework/calculator_framework.h"
-#include "utils/data_structures.h"
+#include "mediapipe/calculators/geti/utils/data_structures.h"
 
 namespace mediapipe {
 

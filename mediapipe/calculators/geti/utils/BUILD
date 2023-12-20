@@ -19,12 +19,16 @@ cc_library(
 
 cc_library(
     name = "data_structures",
+    visibility = [
+        "//visibility:public",
+    ],
     hdrs = [
         "data_structures.h",
     ],
     deps = [
         "@model_api//:model_api",
-    ]
+    ],
+    alwayslink = 1,
 )
 
 cc_library(

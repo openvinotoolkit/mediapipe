@@ -18,7 +18,7 @@
 
 #include <memory>
 
-#include "inference/kserve.h"
+#include "kserve.h"
 #include "mediapipe/framework/calculator_framework.h"
 #include "mediapipe/framework/packet.h"
 #include "mediapipe/framework/port/opencv_core_inc.h"

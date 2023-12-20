@@ -18,7 +18,7 @@
 
 #include <models/results.h>
 
-#include "data_structures.h"
+#include "mediapipe/calculators/geti/utils/data_structures.h"
 #include "mediapipe/framework/calculator_framework.h"
 #include "mediapipe/framework/formats/image.h"
 #include "mediapipe/framework/formats/image_frame.h"

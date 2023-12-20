@@ -1,6 +1,6 @@
 #include "detection_segmentation_combiner_calculator.h"
 
-#include "utils/data_structures.h"
+#include "mediapipe/calculators/geti/utils/data_structures.h"
 
 namespace mediapipe {
 absl::Status DetectionSegmentationCombinerCalculator::GetContract(

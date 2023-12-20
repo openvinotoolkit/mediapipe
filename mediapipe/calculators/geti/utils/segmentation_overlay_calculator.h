@@ -21,7 +21,7 @@
 
 #include <vector>
 
-#include "data_structures.h"
+#include "mediapipe/calculators/geti/utils/data_structures.h"
 #include "mediapipe/framework/calculator_framework.h"
 #include "mediapipe/framework/formats/image_frame.h"
 #include "mediapipe/framework/formats/image_frame_opencv.h"
