@@ -57,7 +57,7 @@ cc_library(
     ],
     deps = [
         ":openvino_inference_adapter_calculator_cc_proto",
-        ":grpc_predict_v2_cc_proto",
+        "@ovms//src/kfserving_api:kfserving_api_cpp",
         "//mediapipe/framework:calculator_framework",
         "//mediapipe/framework/formats:image_frame_opencv",
         "//mediapipe/framework/port:opencv_core",
