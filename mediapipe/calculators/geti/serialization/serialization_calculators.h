@@ -25,7 +25,7 @@
 #include "mediapipe/framework/port/opencv_core_inc.h"
 #include "mediapipe/framework/port/opencv_imgcodecs_inc.h"
 #include "mediapipe/framework/port/status.h"
-#include "serialization/result_serialization.h"
+#include "result_serialization.h"
 
 namespace mediapipe {
 
