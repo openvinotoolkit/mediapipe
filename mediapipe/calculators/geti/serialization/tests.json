@@ -1,0 +1,511 @@
+[
+    {
+        "test_name": "DetectionTest",
+        "type": "DetectionSerializationCalculator",
+        "input": {
+            "label": "test_label",
+            "probability": 1.0,
+            "shape": {
+                "height": 80.0,
+                "width": 50.0,
+                "x": 0.0,
+                "y": 100.0
+            },
+            "image_size": {
+                "width": 256,
+                "height": 256
+            }
+        },
+        "output": {
+            "maps": [
+                {
+                    "data": "/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAIBAQEBAQIBAQECAgICAgQDAgICAgUEBAMEBgUGBgYFBgYGBwkIBgcJBwYGCAsICQoKCgoKBggLDAsKDAkKCgr/wAALCAAHAAcBAREA/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/9oACAEBAAA/APwDr//Z",
+                    "label_id": "0",
+                    "label_name": "test_label"
+                }
+            ],
+            "predictions": [
+                {
+                    "labels": [
+                        {
+                            "id": "0",
+                            "name": "test_label",
+                            "probability": 1.0
+                        }
+                    ],
+                    "shape": {
+                        "height": 80,
+                        "type": "RECTANGLE",
+                        "width": 50,
+                        "x": 0,
+                        "y": 100
+                    }
+                }
+            ]
+        }
+    },
+    {
+        "test_name": "DetectionClassificationTest",
+        "type": "DetectionClassificationSerializationCalculator",
+        "input": {
+            "label": "test_label",
+            "classification": {
+                "label": "classification_label_id",
+                "probability": 1.0
+            },
+            "probability": 1.0,
+            "shape": {
+                "height": 80.0,
+                "width": 50.0,
+                "x": 0.0,
+                "y": 100.0
+            }
+        },
+        "output": {
+            "predictions": [
+                {
+                    "labels": [
+                        {
+                            "id": "0",
+                            "name": "test_label",
+                            "probability": 1.0
+                        },
+                        {
+                            "id": "0",
+                            "name": "classification_label_id",
+                            "probability": 1.0
+                        }
+                    ],
+                    "shape": {
+                        "height": 80,
+                        "type": "RECTANGLE",
+                        "width": 50,
+                        "x": 0,
+                        "y": 100
+                    }
+                }
+            ]
+        }
+    },
+    {
+        "test_name": "DetectionSegmentationTest",
+        "type": "DetectionSegmentationSerializationCalculator",
+        "input": {
+            "label": "test_label",
+            "segmentation": {
+                "label": "segmentation_label_id",
+                "probability": 1.0,
+                "points": [
+                    {
+                        "x": 0,
+                        "y": 0
+                    },
+                    {
+                        "x": 50,
+                        "y": 50
+                    },
+                    {
+                        "x": 0,
+                        "y": 50
+                    }
+                ]
+            },
+            "probability": 1.0,
+            "shape": {
+                "height": 80.0,
+                "width": 50.0,
+                "x": 0.0,
+                "y": 100.0
+            },
+            "image_size": {
+                "width": 256,
+                "height": 256
+            }
+        },
+        "output": {
+            "maps": [
+                {
+                    "data": "/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAIBAQEBAQIBAQECAgICAgQDAgICAgUEBAMEBgUGBgYFBgYGBwkIBgcJBwYGCAsICQoKCgoKBggLDAsKDAkKCgr/wAALCAAHAAcBAREA/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/9oACAEBAAA/APwDr//Z",
+                    "label_id": "0",
+                    "label_name": "test_label"
+                }
+            ],
+            "predictions": [
+                {
+                    "labels": [
+                        {
+                            "id": "0",
+                            "name": "test_label",
+                            "probability": 1.0
+                        }
+                    ],
+                    "shape": {
+                        "height": 80,
+                        "type": "RECTANGLE",
+                        "width": 50,
+                        "x": 0,
+                        "y": 100
+                    }
+                },
+                {
+                    "labels": [
+                        {
+                            "id": "0",
+                            "name": "segmentation_label_id",
+                            "probability": 1.0
+                        }
+                    ],
+                    "shape": {
+                        "points": [
+                            {
+                                "x": 0,
+                                "y": 0
+                            },
+                            {
+                                "x": 50,
+                                "y": 50
+                            },
+                            {
+                                "x": 0,
+                                "y": 50
+                            }
+                        ],
+                        "type": "POLYGON"
+                    }
+                }
+            ]
+        }
+    },
+    {
+        "test_name": "ClassificationTest",
+        "type": "ClassificationSerializationCalculator",
+        "input": {
+            "label": "test_label_id",
+            "score": 1.0,
+            "image_size": {
+                "width": 256,
+                "height": 256
+            }
+        },
+        "output": {
+            "maps": [
+                {
+                    "data": "/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAIBAQEBAQIBAQECAgICAgQDAgICAgUEBAMEBgUGBgYFBgYGBwkIBgcJBwYGCAsICQoKCgoKBggLDAsKDAkKCgr/wAALCAAHAAcBAREA/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/9oACAEBAAA/APwDr//Z",
+                    "label_id": "0",
+                    "label_name": "test_label_id"
+                }
+            ],
+            "predictions": [
+                {
+                    "labels": [
+                        {
+                            "id": "0",
+                            "name": "test_label_id",
+                            "probability": 1.0
+                        }
+                    ],
+                    "shape": {
+                        "height": 256,
+                        "type": "RECTANGLE",
+                        "width": 256,
+                        "x": 0,
+                        "y": 0
+                    }
+                }
+            ]
+        }
+    },
+    {
+        "test_name": "RotatedDetectionTest",
+        "type": "RotatedDetectionSerializationCalculator",
+        "input": {
+            "label": "test_label",
+            "probability": 1.0,
+            "shape": {
+                "angle": 45.0,
+                "height": 80.0,
+                "width": 50.0,
+                "x": 0.0,
+                "y": 100.0
+            },
+            "image_size": {
+                "width": 256,
+                "height": 256
+            }
+        },
+        "output": {
+            "maps": [
+                {
+                    "data": "/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAIBAQEBAQIBAQECAgICAgQDAgICAgUEBAMEBgUGBgYFBgYGBwkIBgcJBwYGCAsICQoKCgoKBggLDAsKDAkKCgr/wAALCAAHAAcBAREA/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/9oACAEBAAA/APwDr//Z",
+                    "label_id": "0",
+                    "label_name": "test_label"
+                }
+            ],
+            "predictions": [
+                {
+                    "labels": [
+                        {
+                            "id": "0",
+                            "name": "test_label",
+                            "probability": 1.0
+                        }
+                    ],
+                    "shape": {
+                        "angle": 45.0,
+                        "height": 80.0,
+                        "type": "ROTATED_RECTANGLE",
+                        "width": 50.0,
+                        "x": 0.0,
+                        "y": 100.0
+                    }
+                }
+            ]
+        }
+    },
+    {
+        "test_name": "SegmentationTest",
+        "type": "SegmentationSerializationCalculator",
+        "input": {
+            "label": "test_label",
+            "probability": 1.0,
+            "points": [
+                {
+                    "x": 0,
+                    "y": 0
+                },
+                {
+                    "x": 50,
+                    "y": 50
+                },
+                {
+                    "x": 0,
+                    "y": 50
+                }
+            ],
+            "image_size": {
+                "width": 256,
+                "height": 256
+            }
+        },
+        "output": {
+            "maps": [
+                {
+                    "data": "/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAIBAQEBAQIBAQECAgICAgQDAgICAgUEBAMEBgUGBgYFBgYGBwkIBgcJBwYGCAsICQoKCgoKBggLDAsKDAkKCgr/wAALCAAHAAcBAREA/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/9oACAEBAAA/APwDr//Z",
+                    "label_id": "0",
+                    "label_name": "test_label"
+                }
+            ],
+            "predictions": [
+                {
+                    "labels": [
+                        {
+                            "id": "0",
+                            "name": "test_label",
+                            "probability": 1.0
+                        }
+                    ],
+                    "shape": {
+                        "points": [
+                            {
+                                "x": 0,
+                                "y": 0
+                            },
+                            {
+                                "x": 50,
+                                "y": 50
+                            },
+                            {
+                                "x": 0,
+                                "y": 50
+                            }
+                        ],
+                        "type": "POLYGON"
+                    }
+                }
+            ]
+        }
+    },
+    {
+        "test_name": "AnomalyClassificationTest",
+        "type": "AnomalySerializationCalculator",
+        "input": {
+            "task": "classification",
+            "label": "test_label",
+            "probability": 1.0,
+            "objects": [],
+            "image_size": {
+                "width": 256,
+                "height": 128
+            }
+        },
+        "output": {
+            "maps": [
+                {
+                    "data": "/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAIBAQEBAQIBAQECAgICAgQDAgICAgUEBAMEBgUGBgYFBgYGBwkIBgcJBwYGCAsICQoKCgoKBggLDAsKDAkKCgr/wAALCACAAQABAREA/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/9oACAEBAAA/AP5/6KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK/9k=",
+                    "label_id": "anomalous_label",
+                    "label_name": "test_label"
+                }
+            ],
+            "predictions": [
+                {
+                    "labels": [
+                        {
+                            "id": "anomalous_label",
+                            "name": "test_label",
+                            "probability": 1.0
+                        }
+                    ],
+                    "shape": {
+                        "height": 128,
+                        "type": "RECTANGLE",
+                        "width": 256,
+                        "x": 0,
+                        "y": 0
+                    }
+                }
+            ]
+        }
+    },
+    {
+        "test_name": "AnomalyDetectionTest",
+        "type": "AnomalySerializationCalculator",
+        "input": {
+            "task": "detection",
+            "label": "test_label",
+            "probability": 1.0,
+            "objects": [
+                {
+                    "x": 50,
+                    "y": 50,
+                    "width": 100,
+                    "height": 50
+                }
+            ],
+            "image_size": {
+                "width": 256,
+                "height": 128
+            }
+        },
+        "output": {
+            "maps": [
+                {
+                    "data": "/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAIBAQEBAQIBAQECAgICAgQDAgICAgUEBAMEBgUGBgYFBgYGBwkIBgcJBwYGCAsICQoKCgoKBggLDAsKDAkKCgr/wAALCACAAQABAREA/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/9oACAEBAAA/AP5/6KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK/9k=",
+                    "label_id": "anomalous_label",
+                    "label_name": "test_label"
+                }
+            ],
+            "predictions": [
+                {
+                    "labels": [
+                        {
+                            "id": "anomalous_label",
+                            "name": "test_label",
+                            "probability": 1.0
+                        }
+                    ],
+                    "shape": {
+                        "height": 128,
+                        "type": "RECTANGLE",
+                        "width": 256,
+                        "x": 0,
+                        "y": 0
+                    }
+                },
+                {
+                    "labels": [
+                        {
+                            "id": "anomalous_label",
+                            "name": "test_label",
+                            "probability": 1.0
+                        }
+                    ],
+                    "shape": {
+                        "height": 50,
+                        "type": "RECTANGLE",
+                        "width": 100,
+                        "x": 50,
+                        "y": 50
+                    }
+                }
+            ]
+        }
+    },
+    {
+        "test_name": "AnomalySegmentationTest",
+        "type": "AnomalySerializationCalculator",
+        "input": {
+            "task": "segmentation",
+            "label": "test_label",
+            "probability": 1.0,
+            "objects": [
+                {
+                    "x": 50,
+                    "y": 50,
+                    "width": 100,
+                    "height": 50
+                }
+            ],
+            "image_size": {
+                "width": 256,
+                "height": 128
+            }
+        },
+        "output": {
+            "maps": [
+                {
+                    "data": "/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAIBAQEBAQIBAQECAgICAgQDAgICAgUEBAMEBgUGBgYFBgYGBwkIBgcJBwYGCAsICQoKCgoKBggLDAsKDAkKCgr/wAALCACAAQABAREA/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/9oACAEBAAA/AP5/6KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK/9k=",
+                    "label_id": "anomalous_label",
+                    "label_name": "test_label"
+                }
+            ],
+            "predictions": [
+                {
+                    "labels": [
+                        {
+                            "id": "anomalous_label",
+                            "name": "test_label",
+                            "probability": 1.0
+                        }
+                    ],
+                    "shape": {
+                        "height": 128,
+                        "type": "RECTANGLE",
+                        "width": 256,
+                        "x": 0,
+                        "y": 0
+                    }
+                },
+                {
+                    "labels": [
+                        {
+                            "id": "anomalous_label",
+                            "name": "test_label",
+                            "probability": 1.0
+                        }
+                    ],
+                    "shape": {
+                        "points": [
+                            {
+                                "x": 50,
+                                "y": 50
+                            },
+                            {
+                                "x": 150,
+                                "y": 50
+                            },
+                            {
+                                "x": 150,
+                                "y": 100
+                            },
+                            {
+                                "x": 50,
+                                "y": 100
+                            }
+                        ],
+                        "type": "POLYGON"
+                    }
+                }
+            ]
+        }
+    }
+]
