@@ -14,7 +14,7 @@
  * License.
  */
 
-#include "utils/loop_calculators.h"
+#include loop_calculators.h"
 
 namespace mediapipe {
 

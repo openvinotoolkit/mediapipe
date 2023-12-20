@@ -20,7 +20,7 @@
 #include <string>
 #include <vector>
 
-#include "inference/test_utils.h"
+#include "test_utils.h"
 #include "mediapipe/framework/calculator_framework.h"
 #include "mediapipe/framework/calculator_runner.h"
 #include "mediapipe/framework/formats/image_frame.h"

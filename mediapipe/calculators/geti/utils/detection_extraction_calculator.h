@@ -23,7 +23,7 @@
 
 #include <memory>
 
-#include "data_structures.h"
+#include "mediapipe/calculators/geti/utils/data_structures.h"
 #include "mediapipe/framework/calculator_framework.h"
 #include "mediapipe/framework/port/status.h"
 

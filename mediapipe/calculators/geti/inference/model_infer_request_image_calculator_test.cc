@@ -21,7 +21,7 @@
 #include <string>
 #include <vector>
 
-#include "inference/kserve.h"
+#include "kserve.h"
 #include "mediapipe/framework/calculator_framework.h"
 #include "mediapipe/framework/calculator_runner.h"
 #include "mediapipe/framework/formats/image_frame.h"

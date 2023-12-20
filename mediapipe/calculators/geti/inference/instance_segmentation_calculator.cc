@@ -20,7 +20,7 @@
 #include <opencv2/imgproc.hpp>
 #include <string>
 
-#include "inference/utils.h"
+#include "utils.h"
 #include "models/image_model.h"
 
 namespace mediapipe {
