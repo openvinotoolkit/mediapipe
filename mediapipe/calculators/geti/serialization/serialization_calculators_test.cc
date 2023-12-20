@@ -26,9 +26,9 @@
 #include <vector>
 
 #include "gtest/gtest.h"
-#include "inference/anomaly_calculator.h"
-#include "inference/kserve.h"
-#include "inference/test_utils.h"
+#include "anomaly_calculator.h"
+#include "kserve.h"
+#include "mediapipe/framework/calculators/geti/inference/test_utils.h"
 #include "mediapipe/framework/calculator_framework.h"
 #include "mediapipe/framework/calculator_runner.h"
 #include "mediapipe/framework/formats/image_frame.h"
@@ -43,7 +43,7 @@
 #include "models/results.h"
 #include "nlohmann/json.hpp"
 #include "third_party/cpp-base64/base64.h"
-#include "utils/data_structures.h"
+#include "mediapipe/calculators/geti/utils/data_structures.h"
 
 namespace mediapipe {
 

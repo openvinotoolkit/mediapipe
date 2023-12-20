@@ -18,11 +18,11 @@
 
 #include <nlohmann/json_fwd.hpp>
 
-#include "inference/kserve.h"
+#include "kserve.h"
 #include "nlohmann/json.hpp"
 #include "serialization/result_serialization.h"
-#include "utils/data_structures.h"
-#include "utils/ocv_common.hpp"
+#include "mediapipe/calculators/geti/utils/data_structures.h"
+#include "ocv_common.hpp"
 
 namespace mediapipe {
 

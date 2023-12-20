@@ -19,7 +19,7 @@
 #include <vector>
 
 #include "detection_calculator.h"
-#include "inference/test_utils.h"
+#include "test_utils.h"
 #include "mediapipe/framework/calculator_framework.h"
 #include "mediapipe/framework/calculator_runner.h"
 #include "mediapipe/framework/formats/image_frame.h"
@@ -30,7 +30,7 @@
 #include "mediapipe/framework/port/parse_text_proto.h"
 #include "mediapipe/framework/port/status_matchers.h"
 #include "mediapipe/util/image_test_utils.h"
-#include "utils/data_structures.h"
+#include "mediapipe/calculators/geti/utils/data_structures.h"
 
 namespace mediapipe {
 

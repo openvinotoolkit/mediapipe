@@ -19,9 +19,9 @@
 #include <memory>
 #include <string>
 
-#include "inference/utils.h"
+#include "utils.h"
 #include "models/image_model.h"
-#include "utils/data_structures.h"
+#include "mediapipe/calculators/geti/utils/data_structures.h"
 
 namespace mediapipe {
 

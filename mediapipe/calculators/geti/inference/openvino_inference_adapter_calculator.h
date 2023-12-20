@@ -19,7 +19,7 @@
 
 #include <memory>
 
-#include "inference/openvino_inference_adapter_calculator.pb.h"
+#include "mediapipe/calculators/geti/inference/openvino_inference_adapter_calculator.pb.h"
 #include "mediapipe/framework/calculator_framework.h"
 #include "mediapipe/framework/packet.h"
 #include "mediapipe/framework/port/status.h"

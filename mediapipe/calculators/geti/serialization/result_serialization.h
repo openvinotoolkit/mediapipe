@@ -4,7 +4,7 @@
 #include "mediapipe/framework/port/opencv_imgcodecs_inc.h"
 #include "nlohmann/json.hpp"
 #include "third_party/cpp-base64/base64.h"
-#include "utils/data_structures.h"
+#include "mediapipe/calculators/geti/utils/data_structures.h"
 
 namespace geti {
 static inline std::string base64_encode_mat(cv::Mat image) {

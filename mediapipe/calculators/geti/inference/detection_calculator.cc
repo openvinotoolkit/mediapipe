@@ -20,8 +20,8 @@
 #include <string>
 #include <vector>
 
-#include "inference/utils.h"
-#include "utils/data_structures.h"
+#include "utils.h"
+#include "mediapipe/calculators/geti/utils/data_structures.h"
 
 namespace mediapipe {
 
