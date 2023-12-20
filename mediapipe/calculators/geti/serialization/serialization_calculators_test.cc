@@ -27,8 +27,8 @@
 
 #include "gtest/gtest.h"
 #include "anomaly_calculator.h"
-#include "kserve.h"
-#include "mediapipe/framework/calculators/geti/inference/test_utils.h"
+#include "mediapipe/calculators/geti/inference/kserve.h"
+#include "mediapipe/calculators/geti/inference/test_utils.h"
 #include "mediapipe/framework/calculator_framework.h"
 #include "mediapipe/framework/calculator_runner.h"
 #include "mediapipe/framework/formats/image_frame.h"
