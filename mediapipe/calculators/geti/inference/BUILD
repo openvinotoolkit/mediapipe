@@ -63,7 +63,7 @@ cc_library(
         "//mediapipe/framework/port:opencv_core",
         "//mediapipe/framework/port:opencv_imgcodecs",
         "//mediapipe/framework/port:opencv_imgproc",
-        "//utils:data_structures",
+        "//mediapipe/calculators/geti/utils:data_structures",
         ":inference_utils",
         "@model_api//:model_api",
     ],
@@ -76,7 +76,7 @@ cc_library(
 cc_library(
     name = "inference_utils",
     hdrs = ["utils.h"],
-    deps = ["//utils:data_structures"]
+    deps = ["//mediapipe/calculators/geti/utils:data_structures"]
 )
 
 cc_library(

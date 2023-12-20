@@ -4,7 +4,7 @@ cc_library(
         "result_serialization.h"
     ],
     deps = [
-        "//utils:data_structures",
+        "//mediapipe/calculators/geti/utils:data_structures",
         "//third_party/cpp-base64:cpp-base64"
     ]
 )
@@ -25,7 +25,7 @@ cc_library(
 
     ],
     deps = [
-        "//inference:inference_calculators",
+        "//mediapipe/calculators/geti/inference:inference_calculators",
         ":serialization"
     ],
     visibility = [
@@ -42,7 +42,7 @@ cc_test(
     ],
     deps = [
         ":calculators",
-        "//inference:test_deps"
+        "//mediapipe/calculators/geti/inference:test_deps"
     ]
 )
 
