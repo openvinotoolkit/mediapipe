@@ -47,7 +47,7 @@ cc_library(
         "modelapiovmsadapter.hpp"
     ],
     deps = [
-        "//mediapipe/framework/port:logging", # TODO remove logs but need better error handling/reporting in Model API
+        "//mediapipe/framework/port:logging",
         "@ovms//src:ovms_header",
         "@model_api//:model_api",
         "@linux_openvino//:openvino",

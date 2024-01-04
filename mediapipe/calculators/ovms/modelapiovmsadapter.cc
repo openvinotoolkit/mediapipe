@@ -67,10 +67,7 @@ using std::endl;
 #pragma GCC diagnostic ignored "-Wunused-function"
 using InferenceOutput = std::map<std::string, ov::Tensor>;
 using InferenceInput = std::map<std::string, ov::Tensor>;
-// TODO
-// * why std::map
-// * no ret code from infer()
-// * no ret code from load()
+
 namespace ovms {
 static OVMS_DataType OVPrecision2CAPI(ov::element::Type_t datatype);
 static ov::element::Type_t CAPI2OVPrecision(OVMS_DataType datatype);
