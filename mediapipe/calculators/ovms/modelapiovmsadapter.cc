@@ -162,14 +162,14 @@ public:
         if (metadata)
             OVMS_ServableMetadataDelete(metadata);
     }
-}
+};
 
 void OVMSInferenceAdapter::loadModel(const std::shared_ptr<const ov::Model>& model, ov::Core& core,
     const std::string& device, const ov::AnyMap& compilationConfig) {
     // no need to load but we need to extract metadata
     OVMS_ServableMetadata* servableMetadata = nullptr;
     ASSERT_CAPI_STATUS_NULL(OVMS_GetServableMetadata(cserver, servableName.c_str(), servableVersion, &servableMetadata));
-    ServableMetadataGuard(servableMetadata);
+    ServableMetadataGuard guard(servableMetadata);
     uint32_t inputCount = 0;
     uint32_t outputCount = 0;
     ASSERT_CAPI_STATUS_NULL(OVMS_ServableMetadataInputCount(servableMetadata, &inputCount));
@@ -198,7 +198,6 @@ void OVMSInferenceAdapter::loadModel(const std::shared_ptr<const ov::Model>& mod
     const ov::AnyMap* servableMetadataRtInfo;
     ASSERT_CAPI_STATUS_NULL(OVMS_ServableMetadataInfo(servableMetadata, reinterpret_cast<const void**>(&servableMetadataRtInfo)));
     this->modelConfig = *servableMetadataRtInfo;
-    OVMS_ServableMetadataDelete(servableMetadata);
 }
 
 ov::PartialShape OVMSInferenceAdapter::getInputShape(const std::string& inputName) const {

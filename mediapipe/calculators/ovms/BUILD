@@ -145,8 +145,8 @@ cc_test(
         "test_data/config.json",
         "test_data/dummy/1/dummy.bin",
         "test_data/dummy/1/dummy.xml",
-        "test_data/add_two_inputs_model/1/dummy.bin",
-        "test_data/add_two_inputs_model/1/dummy.xml",
+        "test_data/add_two_inputs_model/1/add.bin",
+        "test_data/add_two_inputs_model/1/add.xml",
     ],
     copts = ["-Iexternal/ovms/src","-Isrc"],
 )
