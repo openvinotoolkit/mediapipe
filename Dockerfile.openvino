@@ -35,7 +35,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         git \
         wget \
         unzip \
-        nlohmann-json3-dev \
         nodejs \
         npm \
         python3-dev \

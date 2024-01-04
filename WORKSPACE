@@ -842,3 +842,9 @@ new_git_repository(
     build_file = "@_model-api//:BUILD",
     commit = "03a6cee5d486ee9eabb625e4388e69fe9c50ef20"
 )
+
+git_repository(
+    name = "nlohmann_json",
+    remote = "https://github.com/nlohmann/json/",
+    tag = "v3.11.3",
+)
