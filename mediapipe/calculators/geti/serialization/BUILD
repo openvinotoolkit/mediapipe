@@ -26,7 +26,8 @@ cc_library(
     ],
     deps = [
         "//mediapipe/calculators/geti/inference:inference_calculators",
-        ":serialization"
+        ":serialization",
+        "@nlohmann_json//:json",
     ],
     visibility = [
         "//visibility:public",
