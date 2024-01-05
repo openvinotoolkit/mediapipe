@@ -154,22 +154,12 @@ InferenceOutput OVMSInferenceAdapter::infer(const InferenceInput& input) {
     return output;
 }
 
-class ServableMetadataGuard {
-    OVMS_ServableMetadata* metadata;
-public:
-    ServableMetadataGuard(OVMS_ServableMetadata* metadata) : metadata(metadata) {}
-    ~ServableMetadataGuard() {
-        if (metadata)
-            OVMS_ServableMetadataDelete(metadata);
-    }
-};
-
 void OVMSInferenceAdapter::loadModel(const std::shared_ptr<const ov::Model>& model, ov::Core& core,
     const std::string& device, const ov::AnyMap& compilationConfig) {
     // no need to load but we need to extract metadata
     OVMS_ServableMetadata* servableMetadata = nullptr;
     ASSERT_CAPI_STATUS_NULL(OVMS_GetServableMetadata(cserver, servableName.c_str(), servableVersion, &servableMetadata));
-    ServableMetadataGuard guard(servableMetadata);
+    CREATE_GUARD(metadataGuard, OVMS_ServableMetadata, servableMetadata);
     uint32_t inputCount = 0;
     uint32_t outputCount = 0;
     ASSERT_CAPI_STATUS_NULL(OVMS_ServableMetadataInputCount(servableMetadata, &inputCount));

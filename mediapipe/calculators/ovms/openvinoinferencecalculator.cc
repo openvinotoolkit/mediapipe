@@ -317,7 +317,7 @@ static ov::Tensor convertTFLiteTensor2OVTensor(const TfLiteTensor& t) {
     ov::Shape shape;
     // for some reason TfLite tensor does not have bs dim
     shape.emplace_back(1);
-    // No support scalars and no data tensors with 0-dim
+    // No support for scalars and no data tensors with 0-dim
     for (int i = 0; i < t.dims->size; ++i) {
         shape.emplace_back(t.dims->data[i]);
     }
