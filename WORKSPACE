@@ -671,7 +671,7 @@ load("@rules_python//python:pip.bzl", "pip_parse")
 
 pip_parse(
     name = "pip_deps",
-    requirements_lock = "@ovms//src:bindings/python/tests/requirements.txt",
+    requirements_lock = "@ovms//src/python/binding:tests/requirements.txt",
 )
 
 ########################################################### Python support end
