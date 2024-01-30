@@ -644,7 +644,7 @@ load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 git_repository(
     name = "ovms",
     remote = "https://github.com/openvinotoolkit/model_server",
-    commit = "fd59153fbdc3c4831611d4d26eba75cfcab14971", # Fix building without MediaPipe (#2129)
+    commit = "aebe267094fe7ba150b75bbb6e38f1278de74c61", # Improve bazel build (#2245)
 )
 
 # DEV ovms - adjust local repository path for build
