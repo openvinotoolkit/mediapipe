@@ -15,6 +15,7 @@
 //*****************************************************************************
 #include "modelapiovmsadapter.hpp"
 
+#include <fstream>
 #include <iostream>
 #include <map>
 #include <memory>
@@ -36,6 +37,8 @@ namespace mediapipe {
 
 using std::endl;
 
+int INFER_COUNTER = 1;
+int OUTPUT_COUNTER = 1;
 
 #define THROW_IF_CIRCULAR_ERR(C_API_CALL)                                       \
     {                                                                           \
@@ -81,10 +84,22 @@ OVMSInferenceAdapter::OVMSInferenceAdapter(const std::string& servableName, uint
     } else {
         OVMS_ServerNew(&this->cserver);
     }
+
+    response = nullptr;
 }
 
 OVMSInferenceAdapter::~OVMSInferenceAdapter() {
     LOG(INFO) << "OVMSAdapter destr";
+}
+
+static void writeToFile(std::stringstream& stream, std::string name)
+{
+    std::ofstream ofs;
+    ofs.open(name);
+    ofs << stream.rdbuf();
+    ofs.close();
+
+    return;
 }
 
 InferenceOutput OVMSInferenceAdapter::infer(const InferenceInput& input) {
@@ -101,6 +116,20 @@ InferenceOutput OVMSInferenceAdapter::infer(const InferenceInput& input) {
     // extract single tensor
     for (const auto& [name, input_tensor] : input) {
         const char* realInputName = name.c_str();
+
+        const u_int8_t* input_tensor_access = reinterpret_cast<u_int8_t*>(input_tensor.data());
+        std::stringstream ss;
+        ss << " Adapter received tensor datatype:" << input_tensor.get_element_type() << " size:" << input_tensor.get_size() << " [ ";
+        for (size_t x = 0; x < input_tensor.get_size(); ++x) {
+            ss << input_tensor_access[x] << " ";
+        }
+        ss << " ]";
+        //LOG(INFO) << ss.str();
+        std::string fname = std::string("./outputs/input");
+        fname += std::to_string(INFER_COUNTER);
+        OUTPUT_COUNTER = 1;
+        writeToFile(ss, fname);
+ 
         const auto& ovinputShape = input_tensor.get_shape();
         if (std::any_of(ovinputShape.begin(), ovinputShape.end(), [](size_t dim) {
                 return dim > std::numeric_limits<int64_t>::max();})) {
@@ -120,7 +149,7 @@ InferenceOutput OVMSInferenceAdapter::infer(const InferenceInput& input) {
     //////////////////
     //  INFERENCE
     //////////////////
-    OVMS_InferenceResponse* response = nullptr;
+    this->response = nullptr;
     status = OVMS_Inference(cserver, request, &response);
     if (nullptr != status) {
         uint32_t code = 0;
@@ -151,6 +180,7 @@ InferenceOutput OVMSInferenceAdapter::infer(const InferenceInput& input) {
         ASSERT_CAPI_STATUS_NULL(OVMS_InferenceResponseOutput(response, i, &outputName, &datatype, &shape, &dimCount, &voutputData, &bytesize, &bufferType, &deviceId));
         output[outputName] = makeOvTensor(datatype, shape, dimCount, voutputData, bytesize);
     }
+    INFER_COUNTER++;
     return output;
 }
 
@@ -286,6 +316,21 @@ static ov::Tensor makeOvTensor(OVMS_DataType datatype, const int64_t* shape, siz
     // here we make copy of underlying OVMS repsonse tensor
     ov::Tensor output(CAPI2OVPrecision(datatype), ovShape);
     std::memcpy(output.data(), voutputData, bytesize);
+
+    const u_int8_t* input_tensor_access = reinterpret_cast<u_int8_t*>(output.data());
+    std::stringstream ss;
+    ss << " Adapter produced tensor datatype:" << output.get_element_type() << " size:" << output.get_size() << " [ ";
+    for (size_t x = 0; x < output.get_size(); ++x) {
+        ss << input_tensor_access[x] << " ";
+    }
+    ss << " ]";
+    //LOG(INFO) << ss.str();
+    std::string fname = std::string("./outputs/output");
+    fname += std::to_string(INFER_COUNTER);
+    fname += std::string("-");
+    fname += std::to_string(OUTPUT_COUNTER++);
+    writeToFile(ss, fname);
+
     return output;
 }
 

@@ -23,6 +23,11 @@
 #include "utils.h"
 #include "mediapipe/calculators/geti/utils/data_structures.h"
 
+#include <fstream>
+
+int DET_INFER_COUNTER = 1;
+int DET_OUTPUT_COUNTER = 1;
+
 namespace mediapipe {
 
 absl::Status DetectionCalculator::GetContract(CalculatorContract *cc) {
@@ -64,6 +69,16 @@ absl::Status DetectionCalculator::Open(CalculatorContext *cc) {
   return absl::OkStatus();
 }
 
+static void writeToFile(std::stringstream& stream, std::string name)
+{
+    std::ofstream ofs;
+    ofs.open(name);
+    ofs << stream.rdbuf();
+    ofs.close();
+
+    return;
+}
+
 absl::Status DetectionCalculator::Process(CalculatorContext *cc) {
   LOG(INFO) << "DetectionCalculator::Process()";
   if (cc->Inputs().Tag("IMAGE").IsEmpty()) {
@@ -78,13 +93,8 @@ absl::Status DetectionCalculator::Process(CalculatorContext *cc) {
   // Run Inference model
   std::unique_ptr<GetiDetectionResult> result =
       std::make_unique<GetiDetectionResult>();
-  std::unique_ptr<DetectionResult> inference_result;
-  if (tiler) {
-    inference_result = std::unique_ptr<DetectionResult>(
-        static_cast<DetectionResult *>(tiler->run(cvimage).release()));
-  } else {
-    inference_result = model->infer(cvimage);
-  }
+
+  auto inference_result = model->infer(cvimage);
 
   result->objects = {};
   for (auto &obj : inference_result->objects) {
@@ -94,23 +104,43 @@ absl::Status DetectionCalculator::Process(CalculatorContext *cc) {
   result->image_size = cvimage.size();
 
   cv::Rect roi(0, 0, cvimage.cols, cvimage.rows);
-
+  size_t shape_shift;
   if (inference_result->saliency_map) {
-    size_t shape_shift =
+    shape_shift =
         (inference_result->saliency_map.get_shape().size() > 3) ? 1 : 0;
 
     inference_result->saliency_map;
     for (size_t i = 0; i < labels.size(); i++) {
+      cv::Mat mat = wrap_saliency_map_tensor_to_mat(inference_result->saliency_map,
+                                           shape_shift, i).clone();
       result->maps.push_back(
-          {wrap_saliency_map_tensor_to_mat(inference_result->saliency_map,
-                                           shape_shift, i),
-           roi, labels[i]});
+          {mat, roi, labels[i]});
     }
   }
+
+  std::stringstream xx;
+  xx << " result->maps[0].image: " << result->maps[0].image;
+
+  std::string fname = std::string("./DETMAPoutputs/output");
+  fname += std::to_string(DET_INFER_COUNTER);
+  writeToFile(xx, fname);
+
   LOG(INFO) << "completed detection inference";
 
   cc->Outputs().Tag("DETECTIONS").Add(result.release(), cc->InputTimestamp());
 
+  const u_int8_t* input_tensor_access = reinterpret_cast<u_int8_t*>(inference_result->saliency_map.data());
+  std::stringstream ss;
+  ss << " inference_result->saliency_map:" << inference_result->saliency_map.get_element_type() << " size:" << inference_result->saliency_map.get_size();
+  ss << " shape_shift: " << shape_shift << " labels.size(): " << labels.size() << " [ ";
+  for (size_t x = 0; x < inference_result->saliency_map.get_size(); ++x) {
+      ss << input_tensor_access[x] << " ";
+  }
+  ss << " ]";
+
+  fname = std::string("./DEToutputs/output");
+  fname += std::to_string(DET_INFER_COUNTER++);
+  writeToFile(ss, fname);
   return absl::OkStatus();
 }
 

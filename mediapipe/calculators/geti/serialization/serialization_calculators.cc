@@ -23,6 +23,8 @@
 #include "result_serialization.h"
 #include "mediapipe/calculators/geti/utils/data_structures.h"
 
+#include <fstream>
+
 namespace mediapipe {
 
 template <class T>
@@ -41,6 +43,17 @@ absl::Status SerializationCalculator<T>::Open(CalculatorContext *cc) {
   return absl::OkStatus();
 }
 
+int SERIAL_OUTPUT_COUNTER = 1;
+static void writeToFile(std::stringstream& stream, std::string name)
+{
+    std::ofstream ofs;
+    ofs.open(name);
+    ofs << stream.rdbuf();
+    ofs.close();
+
+    return;
+}
+
 template <class T>
 absl::Status SerializationCalculator<T>::Process(CalculatorContext *cc) {
   LOG(INFO) << "SerializationCalculator::Process()";
@@ -57,6 +70,13 @@ absl::Status SerializationCalculator<T>::Process(CalculatorContext *cc) {
   auto data = geti::serialize(result, include_xai);
   auto param = inference::InferParameter();
   param.mutable_string_param()->assign(data.dump());
+
+  std::stringstream ss;
+  ss << "include_xai: " << include_xai << " " << data.dump();
+  std::string fname = std::string("./serialize_outputs/output");
+  fname += std::to_string(SERIAL_OUTPUT_COUNTER++);
+  writeToFile(ss, fname);
+
   response->mutable_parameters()->insert({"predictions", param});
   cc->Outputs()
       .Tag("RESPONSE")
