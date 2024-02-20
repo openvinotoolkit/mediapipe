@@ -20,7 +20,7 @@
 #include <sstream>
 #include <unordered_map>
 
-#include <adapters/inference_adapter.h>  // model_api/model_api/cpp/adapters/include/adapters/inference_adapter.h
+#include <adapters/inference_adapter.h>  // TODO fix path  model_api/model_api/cpp/adapters/include/adapters/inference_adapter.h
 #include <openvino/core/shape.hpp>
 #include <openvino/openvino.hpp>
 
@@ -79,6 +79,8 @@ const std::string MPTENSORS_TAG{"TENSORS"};
 const std::string TFLITE_TENSOR_TAG{"TFLITE_TENSOR"};
 const std::string TFLITE_TENSORS_TAG{"TFLITE_TENSORS"};
 
+const std::vector<std::string> supportedTags = {SESSION_TAG, OVTENSOR_TAG, OVTENSORS_TAG, TFTENSOR_TAG, TFTENSORS_TAG, MPTENSOR_TAG, MPTENSORS_TAG, TFLITE_TENSOR_TAG, TFLITE_TENSORS_TAG};
+
 using TFSDataType = tensorflow::DataType;
 
 // Function from ovms/src/string_utils.h
@@ -94,6 +96,27 @@ bool startsWith(const std::string& str, const std::string& prefix) {
             return c == *(it++);
         });
     return allOf;
+}
+
+// Function from ovms/src/string_utils.h
+std::vector<std::string> tokenize(const std::string& str, const char delimiter) {
+    std::vector<std::string> tokens;
+    std::string token;
+    std::istringstream iss(str);
+    while (std::getline(iss, token, delimiter)) {
+        tokens.push_back(token);
+    }
+
+    return tokens;
+}
+
+// Function from ovms/src/string_utils.h
+bool endsWith(const std::string& str, const std::string& match) {
+    auto it = match.begin();
+    return str.size() >= match.size() &&
+           std::all_of(std::next(str.begin(), str.size() - match.size()), str.end(), [&it](const char& c) {
+               return ::tolower(c) == ::tolower(*(it++));
+           });
 }
 
 TFSDataType getPrecisionAsDataType(ov::element::Type_t precision) {
@@ -317,7 +340,7 @@ static ov::Tensor convertTFLiteTensor2OVTensor(const TfLiteTensor& t) {
     ov::Shape shape;
     // for some reason TfLite tensor does not have bs dim
     shape.emplace_back(1);
-    // No support for scalars and no data tensors with 0-dim
+    // TODO: Support scalars and no data tensors with 0-dim
     for (int i = 0; i < t.dims->size; ++i) {
         shape.emplace_back(t.dims->data[i]);
     }
@@ -333,12 +356,88 @@ class OpenVINOInferenceCalculator : public CalculatorBase {
     std::unique_ptr<tflite::Interpreter> interpreter_ = absl::make_unique<tflite::Interpreter>();
     bool initialized = false;
 
+    static bool ValidateTagToNames(CalculatorContract* cc)
+    {
+        std::vector<std::string> inputTypes;
+        for (const std::string& tag : cc->Inputs().GetTags()) {
+            inputTypes.push_back(tokenize(tag, ':')[0]);
+            LOG(INFO) << "input: " << tokenize(tag, ':')[0];
+        }
+        const auto& options = cc->Options<OpenVINOInferenceCalculatorOptions>();
+        for (const auto& [key, value] : options.tag_to_input_tensor_names()) {
+            bool nameMatch = false;
+            for (const auto& supportedTag : supportedTags) {
+                if ( startsWith(key, supportedTag)){
+                    if (endsWith(key, "S") && !endsWith(supportedTag, "S"))
+                        continue;
+
+                    LOG(INFO) << "startsWith: " << key << " tag " << supportedTag;
+                    for (const auto& graphInput : inputTypes) {
+                        if (startsWith(graphInput, supportedTag)) {
+                            if (endsWith(graphInput, "S") && !endsWith(supportedTag, "S"))
+                                continue;
+                            LOG(INFO) << "startsWith2: " << graphInput << " tag " << supportedTag;
+                            nameMatch = true;
+                            break;
+                        }
+                    }
+                }
+                if (nameMatch)
+                    break;
+            }
+
+            if (!nameMatch)
+            {
+                LOG(ERROR) << "OpenVINOInferenceCalculator GetContract error. Input stream names mismatch for tag_to_input_tensor_names name key " << key;
+                return nameMatch;
+            } 
+        }
+
+        std::vector<std::string> outputTypes;
+        for (const std::string& tag : cc->Outputs().GetTags()) {
+            outputTypes.push_back(tokenize(tag, ':')[0]);
+            LOG(INFO) << "output: " << tokenize(tag, ':')[0];
+        }
+        for (const auto& [key, value] : options.tag_to_output_tensor_names()) {
+            bool nameMatch = false;
+            for (const auto& supportedTag : supportedTags) {
+                if (startsWith(key, supportedTag)){
+                    if (endsWith(key, "S") && !endsWith(supportedTag, "S"))
+                        continue;
+
+                    for (const auto& graphOutput : outputTypes) {
+                        if (startsWith(graphOutput, supportedTag)) {
+                            if (endsWith(graphOutput, "S") && !endsWith(supportedTag, "S"))
+                                continue;
+                            nameMatch = true;
+                            break;
+                        }
+                    }
+                }
+                
+                if (nameMatch)
+                    break;
+            }
+
+            if (!nameMatch)
+            {
+                LOG(ERROR) << "OpenVINOInferenceCalculator GetContract error. Putput stream names mismatch for tag_to_output_tensor_names name key " << key;
+                return nameMatch;
+            } 
+        }
+
+        LOG(INFO) << "MATCH";
+        return true;
+    }
+
 public:
     static absl::Status GetContract(CalculatorContract* cc) {
         LOG(INFO) << "OpenVINOInferenceCalculator GetContract start";
         RET_CHECK(!cc->Inputs().GetTags().empty());
         RET_CHECK(!cc->Outputs().GetTags().empty());
         RET_CHECK(cc->InputSidePackets().HasTag(SESSION_TAG));
+        RET_CHECK(ValidateTagToNames(cc));
+
         for (const std::string& tag : cc->Inputs().GetTags()) {
             // could be replaced with absl::StartsWith when migrated to MP
             if (startsWith(tag, OVTENSORS_TAG)) {
@@ -409,6 +508,7 @@ public:
         LOG(INFO) << "OpenVINOInferenceCalculator Close";
         return absl::OkStatus();
     }
+
     absl::Status Open(CalculatorContext* cc) final {
         LOG(INFO) << "OpenVINOInferenceCalculator Open start";
         session = cc->InputSidePackets()
@@ -570,6 +670,7 @@ public:
                 cc->Outputs().Tag(tag).Add(
                     tensors.release(),
                     cc->InputTimestamp());
+                //break; // TODO FIXME order of outputs
                 // no need to break since we only have one tag
                 // create concatenator calc
             } else if (startsWith(tag, MPTENSORS_TAG)) {
@@ -598,9 +699,11 @@ public:
                 cc->Outputs().Tag(tag).Add(
                     tensors.release(),
                     cc->InputTimestamp());
+                //break; // TODO FIXME order of outputs
                 // no need to break since we only have one tag
                 // create concatenator calc
             } else if (startsWith(tag, TFLITE_TENSORS_TAG)) {
+                // TODO FIXME use output_order_list
                 LOG(INFO) << "OVMS calculator will process vector<TfLiteTensor>";
                 auto outputStreamTensors = std::vector<TfLiteTensor>();
                 if (!this->initialized) {
@@ -616,7 +719,7 @@ public:
                         }
                         interpreter_->SetTensorParametersReadWrite(
                                         tensorId,
-                                        kTfLiteFloat32,
+                                        kTfLiteFloat32, // TODO datatype
                                         name.c_str(),
                                         tfliteshape,
                                         TfLiteQuantization());
