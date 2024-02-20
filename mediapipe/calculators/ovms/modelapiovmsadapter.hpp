@@ -48,7 +48,6 @@ class OVMSInferenceAdapter : public ::InferenceAdapter {
     std::vector<std::string> outputNames;
     shapes_min_max_t inShapesMinMaxes;
     ov::AnyMap modelConfig;
-    OVMS_InferenceResponse* response;
 
 public:
     OVMSInferenceAdapter(const std::string& servableName, uint32_t servableVersion = 0, OVMS_Server* server = nullptr);
