@@ -74,65 +74,7 @@ absl::Status AnomalyCalculator::Process(CalculatorContext *cc) {
 
   const cv::Mat &cvimage = cc->Inputs().Tag("IMAGE").Get<cv::Mat>();
 
-  LOG(INFO) << "Hi";
-  LOG(INFO) << cvimage.size();
-
-  InferenceInput inputs;
-  InferenceResult inference_result;
-  const ImageInputData& ImageInputData = cvimage;
-  const InputData& inputData = static_cast<const InputData&>(ImageInputData);
-
-  auto internalModelData = model->preprocess(inputData, inputs);
-  inference_result.outputsData = ia->infer(inputs);
-  inference_result.internalModelData = std::move(internalModelData);
-
-  {
-    for (auto& v: inference_result.outputsData) {
-      std::cout << v.first << std::endl;
-    }
-    std::string outputName = "258";
-    ov::Tensor predictions = inference_result.outputsData[outputName];
-    const auto& inputImgSize = inference_result.internalModelData->asRef<InternalImageModelData>();
-
-    double pred_score;
-    std::string pred_label;
-    cv::Mat anomaly_map;
-    cv::Mat pred_mask;
-    std::vector<cv::Rect> pred_boxes;
-    if (predictions.get_shape().size() == 1) {
-        pred_score = predictions.data<float>()[0];
-    } else {
-        const ov::Layout& layout = getLayoutFromShape(predictions.get_shape());
-        const ov::Shape& predictionsShape = predictions.get_shape();
-        anomaly_map = cv::Mat(static_cast<int>(predictionsShape[ov::layout::height_idx(layout)]),
-                              static_cast<int>(predictionsShape[ov::layout::width_idx(layout)]),
-                              CV_32FC1,
-                              predictions.data<float>());
-        // find the max predicted score
-        cv::minMaxLoc(anomaly_map, NULL, &pred_score);
-    }
-
-    std::cout << anomaly_map.size() << std::endl;
-
-    float pixelThreshold = 46.0937;
-    pred_mask = anomaly_map >= pixelThreshold;
-    pred_mask.convertTo(pred_mask, CV_8UC1, 1 / 255.);
-    std::cout << "first resize..." << std::endl;
-    cv::resize(pred_mask, pred_mask, cv::Size{inputImgSize.inputImgWidth, inputImgSize.inputImgHeight});
-    std::cout << "after first resize..." << std::endl;
-    //anomaly_map = normalize(anomaly_map, pixelThreshold);
-    anomaly_map.convertTo(anomaly_map, CV_8UC1, 255);
-
-    if (!anomaly_map.empty()) {
-        cv::resize(anomaly_map, anomaly_map, cv::Size{inputImgSize.inputImgWidth, inputImgSize.inputImgHeight});
-    }
-
-    std::cout << "after second resize..." << std::endl;
-
-    std::cout << pred_mask.size() << std::endl;
-  }
-
-  auto infer_result = static_cast<AnomalyResult*>(model->postprocess(inference_result).release());
+  auto infer_result = model->infer(cvimage);
 
   auto result = std::make_unique<geti::InferenceResult>();
 
