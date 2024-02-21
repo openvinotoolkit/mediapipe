@@ -4,242 +4,133 @@
 #include "mediapipe/framework/port/opencv_imgcodecs_inc.h"
 #include "nlohmann/json.hpp"
 #include "third_party/cpp-base64/base64.h"
-#include "mediapipe/calculators/geti/utils/data_structures.h"
+#include "../utils/data_structures.h"
+
+namespace cv {
+inline void to_json(nlohmann ::json& nlohmann_json_j,
+                    const cv ::Point& nlohmann_json_t) {
+  nlohmann_json_j["x"] = nlohmann_json_t.x;
+  nlohmann_json_j["y"] = nlohmann_json_t.y;
+}
+
+inline void to_json(nlohmann ::json& nlohmann_json_j,
+                    const cv ::Rect& nlohmann_json_t) {
+  nlohmann_json_j["x"] = nlohmann_json_t.x;
+  nlohmann_json_j["y"] = nlohmann_json_t.y;
+  nlohmann_json_j["width"] = nlohmann_json_t.width;
+  nlohmann_json_j["height"] = nlohmann_json_t.height;
+  nlohmann_json_j["type"] = "RECTANGLE";
+}
+
+inline void to_json(nlohmann ::json& nlohmann_json_j,
+                    const cv ::RotatedRect& nlohmann_json_t) {
+  nlohmann_json_j["x"] = nlohmann_json_t.center.x;
+  nlohmann_json_j["y"] = nlohmann_json_t.center.y;
+  nlohmann_json_j["width"] = nlohmann_json_t.size.width;
+  nlohmann_json_j["height"] = nlohmann_json_t.size.height;
+  nlohmann_json_j["angle"] = nlohmann_json_t.angle;
+  nlohmann_json_j["type"] = "ROTATED_RECTANGLE";
+}
+}  // namespace cv
 
 namespace geti {
+
 static inline std::string base64_encode_mat(cv::Mat image) {
   std::vector<uchar> buf;
   if (!image.empty()) cv::imencode(".jpg", image, buf);
-  auto *enc_msg = reinterpret_cast<unsigned char *>(buf.data());
+  auto* enc_msg = reinterpret_cast<unsigned char*>(buf.data());
   return base64_encode(enc_msg, buf.size());
 }
 
-static inline nlohmann::json add_maps(const std::vector<SaliencyMap> &maps) {
-  auto json_maps = nlohmann::json::array();
-  for (auto &map : maps) {
-    if (!map.image.empty()) {
-      json_maps.push_back({{"label_id", map.label.label_id},
-                           {"label_name", map.label.label},
-                           {"data", base64_encode_mat(map.image)}});
+inline void to_json(nlohmann ::json& nlohmann_json_j,
+                    const SaliencyMap& nlohmann_json_t) {
+  nlohmann_json_j["data"] = base64_encode_mat(nlohmann_json_t.image);
+  nlohmann_json_j["label_id"] = nlohmann_json_t.label.label_id;
+}
+
+inline void to_json(nlohmann ::json& nlohmann_json_j,
+                    const LabelResult& nlohmann_json_t) {
+  nlohmann_json_j["probability"] = nlohmann_json_t.probability;
+  nlohmann_json_j["id"] = nlohmann_json_t.label.label_id;
+}
+inline void to_json(nlohmann ::json& nlohmann_json_j,
+                    const PolygonPrediction& nlohmann_json_t) {
+  nlohmann_json_j["labels"] = nlohmann_json_t.labels;
+  nlohmann_json_j["shape"]["points"] = nlohmann_json_t.shape;
+  nlohmann_json_j["shape"]["type"] = "POLYGON";
+}
+
+inline void to_json(nlohmann ::json& nlohmann_json_j,
+                    const RectanglePrediction& nlohmann_json_t) {
+  nlohmann_json_j["labels"] = nlohmann_json_t.labels;
+  nlohmann_json_j["shape"] = nlohmann_json_t.shape;
+}
+
+inline void to_json(nlohmann ::json& nlohmann_json_j,
+                    const RotatedRectanglePrediction& nlohmann_json_t) {
+  nlohmann_json_j["labels"] = nlohmann_json_t.labels;
+  nlohmann_json_j["shape"] = nlohmann_json_t.shape;
+}
+
+inline void to_json(nlohmann ::json& nlohmann_json_j,
+                    const InferenceResult& nlohmann_json_t) {
+  nlohmann::json rects = nlohmann_json_t.rectangles;
+  nlohmann::json rotated_rects = nlohmann_json_t.rotated_rectangles;
+  nlohmann::json polygons = nlohmann_json_t.polygons;
+  auto predictions = nlohmann::json::array();
+  predictions.insert(predictions.end(), rects.begin(), rects.end());
+  predictions.insert(predictions.end(), rotated_rects.begin(),
+                     rotated_rects.end());
+  predictions.insert(predictions.end(), polygons.begin(), polygons.end());
+  nlohmann_json_j["predictions"] = predictions;
+  nlohmann_json_j["maps"] = nlohmann_json_t.saliency_maps;
+}
+
+static inline void filter_maps_by_prediction_prevalence(nlohmann::json& data) {
+  if (!data.contains("maps")) {
+    return;
+  }
+  std::map<std::string, bool> label_prevalence_map;
+  for (auto& prediction : data["predictions"]) {
+    for (auto& label : prediction["labels"]) {
+      label_prevalence_map[label["id"]] = true;
     }
   }
-  return json_maps;
-}
 
-static inline nlohmann::json serialize(const GetiDetectionResult &result,
-                                       bool include_xai) {
-  const auto &objects = result.objects;
-
-  nlohmann::json predictions;
-  for (auto &obj : objects) {
-    predictions.push_back({
-        {"labels", nlohmann::json::array({{{"name", obj.label.label},
-                                           {"id", obj.label.label_id},
-                                           {"probability", obj.confidence}}})},
-        {"shape",
-         {
-             {"type", "RECTANGLE"},
-             {"height", obj.shape.height},
-             {"width", obj.shape.width},
-             {"x", obj.shape.x},
-             {"y", obj.shape.y},
-         }},
-
-    });
-  }
-
-  nlohmann::json data = {{"predictions", predictions}};
-
-  if (include_xai) {
-    data["maps"] = add_maps(result.maps);
-  }
-
-  return data;
-}
-
-static inline nlohmann::json serialize(const RotatedDetectionResult &result,
-                                       bool include_xai) {
-  const auto &objects = result.objects;
-
-  nlohmann::json predictions;
-  for (auto &obj : objects) {
-    predictions.push_back({
-        {"labels", nlohmann::json::array({{{"name", obj.label.label},
-                                           {"id", obj.label.label_id},
-                                           {"probability", obj.confidence}}})},
-        {"shape",
-         {
-             {"type", "ROTATED_RECTANGLE"},
-             {"height", obj.rotatedRectangle.size.height},
-             {"width", obj.rotatedRectangle.size.width},
-             {"x", obj.rotatedRectangle.center.x},
-             {"y", obj.rotatedRectangle.center.y},
-             {"angle", obj.rotatedRectangle.angle},
-         }},
-
-    });
-  }
-
-  nlohmann::json data = {{"predictions", predictions}};
-  if (include_xai) {
-    data["maps"] = add_maps(result.maps);
-  }
-
-  return data;
-}
-
-static inline nlohmann::json serialize(const DetectionClassification &result,
-                                       bool include_xai) {
-  nlohmann::json labels;
-  const auto &detection = result.detection;
-  labels.push_back({{"name", detection.label.label},
-                    {"id", detection.label.label_id},
-                    {"probability", detection.confidence}});
-
-  for (auto &classification : result.classifications.predictions) {
-    labels.push_back({{"name", classification.label.label},
-                      {"id", classification.label.label_id},
-                      {"probability", classification.score}});
-  }
-  return {
-      {"labels", labels},
-      {"shape",
-       {
-           {"type", "RECTANGLE"},
-           {"height", detection.shape.height},
-           {"width", detection.shape.width},
-           {"x", detection.shape.x},
-           {"y", detection.shape.y},
-       }},
-  };
-}
-
-static inline nlohmann::json serialize(
-    const DetectionClassificationResult &result, bool include_xai) {
-  nlohmann::json predictions;
-  for (const auto &prediction : result.predictions) {
-    predictions.push_back(serialize(prediction, include_xai));
-  }
-  nlohmann::json data = {{"predictions", predictions}};
-  // Disabled for now...
-  // if (include_xai) {
-  //  data["maps"] = add_maps(result.maps);
-  //}
-  return data;
-}
-
-static inline nlohmann::json serialize(const GetiClassificationResult &result,
-                                       bool include_xai) {
-  const auto &objects = result.predictions;
-
-  nlohmann::json predictions;
-  for (auto &obj : objects) {
-    predictions.push_back({
-        {"labels", nlohmann::json::array({{{"name", obj.label.label},
-                                           {"id", obj.label.label_id},
-                                           {"probability", obj.score}}})},
-        {"shape",
-         {
-             {"type", "RECTANGLE"},
-             {"height", obj.roi.height},
-             {"width", obj.roi.width},
-             {"x", obj.roi.x},
-             {"y", obj.roi.y},
-         }},
-
-    });
-  }
-
-  nlohmann::json data = {{"predictions", predictions}};
-  if (include_xai) {
-    data["maps"] = add_maps(result.maps);
-  }
-  return data;
-}
-
-static inline nlohmann::json serialize(const SegmentationResult &result,
-                                       bool include_xai) {
-  const auto &objects = result.contours;
-
-  nlohmann::json predictions;
-  for (auto &obj : objects) {
-    nlohmann::json points_json;
-    for (auto &coord : obj.shape) {
-      points_json.push_back({{"x", coord.x}, {"y", coord.y}});
+  for (auto element = data["maps"].begin(); element != data["maps"].end();) {
+    auto label_id = element.value()["label_id"];
+    if (label_prevalence_map.find(label_id) == label_prevalence_map.end()) {
+      element = data["maps"].erase(element);
+    } else {
+      ++element;
     }
-    predictions.push_back(
-        {{"labels",
-          nlohmann::json::array({{{"name", obj.label.label},
-                                  {"id", obj.label.label_id},
-                                  {"probability", obj.probability}}})},
-         {"shape", {{"points", points_json}, {"type", "POLYGON"}}}});
   }
-
-  nlohmann::json data = {{"predictions", predictions}};
-  if (include_xai) {
-    data["maps"] = add_maps(result.maps);
-  }
-
-  return data;
 }
 
-static inline nlohmann::json serialize(const DetectionSegmentation &result,
-                                       bool include_xai) {
-  return serialize(result.segmentation_result, include_xai);
-}
-
-static inline nlohmann::json serialize(
-    const DetectionSegmentationResult &result, bool include_xai) {
-  auto data = serialize(result.detection, include_xai);
-
-  for (const auto &prediction : result.segmentations) {
-    const auto segmentation_predictions =
-        serialize(prediction, false)["predictions"];
-    data["predictions"].insert(data["predictions"].end(),
-                               segmentation_predictions.begin(),
-                               segmentation_predictions.end());
+static inline void translate_inference_result_by_roi(InferenceResult& result,
+                                                     int roi_x, int roi_y) {
+  if (roi_x == 0 && roi_y == 0) {
+    return;
   }
 
-  return data;
-}
-
-static inline nlohmann::json serialize(const GetiAnomalyResult &result,
-                                       bool include_xai) {
-  nlohmann::json predictions;
-  for (auto &obj : result.detections) {
-    predictions.push_back({
-        {"labels", nlohmann::json::array({{{"name", obj.label.label},
-                                           {"id", obj.label.label_id},
-                                           {"probability", obj.confidence}}})},
-        {"shape",
-         {
-             {"type", "RECTANGLE"},
-             {"height", obj.shape.height},
-             {"width", obj.shape.width},
-             {"x", obj.shape.x},
-             {"y", obj.shape.y},
-         }},
-    });
-  }
-  for (auto &obj : result.segmentations) {
-    nlohmann::json points_json;
-    for (auto &coord : obj.shape) {
-      points_json.push_back({{"x", coord.x}, {"y", coord.y}});
+  for (auto& polygon : result.polygons) {
+    for (auto& point : polygon.shape) {
+      point.x += roi_x;
+      point.y += roi_y;
     }
-    predictions.push_back(
-        {{"labels",
-          nlohmann::json::array({{{"name", obj.label.label},
-                                  {"id", obj.label.label_id},
-                                  {"probability", obj.probability}}})},
-         {"shape", {{"points", points_json}, {"type", "POLYGON"}}}});
   }
 
-  nlohmann::json data = {{"predictions", predictions}};
-  if (include_xai) {
-    data["maps"] = add_maps(result.maps);
+  for (auto& rect : result.rectangles) {
+    rect.shape.x += roi_x;
+    rect.shape.y += roi_y;
   }
-  return data;
+
+  for (auto& rect : result.rotated_rectangles) {
+    rect.shape.center.x += roi_x;
+    rect.shape.center.y += roi_y;
+  }
 }
+
 }  // namespace geti
 
 #endif  // RESULT_SERIALIZATION_H_

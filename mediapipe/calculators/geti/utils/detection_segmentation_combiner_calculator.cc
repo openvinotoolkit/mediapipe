@@ -1,13 +1,15 @@
 #include "detection_segmentation_combiner_calculator.h"
 
-#include "mediapipe/calculators/geti/utils/data_structures.h"
+#include "../utils/data_structures.h"
 
 namespace mediapipe {
 absl::Status DetectionSegmentationCombinerCalculator::GetContract(
     CalculatorContract *cc) {
-  cc->Inputs().Tag("DETECTION").Set<GetiDetectedObject>();
-  cc->Inputs().Tag("SEGMENTATION").Set<SegmentationResult>();
-  cc->Outputs().Tag("DETECTION_SEGMENTATIONS").Set<DetectionSegmentation>();
+  cc->Inputs().Tag("DETECTION").Set<geti::RectanglePrediction>();
+  cc->Inputs().Tag("SEGMENTATION").Set<geti::InferenceResult>();
+  cc->Outputs()
+      .Tag("DETECTION_SEGMENTATIONS")
+      .Set<std::vector<geti::PolygonPrediction>>();
 
   return absl::OkStatus();
 }
@@ -15,17 +17,16 @@ absl::Status DetectionSegmentationCombinerCalculator::Open(
     CalculatorContext *cc) {
   return absl::OkStatus();
 }
-absl::Status DetectionSegmentationCombinerCalculator::Process(
+absl::Status DetectionSegmentationCombinerCalculator::GetiProcess(
     CalculatorContext *cc) {
   const auto &detection =
-      cc->Inputs().Tag("DETECTION").Get<GetiDetectedObject>();
-  const auto &classifications =
-      cc->Inputs().Tag("SEGMENTATION").Get<SegmentationResult>();
+      cc->Inputs().Tag("DETECTION").Get<geti::RectanglePrediction>();
+  const auto &segmentation =
+      cc->Inputs().Tag("SEGMENTATION").Get<geti::InferenceResult>();
 
-  auto result = std::unique_ptr<DetectionSegmentation>(
-      new DetectionSegmentation{detection, classifications});
+  auto polygons = segmentation.polygons;
 
-  for (auto &contour : result->segmentation_result.contours) {
+  for (auto &contour : polygons) {
     for (auto &point : contour.shape) {
       point.x += detection.shape.x;
       point.y += detection.shape.y;
@@ -34,7 +35,8 @@ absl::Status DetectionSegmentationCombinerCalculator::Process(
 
   cc->Outputs()
       .Tag("DETECTION_SEGMENTATIONS")
-      .Add(result.release(), cc->InputTimestamp());
+      .AddPacket(MakePacket<std::vector<geti::PolygonPrediction>>(polygons).At(
+          cc->InputTimestamp()));
 
   return absl::OkStatus();
 }

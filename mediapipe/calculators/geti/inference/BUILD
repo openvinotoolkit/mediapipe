@@ -1,6 +1,8 @@
 load("//mediapipe/framework/port:build_config.bzl", "mediapipe_cc_proto_library", "mediapipe_proto_library")
 load("@rules_cc//cc:defs.bzl", "cc_proto_library")
 
+package(default_visibility = ["//visibility:public"])
+
 proto_library(
     name = "grpc_predict_v2_proto",
     srcs = ["grpc_predict_v2.proto"],
@@ -57,15 +59,17 @@ cc_library(
     ],
     deps = [
         ":openvino_inference_adapter_calculator_cc_proto",
-        "@ovms//src/kfserving_api:kfserving_api_cpp",
+        ":grpc_predict_v2_cc_proto",
         "//mediapipe/framework:calculator_framework",
         "//mediapipe/framework/formats:image_frame_opencv",
         "//mediapipe/framework/port:opencv_core",
         "//mediapipe/framework/port:opencv_imgcodecs",
         "//mediapipe/framework/port:opencv_imgproc",
         "//mediapipe/calculators/geti/utils:data_structures",
+        "//mediapipe/calculators/geti/utils:emptylabel_cc_proto",
         ":inference_utils",
         "@model_api//:model_api",
+        ":geti_calculator_base",
     ],
     defines = [
         "USE_MODELADAPTER",
@@ -75,8 +79,26 @@ cc_library(
 
 cc_library(
     name = "inference_utils",
+    srcs = ["utils.cc"],
     hdrs = ["utils.h"],
-    deps = ["//mediapipe/calculators/geti/utils:data_structures"]
+    deps = [
+        "//mediapipe/framework:calculator_framework",
+        "//mediapipe/calculators/geti/utils:data_structures",
+        "@model_api//:model_api",
+    ]
+)
+
+cc_library(
+    name = "geti_calculator_base",
+    hdrs = [
+        "geti_calculator_base.h",
+    ],
+    deps = [
+        "//mediapipe/framework:calculator_framework",
+    ],
+    visibility = [
+        "//visibility:public",
+    ],
 )
 
 cc_library(
@@ -90,7 +112,6 @@ cc_library(
         "//mediapipe/framework/port:opencv_imgproc",
         "//mediapipe/framework/port:opencv_highgui",
         "//mediapipe/util:image_test_utils",
-        "@nlohmann_json//:json",
     ],
     visibility = [
         "//visibility:public",

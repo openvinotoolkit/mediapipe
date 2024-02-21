@@ -20,6 +20,7 @@
 #include <string>
 #include <vector>
 
+#include "../inference/test_utils.h"
 #include "mediapipe/framework/calculator_framework.h"
 #include "mediapipe/framework/calculator_runner.h"
 #include "mediapipe/framework/formats/image_frame.h"
@@ -31,19 +32,22 @@
 #include "mediapipe/framework/port/status_matchers.h"
 #include "mediapipe/util/image_test_utils.h"
 #include "models/image_model.h"
-#include "mediapipe/calculators/geti/utils/data_structures.h"
+#include "../utils/data_structures.h"
 
 namespace mediapipe {
 
 TEST(InstanceSegmentationCalculatorTest, TestImageSegmentation) {
-#ifdef USE_MODELADAPTER
+  const cv::Mat image = cv::imread("/data/cattle.jpg");
+  const std::string model_path =
+      "/data/geti/instance_segmentation_maskrcnn_resnet50.xml";
+
   CalculatorGraphConfig graph_config =
       ParseTextProtoOrDie<CalculatorGraphConfig>(absl::Substitute(
           R"pb(
-            input_stream: "input_image"
+            input_stream: "input"
             input_side_packet: "model_path"
             input_side_packet: "device"
-            output_stream: "segmentation"
+            output_stream: "output"
             node {
               calculator: "OpenVINOInferenceAdapterCalculator"
               input_side_packet: "MODEL_PATH:model_path"
@@ -53,50 +57,30 @@ TEST(InstanceSegmentationCalculatorTest, TestImageSegmentation) {
             node {
               calculator: "InstanceSegmentationCalculator"
               input_side_packet: "INFERENCE_ADAPTER:adapter"
-              input_stream: "IMAGE:input_image"
-              output_stream: "RESULT:segmentation"
+              input_stream: "IMAGE:input"
+              output_stream: "INFERENCE_RESULT:output"
             }
           )pb"));
-#else
-  CalculatorGraphConfig graph_config =
-      ParseTextProtoOrDie<CalculatorGraphConfig>(absl::Substitute(
-          R"pb(
-            input_stream: "input_image"
-            input_side_packet: "model_path"
-            output_stream: "segmentation"
-            node {
-              calculator: "InstanceSegmentationCalculator"
-              input_side_packet: "MODEL_PATH:model_path"
-              input_stream: "IMAGE:input_image"
-              output_stream: "RESULT:segmentation"
-            }
-          )pb"));
-#endif
-  const cv::Mat raw_image = cv::imread("/data/cattle.jpg");
-  std::vector<Packet> output_packets;
-  tool::AddVectorSink("segmentation", &graph_config, &output_packets);
 
-  CalculatorGraph graph(graph_config);
+  std::vector<Packet> output_packets;
+  auto packet = mediapipe::MakePacket<cv::Mat>(image);
+
   std::map<std::string, mediapipe::Packet> inputSidePackets;
   inputSidePackets["model_path"] =
-      mediapipe::MakePacket<std::string>(
-          "/data/geti/instance_segmentation_maskrcnn_resnet50.xml")
+      mediapipe::MakePacket<std::string>(model_path)
           .At(mediapipe::Timestamp(0));
   inputSidePackets["device"] =
       mediapipe::MakePacket<std::string>("AUTO").At(mediapipe::Timestamp(0));
 
-  MP_ASSERT_OK(graph.StartRun(inputSidePackets));
+  geti::RunGraph(packet, graph_config, output_packets, inputSidePackets);
 
-  MP_ASSERT_OK(graph.AddPacketToInputStream(
-      "input_image",
-      mediapipe::MakePacket<cv::Mat>(raw_image).At(mediapipe::Timestamp(0))));
+  auto &result = output_packets[0].Get<geti::InferenceResult>();
+  ASSERT_EQ(18, result.polygons.size());
 
-  MP_ASSERT_OK(graph.WaitUntilIdle());
-  ASSERT_EQ(1, output_packets.size());
-
-  auto &result = output_packets[0].Get<SegmentationResult>();
-  ASSERT_EQ(18, result.contours.size());
-  ASSERT_EQ(result.contours[0].label.label, "Sheep");
-  ASSERT_EQ(result.contours[0].label.label_id, "653b85cb4e88964031d81b35");
+  cv::Rect roi(0, 0, image.cols, image.rows);
+  ASSERT_EQ(result.roi, roi);
+  ASSERT_EQ(result.polygons[0].labels[0].label.label_id,
+            "653b85cb4e88964031d81b35");
 }
+
 }  // namespace mediapipe

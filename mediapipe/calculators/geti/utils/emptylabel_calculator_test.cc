@@ -1,12 +1,20 @@
+//
+//  INTEL CONFIDENTIAL
+//
+//  Copyright (C) 2023 Intel Corporation
+//
+//  This software and the related documents are Intel copyrighted materials, and
+// your use of them is governed by the express license under which they were
+// provided to you ("License"). Unless the License provides otherwise, you may
+// not use, modify, copy, publish, distribute, disclose or transmit this
+// software or the related documents without Intel's prior written permission.
+//
+//  This software and the related documents are provided as is, with no express
+// or implied warranties, other than those that are expressly stated in the
+// License.
+//
 
-/*
-**
-**
-** Wat wil ik testne?
-**
-*/
-
-#include "test_utils.h"
+#include "../inference/test_utils.h"
 #include "mediapipe/framework/calculator_framework.h"
 #include "mediapipe/framework/calculator_runner.h"
 #include "mediapipe/framework/formats/image_frame.h"
@@ -17,11 +25,11 @@
 #include "mediapipe/framework/port/opencv_imgproc_inc.h"
 #include "mediapipe/framework/port/parse_text_proto.h"
 #include "mediapipe/framework/port/status_matchers.h"
-#include "mediapipe/calculators/geti/utils/data_structures.h"
+#include "../utils/data_structures.h"
 
 namespace mediapipe {
 
-const Label test_label = {"label_id", "test_label_name"};
+const geti::Label test_label = {"label_id", "test_label_name"};
 
 CalculatorGraphConfig build_graph_config(std::string calculator_name) {
   auto first_part = R"(
@@ -48,135 +56,44 @@ CalculatorGraphConfig build_graph_config(std::string calculator_name) {
 TEST(EmptyLabelDetectionCalculatorTest, DetectionOutput) {
   std::vector<Packet> output_packets;
 
-  auto graph_config = build_graph_config("EmptyLabelDetectionCalculator");
+  auto graph_config = build_graph_config("EmptyLabelCalculator");
 
-  GetiDetectionResult detection;
-  detection.objects = {{test_label, cv::Rect2f(10, 10, 10, 10), 0.0f}};
-  geti::RunGraph(MakePacket<GetiDetectionResult>(detection), graph_config,
-                 output_packets);
+  geti::InferenceResult inference_result;
+  inference_result.rectangles = {
+      {{geti::LabelResult{0.0f, test_label}}, cv::Rect2f(10, 10, 10, 10)}};
+  geti::RunGraph(MakePacket<geti::InferenceResult>(inference_result),
+                 graph_config, output_packets);
 
   ASSERT_EQ(1, output_packets.size());
 
-  auto& result = output_packets[0].Get<GetiDetectionResult>();
-  auto& first_object = result.objects[0];
-  ASSERT_EQ(first_object.label.label, test_label.label);
-  ASSERT_EQ(first_object.label.label_id, test_label.label_id);
-  ASSERT_EQ(first_object.confidence, detection.objects[0].confidence);
+  auto& result = output_packets[0].Get<geti::InferenceResult>();
+  auto& first_object = result.rectangles[0];
+  ASSERT_EQ(first_object.labels[0].label.label, test_label.label);
+  ASSERT_EQ(first_object.labels[0].label.label_id, test_label.label_id);
+  ASSERT_EQ(first_object.labels[0].probability,
+            inference_result.rectangles[0].labels[0].probability);
 }
 
 TEST(EmptyLabelDetectionCalculatorTest, NoDetectionOutput) {
   std::vector<Packet> output_packets;
-  auto graph_config = build_graph_config("EmptyLabelDetectionCalculator");
+  auto graph_config = build_graph_config("EmptyLabelCalculator");
 
-  GetiDetectionResult detection;
-  detection.image_size = cv::Size(256, 128);
-  geti::RunGraph(MakePacket<GetiDetectionResult>(detection), graph_config,
-                 output_packets);
+  geti::InferenceResult inference_result;
+  inference_result.roi = cv::Rect(0, 0, 256, 128);
+  geti::RunGraph(MakePacket<geti::InferenceResult>(inference_result),
+                 graph_config, output_packets);
 
   ASSERT_EQ(1, output_packets.size());
 
-  auto& result = output_packets[0].Get<GetiDetectionResult>();
-  auto& first_object = result.objects[0];
-  ASSERT_EQ(first_object.label.label_id, "777");
-  ASSERT_EQ(first_object.label.label, "mytestlabel");
-  ASSERT_EQ(first_object.confidence, 0);
+  auto& result = output_packets[0].Get<geti::InferenceResult>();
+  auto& first_object = result.rectangles[0];
+  ASSERT_EQ(first_object.labels[0].label.label_id, "777");
+  ASSERT_EQ(first_object.labels[0].label.label, "mytestlabel");
+  ASSERT_EQ(first_object.labels[0].probability, 0);
   ASSERT_EQ(first_object.shape.x, 0);
   ASSERT_EQ(first_object.shape.y, 0);
-  ASSERT_EQ(first_object.shape.width, detection.image_size.width);
-  ASSERT_EQ(first_object.shape.height, detection.image_size.height);
-}
-
-TEST(EmptyLabelSegmentationCalculatorTest, DetectionOutput) {
-  std::vector<Packet> output_packets;
-  auto graph_config = build_graph_config("EmptyLabelSegmentationCalculator");
-
-  SegmentationResult segmentation = {{{test_label, 0.0f, {}}}, {}, {}};
-  geti::RunGraph(MakePacket<SegmentationResult>(segmentation), graph_config,
-                 output_packets);
-
-  ASSERT_EQ(1, output_packets.size());
-
-  auto& result = output_packets[0].Get<SegmentationResult>();
-
-  ASSERT_EQ(result.contours[0].label.label,
-            segmentation.contours[0].label.label);
-  ASSERT_EQ(result.contours[0].probability,
-            segmentation.contours[0].probability);
-}
-
-TEST(EmptyLabelSegmentationCalculatorTest, NoDetectionOutput) {
-  std::vector<Packet> output_packets;
-  auto graph_config = build_graph_config("EmptyLabelSegmentationCalculator");
-
-  SegmentationResult segmentation;
-  geti::RunGraph(MakePacket<SegmentationResult>(segmentation), graph_config,
-                 output_packets);
-
-  ASSERT_EQ(1, output_packets.size());
-
-  auto& result = output_packets[0].Get<SegmentationResult>();
-
-  ASSERT_EQ(result.contours[0].label.label, "mytestlabel");
-  ASSERT_EQ(result.contours[0].probability, 0);
-}
-
-TEST(EmptyLabelClassificationCalculatorTest, DetectionOutput) {
-  std::vector<Packet> output_packets;
-  auto graph_config = build_graph_config("EmptyLabelClassificationCalculator");
-  GetiClassificationResult classification;
-  classification.predictions = {{test_label, 1}};
-  geti::RunGraph(MakePacket<GetiClassificationResult>(classification),
-                 graph_config, output_packets);
-
-  ASSERT_EQ(1, output_packets.size());
-
-  auto& result = output_packets[0].Get<GetiClassificationResult>();
-
-  ASSERT_EQ(result.predictions[0].label.label, test_label.label);
-  ASSERT_EQ(result.predictions[0].score, classification.predictions[0].score);
-}
-
-TEST(EmptyLabelClassificationCalculatorTest, NoDetectionOutput) {
-  std::vector<Packet> output_packets;
-  auto graph_config = build_graph_config("EmptyLabelClassificationCalculator");
-  GetiClassificationResult classification;
-  geti::RunGraph(MakePacket<GetiClassificationResult>(classification),
-                 graph_config, output_packets);
-  ASSERT_EQ(1, output_packets.size());
-
-  auto& result = output_packets[0].Get<GetiClassificationResult>();
-
-  ASSERT_EQ(result.predictions[0].label.label_id, "777");
-  ASSERT_EQ(result.predictions[0].label.label, "mytestlabel");
-  ASSERT_EQ(result.predictions[0].score, 0);
-}
-
-TEST(EmptyLabelRotatedDetectionCalculatorTest, DetectionOutput) {
-  std::vector<Packet> output_packets;
-  auto graph_config =
-      build_graph_config("EmptyLabelRotatedDetectionCalculator");
-  RotatedDetectionResult detection = {{{test_label, 0.0f, {}}}, {}, {}};
-  geti::RunGraph(MakePacket<RotatedDetectionResult>(detection), graph_config,
-                 output_packets);
-  ASSERT_EQ(1, output_packets.size());
-
-  auto& result = output_packets[0].Get<RotatedDetectionResult>();
-  ASSERT_EQ(result.objects[0].label.label, test_label.label);
-  ASSERT_EQ(result.objects[0].confidence, detection.objects[0].confidence);
-}
-
-TEST(EmptyLabelRotatedDetectionCalculatorTest, NoDetectionOutput) {
-  std::vector<Packet> output_packets;
-  auto graph_config =
-      build_graph_config("EmptyLabelRotatedDetectionCalculator");
-  RotatedDetectionResult detection;
-  geti::RunGraph(MakePacket<RotatedDetectionResult>(detection), graph_config,
-                 output_packets);
-  ASSERT_EQ(1, output_packets.size());
-
-  auto& result = output_packets[0].Get<RotatedDetectionResult>();
-  ASSERT_EQ(result.objects[0].label.label, "mytestlabel");
-  ASSERT_EQ(result.objects[0].confidence, 0);
+  ASSERT_EQ(first_object.shape.width, inference_result.roi.width);
+  ASSERT_EQ(first_object.shape.height, inference_result.roi.height);
 }
 
 }  // namespace mediapipe

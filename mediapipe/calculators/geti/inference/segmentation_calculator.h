@@ -22,12 +22,13 @@
 
 #include <memory>
 
+#include "../inference/geti_calculator_base.h"
 #include "mediapipe/framework/calculator_framework.h"
 #include "mediapipe/framework/formats/image_frame.h"
 #include "mediapipe/framework/formats/image_frame_opencv.h"
 #include "mediapipe/framework/port/opencv_core_inc.h"
 #include "mediapipe/framework/port/status.h"
-#include "mediapipe/calculators/geti/utils/data_structures.h"
+#include "../utils/data_structures.h"
 
 namespace mediapipe {
 
@@ -43,18 +44,18 @@ namespace mediapipe {
 //  INFERENCE_ADAPTER - std::shared_ptr<InferenceAdapter>
 //
 
-class SegmentationCalculator : public CalculatorBase {
+class SegmentationCalculator : public GetiCalculatorBase {
  public:
   static absl::Status GetContract(CalculatorContract *cc);
   absl::Status Open(CalculatorContext *cc) override;
-  absl::Status Process(CalculatorContext *cc) override;
+  absl::Status GetiProcess(CalculatorContext *cc) override;
   absl::Status Close(CalculatorContext *cc) override;
 
  private:
   std::shared_ptr<InferenceAdapter> ia;
   std::unique_ptr<SegmentationModel> model;
-  std::vector<Label> labels;
-  std::map<std::string, Label> labels_map;
+  std::vector<geti::Label> labels;
+  std::map<std::string, geti::Label> labels_map;
 };
 
 }  // namespace mediapipe

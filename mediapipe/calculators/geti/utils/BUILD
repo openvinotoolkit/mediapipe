@@ -10,25 +10,22 @@ cc_library(
         ":data_structures",
         ":loop_calculators",
         ":crop_calculator",
-        ":overlay_calculators",
+        ":overlay_calculator",
         ":detection_extraction_calculator",
-        ":combiner_calculators"
+        ":combiner_calculators",
+        ":emptylabel_calculators"
     ],
     alwayslink = 1,
 )
 
 cc_library(
     name = "data_structures",
-    visibility = [
-        "//visibility:public",
-    ],
     hdrs = [
         "data_structures.h",
     ],
     deps = [
         "@model_api//:model_api",
-    ],
-    alwayslink = 1,
+    ]
 )
 
 cc_library(
@@ -42,6 +39,8 @@ cc_library(
     deps = [
         "//mediapipe/framework:calculator_framework",
         ":data_structures",
+        "//mediapipe/calculators/geti/inference:geti_calculator_base",
+        "//mediapipe/calculators/geti/inference:inference_utils",
     ],
     alwayslink = 1,
 )
@@ -59,6 +58,7 @@ cc_library(
         "//mediapipe/calculators/core:begin_loop_calculator",
         "//mediapipe/calculators/core:end_loop_calculator",
         ":data_structures",
+        "//mediapipe/calculators/geti/inference:geti_calculator_base",
         "@model_api//:model_api",
     ],
     alwayslink = 1,
@@ -82,7 +82,9 @@ cc_library(
         "//mediapipe/framework:calculator_framework",
         "//mediapipe/framework/formats:image_frame",
         "//mediapipe/framework/formats:image_frame_opencv",
-        ":data_structures"
+        ":data_structures",
+        "//mediapipe/calculators/geti/inference:geti_calculator_base",
+        "//mediapipe/calculators/geti/inference:inference_utils",
     ],
     alwayslink = 1
 )
@@ -102,6 +104,7 @@ cc_library(
         "//mediapipe/framework/formats:image_frame_opencv",
         "//mediapipe/framework/port:opencv_core",
         ":data_structures",
+        "//mediapipe/calculators/geti/inference:geti_calculator_base",
     ],
     alwayslink = 1,
 )
@@ -113,25 +116,17 @@ cc_test(
     ],
     deps = [
         ":crop_calculator",
-        "//inference:test_deps"
+        "//mediapipe/calculators/geti/inference:test_deps"
     ]
 )
 
 cc_library(
-    name = "overlay_calculators",
+    name = "overlay_calculator",
     srcs = [
-        "segmentation_overlay_calculator.cc",
-        "classification_overlay_calculator.cc",
-        "detection_overlay_calculator.cc",
-        "rotated_detection_overlay_calculator.cc",
-        "detection_classification_overlay_calculator.cc",
+        "overlay_calculator.cc",
     ],
     hdrs = [
-        "segmentation_overlay_calculator.h",
-        "classification_overlay_calculator.h",
-        "detection_overlay_calculator.h",
-        "rotated_detection_overlay_calculator.h",
-        "detection_classification_overlay_calculator.h",
+        "overlay_calculator.h",
     ],
     deps = [
         ":data_structures",
@@ -140,6 +135,7 @@ cc_library(
         "//mediapipe/framework/formats:image_frame_opencv",
         "//mediapipe/framework/port:opencv_core",
         "@model_api//:model_api",
+        "//mediapipe/calculators/geti/inference:geti_calculator_base",
     ],
     alwayslink = 1,
 )
@@ -177,6 +173,7 @@ cc_library(
         "//mediapipe/framework/formats:image_frame_opencv",
         "//mediapipe/framework/port:opencv_core",
         "@model_api//:model_api",
+        "//mediapipe/calculators/geti/inference:geti_calculator_base",
     ],
     alwayslink = 1,
 )
@@ -188,7 +185,7 @@ cc_test(
     ],
     deps = [
         ":emptylabel_calculators",
-        "//inference:test_deps"
+        "//mediapipe/calculators/geti/inference:test_deps"
     ],
     defines = [
        "USE_MODELADAPTER",

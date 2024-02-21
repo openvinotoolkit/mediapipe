@@ -19,9 +19,9 @@
 #include <memory>
 #include <string>
 
-#include "utils.h"
+#include "../inference/utils.h"
 #include "models/image_model.h"
-#include "mediapipe/calculators/geti/utils/data_structures.h"
+#include "../utils/data_structures.h"
 
 namespace mediapipe {
 
@@ -35,7 +35,8 @@ absl::Status SegmentationCalculator::GetContract(CalculatorContract *cc) {
 #else
   cc->InputSidePackets().Tag("MODEL_PATH").Set<std::string>();
 #endif
-  cc->Outputs().Tag("RESULT").Set<SegmentationResult>();
+  cc->Outputs().Tag("INFERENCE_RESULT").Set<geti::InferenceResult>().Optional();
+  cc->Outputs().Tag("RESULT").Set<geti::InferenceResult>().Optional();
   return absl::OkStatus();
 }
 
@@ -62,8 +63,8 @@ absl::Status SegmentationCalculator::Open(CalculatorContext *cc) {
   return absl::OkStatus();
 }
 
-absl::Status SegmentationCalculator::Process(CalculatorContext *cc) {
-  LOG(INFO) << "SegmentationCalculator::Process()";
+absl::Status SegmentationCalculator::GetiProcess(CalculatorContext *cc) {
+  LOG(INFO) << "SegmentationCalculator::GetiProcess()";
   if (cc->Inputs().Tag("IMAGE").IsEmpty()) {
     return absl::OkStatus();
   }
@@ -78,23 +79,32 @@ absl::Status SegmentationCalculator::Process(CalculatorContext *cc) {
 
   cv::Rect roi(0, 0, cvimage.cols, cvimage.rows);
   // Insert first, since background label is not supplied by model.xml
-  std::vector<SaliencyMap> saliency_maps = {
-      {saliency_maps_split[0], roi, {"None", "otx_empty_lbl"}}};
+
+  std::unique_ptr<geti::InferenceResult> result =
+      std::make_unique<geti::InferenceResult>();
+  result->roi = roi;
 
   for (size_t i = 1; i < saliency_maps_split.size(); i++) {
-    saliency_maps.push_back({saliency_maps_split[i], roi, labels[i - 1]});
+    if (labels.size() > i - 1)
+      result->saliency_maps.push_back(
+          {saliency_maps_split[i], roi, labels[i - 1]});
   }
 
-  std::vector<GetiContour> contours = {};
   for (const auto &contour : model->getContours(inference)) {
-    contours.push_back(
-        {labels_map[contour.label], contour.probability, contour.shape});
+    std::vector<cv::Point> approxCurve;
+    if (contour.shape.size() > 0) {
+      cv::approxPolyDP(contour.shape, approxCurve, 1.0f, true);
+      if (approxCurve.size() > 2) {
+        result->polygons.push_back(
+            {{geti::LabelResult{contour.probability,
+                                labels_map[contour.label]}},
+             approxCurve});
+      }
+    }
   }
 
-  std::unique_ptr<SegmentationResult> result(new SegmentationResult{
-      contours, saliency_maps, inference.feature_vector});
-
-  cc->Outputs().Tag("RESULT").Add(result.release(), cc->InputTimestamp());
+  std::string tag = geti::get_output_tag("INFERENCE_RESULT", {"RESULT"}, cc);
+  cc->Outputs().Tag(tag).Add(result.release(), cc->InputTimestamp());
   return absl::OkStatus();
 }
 

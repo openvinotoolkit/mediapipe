@@ -20,8 +20,8 @@
 #include <string>
 #include <vector>
 
-#include "utils.h"
-#include "mediapipe/calculators/geti/utils/data_structures.h"
+#include "../inference/utils.h"
+#include "../utils/data_structures.h"
 
 namespace mediapipe {
 
@@ -35,7 +35,9 @@ absl::Status DetectionCalculator::GetContract(CalculatorContract *cc) {
 #else
   cc->InputSidePackets().Tag("MODEL_PATH").Set<std::string>();
 #endif
-  cc->Outputs().Tag("DETECTIONS").Set<GetiDetectionResult>();
+
+  cc->Outputs().Tag("INFERENCE_RESULT").Set<geti::InferenceResult>().Optional();
+  cc->Outputs().Tag("DETECTIONS").Set<geti::InferenceResult>().Optional();
   return absl::OkStatus();
 }
 
@@ -64,8 +66,8 @@ absl::Status DetectionCalculator::Open(CalculatorContext *cc) {
   return absl::OkStatus();
 }
 
-absl::Status DetectionCalculator::Process(CalculatorContext *cc) {
-  LOG(INFO) << "DetectionCalculator::Process()";
+absl::Status DetectionCalculator::GetiProcess(CalculatorContext *cc) {
+  LOG(INFO) << "DetectionCalculator::GetiProcess()";
   if (cc->Inputs().Tag("IMAGE").IsEmpty()) {
     return absl::OkStatus();
   }
@@ -76,8 +78,8 @@ absl::Status DetectionCalculator::Process(CalculatorContext *cc) {
   const cv::Mat &cvimage = cc->Inputs().Tag("IMAGE").Get<cv::Mat>();
 
   // Run Inference model
-  std::unique_ptr<GetiDetectionResult> result =
-      std::make_unique<GetiDetectionResult>();
+  std::unique_ptr<geti::InferenceResult> result =
+      std::make_unique<geti::InferenceResult>();
   std::unique_ptr<DetectionResult> inference_result;
   if (tiler) {
     inference_result = std::unique_ptr<DetectionResult>(
@@ -86,30 +88,30 @@ absl::Status DetectionCalculator::Process(CalculatorContext *cc) {
     inference_result = model->infer(cvimage);
   }
 
-  result->objects = {};
   for (auto &obj : inference_result->objects) {
     if (labels.size() > obj.labelID)
-      result->objects.push_back({labels[obj.labelID], obj, obj.confidence});
+      result->rectangles.push_back(
+          {{geti::LabelResult{obj.confidence, labels[obj.labelID]}}, obj});
   }
-  result->image_size = cvimage.size();
 
-  cv::Rect roi(0, 0, cvimage.cols, cvimage.rows);
+  result->roi = cv::Rect(0, 0, cvimage.cols, cvimage.rows);
 
   if (inference_result->saliency_map) {
     size_t shape_shift =
         (inference_result->saliency_map.get_shape().size() > 3) ? 1 : 0;
 
-    inference_result->saliency_map;
     for (size_t i = 0; i < labels.size(); i++) {
-      result->maps.push_back(
-          {wrap_saliency_map_tensor_to_mat(inference_result->saliency_map,
-                                           shape_shift, i),
-           roi, labels[i]});
+      result->saliency_maps.push_back(
+          {geti::get_mat_from_ov_tensor(inference_result->saliency_map,
+                                        shape_shift, i),
+           result->roi, labels[i]});
     }
   }
   LOG(INFO) << "completed detection inference";
 
-  cc->Outputs().Tag("DETECTIONS").Add(result.release(), cc->InputTimestamp());
+  std::string tag =
+      geti::get_output_tag("INFERENCE_RESULT", {"DETECTIONS"}, cc);
+  cc->Outputs().Tag(tag).Add(result.release(), cc->InputTimestamp());
 
   return absl::OkStatus();
 }

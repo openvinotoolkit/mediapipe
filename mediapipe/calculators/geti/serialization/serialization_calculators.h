@@ -20,6 +20,7 @@
 
 #include <memory>
 
+#include "../inference/geti_calculator_base.h"
 #include "mediapipe/framework/calculator_framework.h"
 #include "mediapipe/framework/packet.h"
 #include "mediapipe/framework/port/opencv_core_inc.h"
@@ -38,29 +39,22 @@ namespace mediapipe {
 //  RESPONSE - KFSResponse
 //
 
-template <class T>
-class SerializationCalculator : public CalculatorBase {
+class SerializationCalculator : public GetiCalculatorBase {
  public:
   static absl::Status GetContract(CalculatorContract *cc);
   absl::Status Open(CalculatorContext *cc) override;
-  absl::Status Process(CalculatorContext *cc) override;
+  absl::Status GetiProcess(CalculatorContext *cc) override;
   absl::Status Close(CalculatorContext *cc) override;
 };
 
-using DetectionSerializationCalculator =
-    SerializationCalculator<GetiDetectionResult>;
-using RotatedDetectionSerializationCalculator =
-    SerializationCalculator<RotatedDetectionResult>;
-using ClassificationSerializationCalculator =
-    SerializationCalculator<GetiClassificationResult>;
-using DetectionClassificationSerializationCalculator =
-    SerializationCalculator<DetectionClassificationResult>;
-using DetectionSegmentationSerializationCalculator =
-    SerializationCalculator<DetectionSegmentationResult>;
-using SegmentationSerializationCalculator =
-    SerializationCalculator<SegmentationResult>;
-using AnomalySerializationCalculator =
-    SerializationCalculator<GetiAnomalyResult>;
+using DetectionSerializationCalculator = SerializationCalculator;
+using DetectionSerializationCalculator = SerializationCalculator;
+using RotatedDetectionSerializationCalculator = SerializationCalculator;
+using ClassificationSerializationCalculator = SerializationCalculator;
+using DetectionClassificationSerializationCalculator = SerializationCalculator;
+using DetectionSegmentationSerializationCalculator = SerializationCalculator;
+using SegmentationSerializationCalculator = SerializationCalculator;
+using AnomalySerializationCalculator = SerializationCalculator;
 
 }  // namespace mediapipe
 

@@ -18,113 +18,56 @@
 
 #include <memory>
 
-#include "mediapipe/calculators/geti/utils/data_structures.h"
+#include "data_structures.h"
 
 namespace mediapipe {
 
-template <class T>
-absl::Status EmptyLabelCalculator<T>::GetContract(CalculatorContract *cc) {
+absl::Status EmptyLabelCalculator::GetContract(CalculatorContract *cc) {
   LOG(INFO) << "EmptyLabelCalculator::GetContract()";
-  cc->Inputs().Tag("PREDICTION").Set<T>();
-  cc->Outputs().Tag("PREDICTION").Set<T>();
+  cc->Inputs().Tag("PREDICTION").Set<geti::InferenceResult>();
+  cc->Outputs().Tag("PREDICTION").Set<geti::InferenceResult>();
 
   return absl::OkStatus();
 }
 
-template <class T>
-absl::Status EmptyLabelCalculator<T>::Open(CalculatorContext *cc) {
+absl::Status EmptyLabelCalculator::Open(CalculatorContext *cc) {
   LOG(INFO) << "EmptyLabelCalculator::Open()";
   return absl::OkStatus();
 }
 
-template <class T>
-absl::Status EmptyLabelCalculator<T>::Process(CalculatorContext *cc) {
-  LOG(INFO) << "EmptyLabelCalculator::Process()";
-  const auto &prediction = cc->Inputs().Tag("PREDICTION").Get<T>();
+absl::Status EmptyLabelCalculator::GetiProcess(CalculatorContext *cc) {
+  LOG(INFO) << "EmptyLabelCalculator::GetiProcess()";
+  auto prediction = cc->Inputs().Tag("PREDICTION").Get<geti::InferenceResult>();
+  size_t n_predictions = prediction.polygons.size() +
+                         prediction.rectangles.size() +
+                         prediction.rotated_rectangles.size();
+  if (n_predictions == 0) {
+    const auto &options = cc->Options<EmptyLabelOptions>();
+    auto label = get_label_from_options(options);
+    prediction.rectangles.push_back(
+        {{geti::LabelResult{0.0f, label}}, prediction.roi});
+  }
 
-  const auto &options = cc->Options<EmptyLabelOptions>();
   cc->Outputs()
       .Tag("PREDICTION")
-      .AddPacket(MakePacket<T>(add_global_labels(prediction, options))
+      .AddPacket(MakePacket<geti::InferenceResult>(prediction)
                      .At(cc->InputTimestamp()));
 
   return absl::OkStatus();
 }
 
-template <class T>
-absl::Status EmptyLabelCalculator<T>::Close(CalculatorContext *cc) {
+absl::Status EmptyLabelCalculator::Close(CalculatorContext *cc) {
   LOG(INFO) << "EmptyLabelCalculator::Close()";
   return absl::OkStatus();
 }
-template <class T>
-Label EmptyLabelCalculator<T>::get_label_from_options(
+
+geti::Label EmptyLabelCalculator::get_label_from_options(
     const mediapipe::EmptyLabelOptions &options) {
   std::string label_name = options.label().empty() ? "empty" : options.label();
   return {options.id(), label_name};
 }
 
-template <>
-GetiDetectionResult
-EmptyLabelCalculator<GetiDetectionResult>::add_global_labels(
-    const GetiDetectionResult &prediction,
-    const mediapipe::EmptyLabelOptions &options) {
-  if (prediction.objects.size() == 0) {
-    auto label = get_label_from_options(options);
-    GetiDetectionResult result = prediction;
-    result.objects = {{label, cv::Rect2f({0, 0}, result.image_size), 0.0f}};
-    return result;
-  } else {
-    return prediction;
-  }
-}
-
-template <>
-SegmentationResult EmptyLabelCalculator<SegmentationResult>::add_global_labels(
-    const SegmentationResult &prediction,
-    const mediapipe::EmptyLabelOptions &options) {
-  if (prediction.contours.size() == 0) {
-    auto label = get_label_from_options(options);
-
-    SegmentationResult result = prediction;
-    result.contours = {{label, 0, {}}};
-    return result;
-  } else {
-    return prediction;
-  }
-}
-
-template <>
-GetiClassificationResult
-EmptyLabelCalculator<GetiClassificationResult>::add_global_labels(
-    const GetiClassificationResult &prediction,
-    const mediapipe::EmptyLabelOptions &options) {
-  if (prediction.predictions.size() == 0) {
-    auto label = get_label_from_options(options);
-
-    GetiClassificationResult result = prediction;
-    result.predictions.push_back({label, 0.0f});
-    return result;
-  } else {
-    return prediction;
-  }
-}
-
-template <>
-RotatedDetectionResult
-EmptyLabelCalculator<RotatedDetectionResult>::add_global_labels(
-    const RotatedDetectionResult &prediction,
-    const mediapipe::EmptyLabelOptions &options) {
-  if (prediction.objects.empty()) {
-    auto label = get_label_from_options(options);
-
-    RotatedDetectionResult result = prediction;
-    result.objects = {{label, 0.0f, cv::RotatedRect()}};
-    return result;
-  } else {
-    return prediction;
-  }
-}
-
+REGISTER_CALCULATOR(EmptyLabelCalculator);
 REGISTER_CALCULATOR(EmptyLabelDetectionCalculator);
 REGISTER_CALCULATOR(EmptyLabelClassificationCalculator);
 REGISTER_CALCULATOR(EmptyLabelRotatedDetectionCalculator);

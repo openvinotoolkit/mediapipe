@@ -21,7 +21,8 @@
 #include <string>
 #include <vector>
 
-#include "kserve.h"
+#include "../inference/kserve.h"
+#include "../inference/test_utils.h"
 #include "mediapipe/framework/calculator_framework.h"
 #include "mediapipe/framework/calculator_runner.h"
 #include "mediapipe/framework/formats/image_frame.h"
@@ -36,8 +37,19 @@
 
 namespace mediapipe {
 
-void RunGraph(inference::ModelInferRequest* request,
-              std::vector<Packet>& output_packets) {
+inference::ModelInferRequest build_request(std::string& file_path) {
+  auto request = inference::ModelInferRequest();
+  std::ifstream is(file_path);
+  std::stringstream ss;
+  ss << is.rdbuf();
+
+  request.mutable_raw_input_contents()->Add(std::move(ss.str()));
+  return request;
+}
+
+TEST(ModelInferRequestImageCalculatorTest, ImageIsConvertedToCVMatrix) {
+  std::string file_path = "/data/pearl.jpg";
+
   CalculatorGraphConfig graph_config =
       ParseTextProtoOrDie<CalculatorGraphConfig>(absl::Substitute(
           R"pb(
@@ -50,39 +62,12 @@ void RunGraph(inference::ModelInferRequest* request,
             }
           )pb"));
 
-  tool::AddVectorSink("output", &graph_config, &output_packets);
-
-  CalculatorGraph graph(graph_config);
-  std::map<std::string, mediapipe::Packet> inputSidePackets;
-
-  MP_ASSERT_OK(graph.StartRun({}));
-
-  MP_ASSERT_OK(graph.AddPacketToInputStream(
-      "input",
-      mediapipe::MakePacket<const inference::ModelInferRequest*>(request).At(
-          mediapipe::Timestamp(0))));
-
-  MP_ASSERT_OK(graph.WaitUntilIdle());
-}  // namespace mediapipe
-
-inference::ModelInferRequest build_request(std::string& file_path) {
-  auto request = inference::ModelInferRequest();
-  std::ifstream is(file_path);
-  std::stringstream ss;
-  ss << is.rdbuf();
-
-  request.mutable_raw_input_contents()->Add(std::move(ss.str()));
-  return request;
-}
-
-TEST(ModelInferRequestImageCalculatorTest, ImageIsConvertedToCVMatrix) {
-  std::vector<Packet> output_packets;
-
-  std::string file_path = "/data/pearl.jpg";
   const cv::Mat raw_image = cv::imread(file_path);
-
   auto request = build_request(file_path);
-  RunGraph(&request, output_packets);
+  auto packet =
+      mediapipe::MakePacket<const inference::ModelInferRequest*>(&request);
+  std::vector<Packet> output_packets;
+  geti::RunGraph(packet, graph_config, output_packets);
 
   auto& image = output_packets[0].Get<cv::Mat>();
   ASSERT_EQ(image.cols, raw_image.cols);

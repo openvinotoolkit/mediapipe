@@ -21,6 +21,7 @@
 #include <string>
 #include <vector>
 
+#include "../inference/test_utils.h"
 #include "mediapipe/framework/calculator_framework.h"
 #include "mediapipe/framework/calculator_runner.h"
 #include "mediapipe/framework/formats/image_frame.h"
@@ -35,73 +36,48 @@
 namespace mediapipe {
 
 TEST(ClassificationCalculatorTest, TestImageClassification) {
-#ifdef USE_MODELADAPTER
+  const cv::Mat image = cv::imread("/data/cattle.jpg");
+  std::vector<Packet> output_packets;
+  std::string model_path = "/data/geti/classification_efficientnet_b0.xml";
   CalculatorGraphConfig graph_config =
       ParseTextProtoOrDie<CalculatorGraphConfig>(absl::Substitute(
           R"pb(
-            input_stream: "input_image"
-            output_stream: "classification"
+            input_stream: "input"
+            output_stream: "output"
             node {
               calculator: "OpenVINOInferenceAdapterCalculator"
+              input_side_packet: "MODEL_PATH:model_path"
+              input_side_packet: "DEVICE:device"
               output_side_packet: "INFERENCE_ADAPTER:adapter"
-              node_options: {
-                [type.googleapis.com/
-                 mediapipe.OpenVINOInferenceAdapterCalculatorOptions] {
-                  model_path: "/data/geti/classification_efficientnet_b0.xml"
-                }
-              }
+
             }
             node {
               calculator: "ClassificationCalculator"
               input_side_packet: "INFERENCE_ADAPTER:adapter"
-              input_stream: "IMAGE:input_image"
-              output_stream: "CLASSIFICATION:classification"
+              input_stream: "IMAGE:input"
+              output_stream: "INFERENCE_RESULT:output"
             }
           )pb"));
-#else
-  CalculatorGraphConfig graph_config =
-      ParseTextProtoOrDie<CalculatorGraphConfig>(absl::Substitute(
-          R"pb(
-            input_stream: "input_image"
-            input_side_packet: "model_path"
-            output_stream: "classification"
-            node {
-              calculator: "ClassificationCalculator"
-              input_side_packet: "MODEL_PATH:model_path"
-              input_stream: "IMAGE:input_image"
-              output_stream: "CLASSIFICATION:classification"
-            }
-          )pb"));
-#endif
-  const cv::Mat raw_image = cv::imread("/data/cattle.jpg");
-  std::vector<Packet> output_packets;
-  tool::AddVectorSink("classification", &graph_config, &output_packets);
-
-  CalculatorGraph graph(graph_config);
   std::map<std::string, mediapipe::Packet> inputSidePackets;
+  inputSidePackets["model_path"] =
+      mediapipe::MakePacket<std::string>(model_path)
+          .At(mediapipe::Timestamp(0));
+  inputSidePackets["device"] =
+      mediapipe::MakePacket<std::string>("AUTO").At(mediapipe::Timestamp(0));
 
-  MP_ASSERT_OK(graph.StartRun(inputSidePackets));
-
-  MP_ASSERT_OK(graph.AddPacketToInputStream(
-      "input_image",
-      mediapipe::MakePacket<cv::Mat>(raw_image).At(mediapipe::Timestamp(0))));
-
-  MP_ASSERT_OK(graph.WaitUntilIdle());
+  auto packet = mediapipe::MakePacket<cv::Mat>(image);
+  geti::RunGraph(packet, graph_config, output_packets, inputSidePackets);
+  const auto &result = output_packets[0].Get<geti::InferenceResult>();
   ASSERT_EQ(1, output_packets.size());
 
-  auto &classification = output_packets[0].Get<GetiClassificationResult>();
-  ASSERT_EQ(classification.predictions.size(), 2);
+  cv::Rect roi(0, 0, image.cols, image.rows);
+  ASSERT_EQ(result.roi, roi);
+  ASSERT_EQ(result.rectangles[0].shape, roi);
 
-  ASSERT_EQ(classification.predictions[0].label.label, "Cow");
-  ASSERT_EQ(classification.predictions[0].roi.height, raw_image.rows);
-  ASSERT_EQ(classification.predictions[0].roi.width, raw_image.cols);
-
-  const auto &cow_map = classification.maps[0];
-  ASSERT_EQ(cow_map.label.label, "Cow");
+  const auto &cow_map = result.saliency_maps[0];
   ASSERT_EQ(cow_map.label.label_id, "653bb9844e88964031d81e30");
 
-  const auto &sheep_map = classification.maps[1];
-  ASSERT_EQ(sheep_map.label.label, "Sheep");
+  const auto &sheep_map = result.saliency_maps[1];
   ASSERT_EQ(sheep_map.label.label_id, "653bb9844e88964031d81e31");
 }
 }  // namespace mediapipe

@@ -20,6 +20,7 @@
 #include <string>
 #include <vector>
 
+#include "../inference/test_utils.h"
 #include "mediapipe/framework/calculator_framework.h"
 #include "mediapipe/framework/calculator_runner.h"
 #include "mediapipe/framework/formats/image_frame.h"
@@ -31,19 +32,21 @@
 #include "mediapipe/framework/port/status_matchers.h"
 #include "mediapipe/util/image_test_utils.h"
 #include "models/image_model.h"
-#include "mediapipe/calculators/geti/utils/data_structures.h"
+#include "../utils/data_structures.h"
 
 namespace mediapipe {
 
 TEST(AnomalyCalculatorTest, TestImageAnomaly) {
-#ifdef USE_MODELADAPTER
+  const cv::Mat raw_image = cv::imread("/data/cattle.jpg");
+  const std::string model_path = "/data/geti/anomaly_classification_padim.xml";
+
   CalculatorGraphConfig graph_config =
       ParseTextProtoOrDie<CalculatorGraphConfig>(absl::Substitute(
           R"pb(
-            input_stream: "input_image"
+            input_stream: "input"
             input_side_packet: "model_path"
             input_side_packet: "device"
-            output_stream: "anomaly"
+            output_stream: "output"
             node {
               calculator: "OpenVINOInferenceAdapterCalculator"
               input_side_packet: "MODEL_PATH:model_path"
@@ -53,50 +56,29 @@ TEST(AnomalyCalculatorTest, TestImageAnomaly) {
             node {
               calculator: "AnomalyCalculator"
               input_side_packet: "INFERENCE_ADAPTER:adapter"
-              input_stream: "IMAGE:input_image"
-              output_stream: "RESULT:anomaly"
+              input_stream: "IMAGE:input"
+              output_stream: "INFERENCE_RESULT:output"
             }
           )pb"));
-#else
-  CalculatorGraphConfig graph_config =
-      ParseTextProtoOrDie<CalculatorGraphConfig>(absl::Substitute(
-          R"pb(
-            input_stream: "input_image"
-            input_side_packet: "model_path"
-            output_stream: "anomaly"
-            node {
-              calculator: "AnomalyCalculator"
-              input_side_packet: "MODEL_PATH:model_path"
-              input_stream: "IMAGE:input_image"
-              output_stream: "RESULT:anomaly"
-            }
-          )pb"));
-#endif
-  const cv::Mat raw_image = cv::imread("/data/cattle.jpg");
   std::vector<Packet> output_packets;
-  tool::AddVectorSink("anomaly", &graph_config, &output_packets);
 
-  CalculatorGraph graph(graph_config);
   std::map<std::string, mediapipe::Packet> inputSidePackets;
   inputSidePackets["model_path"] =
-      mediapipe::MakePacket<std::string>(
-          "/data/geti/anomaly_classification_padim.xml")
+      mediapipe::MakePacket<std::string>(model_path)
           .At(mediapipe::Timestamp(0));
   inputSidePackets["device"] =
       mediapipe::MakePacket<std::string>("AUTO").At(mediapipe::Timestamp(0));
 
-  MP_ASSERT_OK(graph.StartRun(inputSidePackets));
+  auto packet = mediapipe::MakePacket<cv::Mat>(raw_image);
+  geti::RunGraph(packet, graph_config, output_packets, inputSidePackets);
 
-  MP_ASSERT_OK(graph.AddPacketToInputStream(
-      "input_image",
-      mediapipe::MakePacket<cv::Mat>(raw_image).At(mediapipe::Timestamp(0))));
-
-  MP_ASSERT_OK(graph.WaitUntilIdle());
   ASSERT_EQ(1, output_packets.size());
 
-  auto &result = output_packets[0].Get<GetiAnomalyResult>();
-  ASSERT_EQ(1, result.detections.size());
-  ASSERT_NEAR(0.699, result.detections[0].confidence, 0.01);
-  ASSERT_EQ("Anomaly", result.detections[0].label.label);
+  auto &result = output_packets[0].Get<geti::InferenceResult>();
+  cv::Rect roi(0, 0, raw_image.cols, raw_image.rows);
+  ASSERT_EQ(result.roi, roi);
+  ASSERT_EQ(1, result.rectangles.size());
+  ASSERT_NEAR(0.699, result.rectangles[0].labels[0].probability, 0.01);
+  ASSERT_EQ("Anomaly", result.rectangles[0].labels[0].label.label);
 }
 }  // namespace mediapipe

@@ -19,12 +19,13 @@
 
 #include <models/results.h>
 
+#include "../inference/geti_calculator_base.h"
 #include "mediapipe/framework/calculator_framework.h"
 #include "mediapipe/framework/formats/image_frame.h"
 #include "mediapipe/framework/formats/image_frame_opencv.h"
 #include "mediapipe/framework/port/opencv_core_inc.h"
 #include "mediapipe/framework/port/status.h"
-#include "mediapipe/calculators/geti/utils/data_structures.h"
+#include "data_structures.h"
 #include "mediapipe/calculators/geti/utils/emptylabel.pb.h"
 
 namespace mediapipe {
@@ -38,26 +39,24 @@ namespace mediapipe {
 //  PREDICTION - ResultObject
 //
 
-template <class T>
-class EmptyLabelCalculator : public CalculatorBase {
+class EmptyLabelCalculator : public GetiCalculatorBase {
  public:
   static absl::Status GetContract(CalculatorContract *cc);
   absl::Status Open(CalculatorContext *cc) override;
-  absl::Status Process(CalculatorContext *cc) override;
+  absl::Status GetiProcess(CalculatorContext *cc) override;
   absl::Status Close(CalculatorContext *cc) override;
 
-  T add_global_labels(const T &prediction,
-                      const mediapipe::EmptyLabelOptions &options);
-  Label get_label_from_options(const mediapipe::EmptyLabelOptions &options);
+  geti::InferenceResult add_global_labels(
+      const geti::InferenceResult &prediction,
+      const mediapipe::EmptyLabelOptions &options);
+  geti::Label get_label_from_options(
+      const mediapipe::EmptyLabelOptions &options);
 };
 
-using EmptyLabelDetectionCalculator = EmptyLabelCalculator<GetiDetectionResult>;
-using EmptyLabelClassificationCalculator =
-    EmptyLabelCalculator<GetiClassificationResult>;
-using EmptyLabelRotatedDetectionCalculator =
-    EmptyLabelCalculator<RotatedDetectionResult>;
-using EmptyLabelSegmentationCalculator =
-    EmptyLabelCalculator<SegmentationResult>;
+using EmptyLabelDetectionCalculator = EmptyLabelCalculator;
+using EmptyLabelClassificationCalculator = EmptyLabelCalculator;
+using EmptyLabelRotatedDetectionCalculator = EmptyLabelCalculator;
+using EmptyLabelSegmentationCalculator = EmptyLabelCalculator;
 
 }  // namespace mediapipe
 
