@@ -356,10 +356,10 @@ class OpenVINOInferenceCalculator : public CalculatorBase {
     std::unique_ptr<tflite::Interpreter> interpreter_ = absl::make_unique<tflite::Interpreter>();
     bool initialized = false;
 
-    static bool ValidateInputTagToNames(CalculatorContract* cc) {
+    static bool ValidateTagToNames(std::set<std::string> calculatorTags, const google::protobuf::Map<std::string, std::string>& tags_to_names) {
         // Get output_stream types defined in the graph
         std::vector<std::string> inputTypes;
-        for (const std::string& tag : cc->Inputs().GetTags()) {
+        for (const std::string& tag : calculatorTags) {
             std::vector<std::string> tokens = tokenize(tag, ':');
             if (tokens.size() > 0) {
                 inputTypes.push_back(tokens[0]);
@@ -368,8 +368,7 @@ class OpenVINOInferenceCalculator : public CalculatorBase {
             }
         }
 
-        const auto& options = cc->Options<OpenVINOInferenceCalculatorOptions>();
-        for (const auto& [key, value] : options.tag_to_input_tensor_names()) {
+        for (const auto& [key, value] : tags_to_names) {
             bool nameMatch = false;
 
             // Check if supported tag was used
@@ -401,108 +400,16 @@ class OpenVINOInferenceCalculator : public CalculatorBase {
                     }
                 }
 
-                // Type used in tag_to_input_tensor_names does match input_stream type
+                // Type used in tag_to__tensor_names does match input_stream type
                 if (nameMatch){
                     break;
                 }
             }
 
-            // Type used in tag_to_output_tensor_names does not match outputstream type
+            // Type used in tag_to__tensor_names does not match outputstream type
             if (!nameMatch)
             {
-                LOG(ERROR) << "OpenVINOInferenceCalculator GetContract error. Input stream names mismatch for tag_to_input_tensor_names name key " << key;
-                return false;
-            } 
-        }
-
-        return true;
-    }
-
-    static bool ValidateTagsNames(CalculatorContract* cc) {
-        const auto& options = cc->Options<OpenVINOInferenceCalculatorOptions>();
-        std::unordered_map<std::string, std::string> names;
-        for (const auto& [key, value] : options.tag_to_output_tensor_names()) {
-            if (names.find(key) != names.end()){
-                LOG(ERROR) << "OpenVINOInferenceCalculator GetContract error. Duplicate key used in tag_to_output_tensor_names: " << key;
-                return false;
-            }
-
-            names[key] = value;
-            LOG(INFO) << "ValidateTagsNames key: " << key << " map size: " << names.size() << " velue" << value;
-        }
-
-        names.clear();
-
-        for (const auto& [key, value] : options.tag_to_input_tensor_names()) {
-            if (names.find(key) != names.end()){
-                LOG(ERROR) << "OpenVINOInferenceCalculator GetContract error. Duplicate key used in tag_to_input_tensor_names: " << key;
-                return false;
-            }
-            
-            names[key] = value;
-            LOG(INFO) << "ValidateTagsNames key: " << key << " map size: " << names.size() << " velue" << value;
-        }
-
-        return true;
-    }
-
-    static bool ValidateOutputTagToNames(CalculatorContract* cc) {
-        // Get output_stream types defined in the graph
-        std::vector<std::string> outputTypes;
-        for (const std::string& tag : cc->Outputs().GetTags()) {
-            std::vector<std::string> tokens = tokenize(tag, ':');
-            if (tokens.size() > 0) {
-                outputTypes.push_back(tokens[0]);
-            }
-            else {
-                outputTypes.push_back(tag);
-            }
-        }
-
-        const auto& options = cc->Options<OpenVINOInferenceCalculatorOptions>();
-        for (const auto& [key, value] : options.tag_to_output_tensor_names()) {
-            bool nameMatch = false;
-
-            // Check if supported tag was used
-            for (const auto& supportedTag : supportedTags) {
-                if (startsWith(key, supportedTag)){
-                    // Check if we match on full type name, for example: OVTENSORS != OVTENSOR
-                    if (endsWith(key, "S") && !endsWith(supportedTag, "S"))
-                        continue;
-
-                    // Check if used tag is defined in the output_stream
-                    for (const auto& graphOutput : outputTypes) {
-                        if (startsWith(graphOutput, supportedTag)) {
-                            // Check if we match on full type name, for example: OVTENSORS != OVTENSOR
-                            if (endsWith(graphOutput, "S") && !endsWith(supportedTag, "S"))
-                                continue;
-                            nameMatch = true;
-                            break;
-                        }
-                    }
-                }
-                
-                // Check if no supported tag used - OV:Tensor default type
-                if ( tokenize(key, ':').size() == 0) {
-                    // Check if used tag is defined in the output_stream
-                    for (const auto& graphOutput : outputTypes) {
-                        if (key == graphOutput) {
-                            nameMatch = true;
-                            break;
-                        }                       
-                    }
-                }
-
-                // Type used in tag_to_output_tensor_names does match output_stream type
-                if (nameMatch) {
-                    break;
-                }
-            }
-
-            // Type used in tag_to_output_tensor_names does not match outputstream type
-            if (!nameMatch)
-            {
-                LOG(ERROR) << "OpenVINOInferenceCalculator GetContract error. Putput stream names mismatch for tag_to_output_tensor_names name key " << key;
+                LOG(ERROR) << "OpenVINOInferenceCalculator GetContract error. Stream names mismatch for tag_to__tensor_names name key " << key;
                 return false;
             } 
         }
@@ -533,16 +440,14 @@ class OpenVINOInferenceCalculator : public CalculatorBase {
             LOG(INFO) << "OpenVINOInferenceCalculator ValidateOptions failed.";
             return false;
         }
-        if (!ValidateTagsNames(cc)){
-            LOG(INFO) << "OpenVINOInferenceCalculator ValidateTagsNames failed.";
-            return false;
-        }
-        if (!ValidateInputTagToNames(cc))
+
+        const auto& options = cc->Options<OpenVINOInferenceCalculatorOptions>();
+        if (!ValidateTagToNames(cc->Inputs().GetTags(), options.tag_to_input_tensor_names()))
         {
             LOG(INFO) << "OpenVINOInferenceCalculator ValidateInputTagToNames failed.";
             return false;
         }
-        if (!ValidateOutputTagToNames(cc)){
+        if (!ValidateTagToNames(cc->Outputs().GetTags(), options.tag_to_output_tensor_names())){
             LOG(INFO) << "OpenVINOInferenceCalculator ValidateOutputTagToNames failed.";
             return false;
         }
