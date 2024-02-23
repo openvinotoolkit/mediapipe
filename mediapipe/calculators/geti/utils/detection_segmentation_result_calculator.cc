@@ -1,17 +1,17 @@
 #include "detection_segmentation_result_calculator.h"
 
-#include "mediapipe/calculators/geti/utils/data_structures.h"
+#include "../utils/data_structures.h"
 
 namespace mediapipe {
 absl::Status DetectionSegmentationResultCalculator::GetContract(
     CalculatorContract *cc) {
-  cc->Inputs().Tag("DETECTION").Set<GetiDetectionResult>();
+  cc->Inputs().Tag("DETECTION").Set<geti::InferenceResult>();
   cc->Inputs()
       .Tag("DETECTION_SEGMENTATIONS")
-      .Set<std::vector<DetectionSegmentation>>();
+      .Set<std::vector<std::vector<geti::PolygonPrediction>>>();
   cc->Outputs()
       .Tag("DETECTION_SEGMENTATION_RESULT")
-      .Set<DetectionSegmentationResult>();
+      .Set<geti::InferenceResult>();
 
   return absl::OkStatus();
 }
@@ -19,28 +19,29 @@ absl::Status DetectionSegmentationResultCalculator::Open(
     CalculatorContext *cc) {
   return absl::OkStatus();
 }
-absl::Status DetectionSegmentationResultCalculator::Process(
+absl::Status DetectionSegmentationResultCalculator::GetiProcess(
     CalculatorContext *cc) {
   const auto &detection =
-      cc->Inputs().Tag("DETECTION").Get<GetiDetectionResult>();
+      cc->Inputs().Tag("DETECTION").Get<geti::InferenceResult>();
 
-  auto result = std::make_unique<DetectionSegmentationResult>();
-  DetectionSegmentation segmentation;
-  segmentation.detection_result = detection.objects.front();
-  result->segmentations.push_back(segmentation);
-  result->detection = detection;
+  auto result = detection;  // copy
 
   if (!cc->Inputs().Tag("DETECTION_SEGMENTATIONS").IsEmpty()) {
-    const auto &segmentations = cc->Inputs()
-                                    .Tag("DETECTION_SEGMENTATIONS")
-                                    .Get<std::vector<DetectionSegmentation>>();
-    result.reset(new DetectionSegmentationResult{detection, segmentations});
+    const auto &segmentations =
+        cc->Inputs()
+            .Tag("DETECTION_SEGMENTATIONS")
+            .Get<std::vector<std::vector<geti::PolygonPrediction>>>();
+
+    for (auto &polygons : segmentations) {
+      result.polygons.insert(result.polygons.end(), polygons.begin(),
+                             polygons.end());
+    }
   }
-  // add saliency maps for detection task here...
 
   cc->Outputs()
       .Tag("DETECTION_SEGMENTATION_RESULT")
-      .Add(result.release(), cc->InputTimestamp());
+      .AddPacket(
+          MakePacket<geti::InferenceResult>(result).At(cc->InputTimestamp()));
 
   return absl::OkStatus();
 }

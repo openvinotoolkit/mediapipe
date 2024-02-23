@@ -53,9 +53,10 @@ TEST(CropCalculatorTest, TestImageIsCropped) {
           )pb"));
 
   const cv::Mat raw_image = cv::imread("/data/pearl.jpg");
-  Label label{"id", "label_name"};
-  GetiDetectedObject area = {label, cv::Rect2f(10, 20, 100, 200), 0.0f};
-  Packet area_packet = MakePacket<GetiDetectedObject>(area);
+  geti::Label label{"id", "label_name"};
+  geti::RectanglePrediction area = {{geti::LabelResult{0.0f, label}},
+                                    cv::Rect2f(10, 20, 100, 200)};
+  Packet area_packet = MakePacket<geti::RectanglePrediction>(area);
   std::vector<Packet> output_packets;
   tool::AddVectorSink("cropped_image", &graph_config, &output_packets);
   CalculatorGraph graph(graph_config);

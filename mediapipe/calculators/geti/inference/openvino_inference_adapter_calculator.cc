@@ -67,9 +67,9 @@ absl::Status OpenVINOInferenceAdapterCalculator::Open(CalculatorContext *cc) {
   return absl::OkStatus();
 }
 
-absl::Status OpenVINOInferenceAdapterCalculator::Process(
+absl::Status OpenVINOInferenceAdapterCalculator::GetiProcess(
     CalculatorContext *cc) {
-  LOG(INFO) << "OpenVINOInferenceAdapterCalculator::Process()";
+  LOG(INFO) << "OpenVINOInferenceAdapterCalculator::GetiProcess()";
   return absl::OkStatus();
 }
 

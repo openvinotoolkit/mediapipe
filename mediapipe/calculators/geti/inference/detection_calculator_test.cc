@@ -20,7 +20,7 @@
 #include <string>
 #include <vector>
 
-#include "test_utils.h"
+#include "../inference/test_utils.h"
 #include "mediapipe/framework/calculator_framework.h"
 #include "mediapipe/framework/calculator_runner.h"
 #include "mediapipe/framework/formats/image_frame.h"
@@ -33,8 +33,6 @@
 #include "mediapipe/util/image_test_utils.h"
 
 namespace mediapipe {
-
-#ifdef USE_MODELADAPTER
 CalculatorGraphConfig graph_config =
     ParseTextProtoOrDie<CalculatorGraphConfig>(absl::Substitute(
         R"pb(
@@ -52,25 +50,10 @@ CalculatorGraphConfig graph_config =
             calculator: "DetectionCalculator"
             input_side_packet: "INFERENCE_ADAPTER:adapter"
             input_stream: "IMAGE:input"
-            output_stream: "DETECTIONS:output"
+            output_stream: "INFERENCE_RESULT:output"
           }
         )pb"));
-#else
-CalculatorGraphConfig graph_config =
-    ParseTextProtoOrDie<CalculatorGraphConfig>(absl::Substitute(
-        R"pb(
-          input_stream: "input"
-          input_side_packet: "model_path"
-          output_stream: "output"
-          node {
-            calculator: "DetectionCalculator"
-            input_side_packet: "MODEL_PATH:model_path"
-            input_stream: "IMAGE:input"
-            output_stream: "DETECTIONS:output"
-          }
-        )pb"));
-}
-#endif
+
 TEST(DetectionCalculatorTest, TestDetection) {
   const cv::Mat raw_image = cv::imread("/data/cattle.jpg");
   std::vector<Packet> output_packets;
@@ -86,41 +69,21 @@ TEST(DetectionCalculatorTest, TestDetection) {
                  output_packets, inputSidePackets);
   ASSERT_EQ(1, output_packets.size());
 
-  auto result = output_packets[0].Get<GetiDetectionResult>();
-  auto detections = result.objects;
+  auto result = output_packets[0].Get<geti::InferenceResult>();
+  auto detections = result.rectangles;
 
   ASSERT_EQ(detections.size(), 4);
 
+  cv::Rect roi(0, 0, raw_image.cols, raw_image.rows);
+  ASSERT_EQ(result.roi, roi);
   const auto &detection = detections[0];
-  ASSERT_EQ(detection.label.label_id, "653b84c34e88964031d81a48");
-  ASSERT_EQ(detection.label.label, "Sheep");
+  ASSERT_EQ(detection.labels[0].label.label_id, "653b84c34e88964031d81a48");
 
-  const auto &cow_map = result.maps[0];
+  const auto &cow_map = result.saliency_maps[0];
   ASSERT_EQ(cow_map.label.label_id, "653b84c34e88964031d81a47");
-  ASSERT_EQ(cow_map.label.label, "Cow");
 
-  const auto &sheep_map = result.maps[1];
+  const auto &sheep_map = result.saliency_maps[1];
   ASSERT_EQ(sheep_map.label.label_id, "653b84c34e88964031d81a48");
-  ASSERT_EQ(sheep_map.label.label, "Sheep");
 }
-
-// TEST(DetectionCalculatorTest, TestTiling) {
-//   const cv::Mat raw_image = cv::imread("/data/cattle.jpg");
-//   std::vector<Packet> output_packets;
-//   std::string model_path = "/data/geti/detection_atss_tiling.xml";
-//   std::map<std::string, mediapipe::Packet> inputSidePackets;
-//   inputSidePackets["model_path"] =
-//       mediapipe::MakePacket<std::string>(model_path)
-//           .At(mediapipe::Timestamp(0));
-//   inputSidePackets["device"] =
-//       mediapipe::MakePacket<std::string>("AUTO").At(mediapipe::Timestamp(0));
-//   geti::RunGraph(mediapipe::MakePacket<cv::Mat>(raw_image), graph_config,
-//                  output_packets, inputSidePackets);
-//
-//   auto result = output_packets[0].Get<GetiDetectionResult>();
-//   auto detections = result.objects;
-//   ASSERT_EQ(detections.size(), 9);
-//   ASSERT_EQ(result.image_size, raw_image.size());
-// }
 
 }  // namespace mediapipe

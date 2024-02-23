@@ -18,7 +18,8 @@
 
 #include <memory>
 
-#include "kserve.h"
+#include "../inference/geti_calculator_base.h"
+#include "../inference/kserve.h"
 #include "mediapipe/framework/calculator_framework.h"
 #include "mediapipe/framework/packet.h"
 #include "mediapipe/framework/port/opencv_core_inc.h"
@@ -38,11 +39,11 @@ namespace mediapipe {
 //  IMAGE
 //
 
-class ModelInferRequestImageCalculator : public CalculatorBase {
+class ModelInferRequestImageCalculator : public GetiCalculatorBase {
  public:
   static absl::Status GetContract(CalculatorContract *cc);
   absl::Status Open(CalculatorContext *cc) override;
-  absl::Status Process(CalculatorContext *cc) override;
+  absl::Status GetiProcess(CalculatorContext *cc) override;
   absl::Status Close(CalculatorContext *cc) override;
 };
 

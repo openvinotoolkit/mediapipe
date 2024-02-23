@@ -26,8 +26,9 @@ cc_library(
     ],
     deps = [
         "//mediapipe/calculators/geti/inference:inference_calculators",
-        ":serialization",
-        "@nlohmann_json//:json",
+        "//mediapipe/calculators/geti/inference:geti_calculator_base",
+        "//mediapipe/calculators/geti/inference:inference_utils",
+        ":serialization"
     ],
     visibility = [
         "//visibility:public",
@@ -37,7 +38,7 @@ cc_library(
 
 cc_test(
     name = "serialization_calculators_test",
-    srcs = [ "serialization_calculators_test.cc" ],
+    srcs = ["serialization_calculators_test.cc" ],
     data = [
         ":test_data"
     ],

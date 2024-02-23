@@ -20,8 +20,8 @@
 #include <string>
 #include <vector>
 
-#include "utils.h"
-#include "mediapipe/calculators/geti/utils/data_structures.h"
+#include "../inference/utils.h"
+#include "../utils/data_structures.h"
 
 namespace mediapipe {
 
@@ -35,7 +35,8 @@ absl::Status RotatedDetectionCalculator::GetContract(CalculatorContract *cc) {
 #else
   cc->InputSidePackets().Tag("MODEL_PATH").Set<std::string>();
 #endif
-  cc->Outputs().Tag("DETECTIONS").Set<RotatedDetectionResult>();
+  cc->Outputs().Tag("INFERENCE_RESULT").Set<geti::InferenceResult>().Optional();
+  cc->Outputs().Tag("DETECTIONS").Set<geti::InferenceResult>().Optional();
   return absl::OkStatus();
 }
 
@@ -51,7 +52,14 @@ absl::Status RotatedDetectionCalculator::Open(CalculatorContext *cc) {
   auto configuration = ia->getModelConfig();
   labels = geti::get_labels_from_configuration(configuration);
 
-  model = MaskRCNNModel::create_model(ia);
+  auto property = configuration.find("tile_size");
+  if (property == configuration.end()) {
+    model = MaskRCNNModel::create_model(ia);
+  } else {
+    tiler = std::unique_ptr<InstanceSegmentationTiler>(
+        new InstanceSegmentationTiler(
+            std::move(MaskRCNNModel::create_model(ia)), {}));
+  }
 #else
   auto model_path = cc->InputSidePackets().Tag("MODEL_PATH").Get<std::string>();
   model = MaskRCNNModel::create_model(model_path);
@@ -60,8 +68,8 @@ absl::Status RotatedDetectionCalculator::Open(CalculatorContext *cc) {
   return absl::OkStatus();
 }
 
-absl::Status RotatedDetectionCalculator::Process(CalculatorContext *cc) {
-  LOG(INFO) << "RotatedDetectionCalculator::Process()";
+absl::Status RotatedDetectionCalculator::GetiProcess(CalculatorContext *cc) {
+  LOG(INFO) << "RotatedDetectionCalculator::GetiProcess()";
   if (cc->Inputs().Tag("IMAGE").IsEmpty()) {
     return absl::OkStatus();
   }
@@ -69,29 +77,40 @@ absl::Status RotatedDetectionCalculator::Process(CalculatorContext *cc) {
   // Get image
   const cv::Mat &cvimage = cc->Inputs().Tag("IMAGE").Get<cv::Mat>();
 
+  std::unique_ptr<InstanceSegmentationResult> inference_result;
   // Run Inference model
-  auto inference_result = model->infer(cvimage);
-  auto result = add_rotated_rects(inference_result->segmentedObjects);
-  std::vector<RotatedDetectedObject> objects;
 
-  for (auto &obj : result) {
-    objects.push_back({labels[obj.labelID], obj.confidence, obj.rotated_rect});
+  if (tiler) {
+    auto tiler_result = tiler->run(cvimage);
+    inference_result = std::unique_ptr<InstanceSegmentationResult>(
+        static_cast<InstanceSegmentationResult *>(tiler_result.release()));
+  } else {
+    inference_result = model->infer(cvimage);
   }
 
-  std::unique_ptr<RotatedDetectionResult> detections =
-      std::make_unique<RotatedDetectionResult>();
-  detections->objects = objects;
-  detections->feature_vector = inference_result->feature_vector;
+  auto rotated_rects = add_rotated_rects(inference_result->segmentedObjects);
+
+  std::unique_ptr<geti::InferenceResult> result =
+      std::make_unique<geti::InferenceResult>();
+
+  for (auto &obj : rotated_rects) {
+    if (labels.size() > obj.labelID)
+      result->rotated_rectangles.push_back(
+          {{geti::LabelResult{obj.confidence, labels[obj.labelID]}},
+           obj.rotated_rect});
+  }
 
   cv::Rect roi(0, 0, cvimage.cols, cvimage.rows);
+  result->roi = roi;
   for (size_t i = 0; i < inference_result->saliency_map.size(); i++) {
-    detections->maps.push_back(
-        {inference_result->saliency_map[i], roi, labels[i]});
+    if (labels.size() > i + 1)
+      result->saliency_maps.push_back(
+          {inference_result->saliency_map[i], roi, labels[i + 1]});
   }
 
-  cc->Outputs()
-      .Tag("DETECTIONS")
-      .Add(detections.release(), cc->InputTimestamp());
+  std::string tag =
+      geti::get_output_tag("INFERENCE_RESULT", {"DETECTIONS"}, cc);
+  cc->Outputs().Tag(tag).Add(result.release(), cc->InputTimestamp());
 
   return absl::OkStatus();
 }

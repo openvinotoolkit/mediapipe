@@ -20,6 +20,7 @@
 #include <string>
 #include <vector>
 
+#include "../inference/test_utils.h"
 #include "mediapipe/framework/calculator_framework.h"
 #include "mediapipe/framework/calculator_runner.h"
 #include "mediapipe/framework/formats/image_frame.h"
@@ -31,19 +32,21 @@
 #include "mediapipe/framework/port/status_matchers.h"
 #include "mediapipe/util/image_test_utils.h"
 #include "models/image_model.h"
-#include "mediapipe/calculators/geti/utils/data_structures.h"
+#include "../utils/data_structures.h"
 
 namespace mediapipe {
 
 TEST(SegmentationCalculatorTest, TestImageSegmentation) {
-#ifdef USE_MODELADAPTER
+  const cv::Mat raw_image = cv::imread("/data/cattle.jpg");
+  const std::string model_path =
+      "/data/geti/segmentation_lite_hrnet_18_mod2.xml";
   CalculatorGraphConfig graph_config =
       ParseTextProtoOrDie<CalculatorGraphConfig>(absl::Substitute(
           R"pb(
-            input_stream: "input_image"
+            input_stream: "input"
             input_side_packet: "model_path"
             input_side_packet: "device"
-            output_stream: "segmentation"
+            output_stream: "output"
             node {
               calculator: "OpenVINOInferenceAdapterCalculator"
               input_side_packet: "MODEL_PATH:model_path"
@@ -53,57 +56,32 @@ TEST(SegmentationCalculatorTest, TestImageSegmentation) {
             node {
               calculator: "SegmentationCalculator"
               input_side_packet: "INFERENCE_ADAPTER:adapter"
-              input_stream: "IMAGE:input_image"
-              output_stream: "RESULT:segmentation"
+              input_stream: "IMAGE:input"
+              output_stream: "INFERENCE_RESULT:output"
             }
           )pb"));
-#else
-  CalculatorGraphConfig graph_config =
-      ParseTextProtoOrDie<CalculatorGraphConfig>(absl::Substitute(
-          R"pb(
-            input_stream: "input_image"
-            input_side_packet: "model_path"
-            output_stream: "segmentation"
-            node {
-              calculator: "SegmentationCalculator"
-              input_side_packet: "MODEL_PATH:model_path"
-              input_stream: "IMAGE:input_image"
-              output_stream: "RESULT:segmentation"
-            }
-          )pb"));
-#endif
-  const cv::Mat raw_image = cv::imread("/data/cattle.jpg");
   std::vector<Packet> output_packets;
-  tool::AddVectorSink("segmentation", &graph_config, &output_packets);
 
-  CalculatorGraph graph(graph_config);
   std::map<std::string, mediapipe::Packet> inputSidePackets;
   inputSidePackets["model_path"] =
-      mediapipe::MakePacket<std::string>(
-          "/data/geti/segmentation_lite_hrnet_18_mod2.xml")
+      mediapipe::MakePacket<std::string>(model_path)
           .At(mediapipe::Timestamp(0));
   inputSidePackets["device"] =
       mediapipe::MakePacket<std::string>("AUTO").At(mediapipe::Timestamp(0));
 
-  MP_ASSERT_OK(graph.StartRun(inputSidePackets));
+  auto packet = mediapipe::MakePacket<cv::Mat>(raw_image);
 
-  MP_ASSERT_OK(graph.AddPacketToInputStream(
-      "input_image",
-      mediapipe::MakePacket<cv::Mat>(raw_image).At(mediapipe::Timestamp(0))));
+  geti::RunGraph(packet, graph_config, output_packets, inputSidePackets);
 
-  MP_ASSERT_OK(graph.WaitUntilIdle());
   ASSERT_EQ(1, output_packets.size());
 
-  auto &result = output_packets[0].Get<SegmentationResult>();
-  ASSERT_EQ(8, result.contours.size());
+  auto &result = output_packets[0].Get<geti::InferenceResult>();
+  ASSERT_EQ(8, result.polygons.size());
 
-  ASSERT_EQ(result.maps[0].label.label, "otx_empty_lbl");
-  ASSERT_EQ(result.maps[0].label.label_id, "None");
+  cv::Rect roi(0, 0, raw_image.cols, raw_image.rows);
+  ASSERT_EQ(result.roi, roi);
+  ASSERT_EQ(result.saliency_maps[0].label.label_id, "653b872e4e88964031d81c9b");
 
-  ASSERT_EQ(result.maps[1].label.label, "Cow");
-  ASSERT_EQ(result.maps[1].label.label_id, "653b872e4e88964031d81c9b");
-
-  ASSERT_EQ(result.maps[2].label.label, "Sheep");
-  ASSERT_EQ(result.maps[2].label.label_id, "653b872e4e88964031d81c9c");
+  ASSERT_EQ(result.saliency_maps[1].label.label_id, "653b872e4e88964031d81c9c");
 }
 }  // namespace mediapipe

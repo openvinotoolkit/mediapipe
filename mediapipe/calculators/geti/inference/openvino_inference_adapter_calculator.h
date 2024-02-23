@@ -19,6 +19,7 @@
 
 #include <memory>
 
+#include "geti_calculator_base.h"
 #include "mediapipe/calculators/geti/inference/openvino_inference_adapter_calculator.pb.h"
 #include "mediapipe/framework/calculator_framework.h"
 #include "mediapipe/framework/packet.h"
@@ -36,11 +37,11 @@ namespace mediapipe {
 //  INFERENCE_ADAPTER
 //
 
-class OpenVINOInferenceAdapterCalculator : public CalculatorBase {
+class OpenVINOInferenceAdapterCalculator : public GetiCalculatorBase {
  public:
   static absl::Status GetContract(CalculatorContract *cc);
   absl::Status Open(CalculatorContext *cc) override;
-  absl::Status Process(CalculatorContext *cc) override;
+  absl::Status GetiProcess(CalculatorContext *cc) override;
   absl::Status Close(CalculatorContext *cc) override;
 
  private:

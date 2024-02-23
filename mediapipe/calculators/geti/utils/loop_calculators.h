@@ -21,20 +21,27 @@
 
 #include <vector>
 
+#include "../inference/geti_calculator_base.h"
 #include "mediapipe/calculators/core/begin_loop_calculator.h"
 #include "mediapipe/calculators/core/end_loop_calculator.h"
 #include "mediapipe/framework/calculator_framework.h"
-#include "mediapipe/calculators/geti/utils/data_structures.h"
+#include "../utils/data_structures.h"
 
 namespace mediapipe {
 
-using BeginLoopModelApiDetectionCalculator =
-    BeginLoopCalculator<std::vector<GetiDetectedObject>>;
-using EndLoopModelApiDetectionClassificationCalculator =
-    EndLoopCalculator<std::vector<DetectionClassification>>;
-using EndLoopModelApiDetectionSegmentationCalculator =
-    EndLoopCalculator<std::vector<DetectionSegmentation>>;
+using BeginLoopRectanglePredictionCalculator =
+    BeginLoopCalculator<std::vector<geti::RectanglePrediction>>;
+using EndLoopRectanglePredictionsCalculator =
+    EndLoopCalculator<std::vector<geti::RectanglePrediction>>;
+using EndLoopPolygonPredictionsCalculator =
+    EndLoopCalculator<std::vector<std::vector<geti::PolygonPrediction>>>;
 
+using BeginLoopModelApiDetectionCalculator =
+    BeginLoopCalculator<std::vector<geti::RectanglePrediction>>;
+using EndLoopModelApiDetectionClassificationCalculator =
+    EndLoopCalculator<std::vector<geti::RectanglePrediction>>;
+using EndLoopModelApiDetectionSegmentationCalculator =
+    EndLoopCalculator<std::vector<std::vector<geti::PolygonPrediction>>>;
 }  // namespace mediapipe
 
 #endif  // LOOP_CALCULATORS_H

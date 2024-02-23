@@ -18,7 +18,8 @@
 
 #include <models/results.h>
 
-#include "mediapipe/calculators/geti/utils/data_structures.h"
+#include "data_structures.h"
+#include "../inference/geti_calculator_base.h"
 #include "mediapipe/framework/calculator_framework.h"
 #include "mediapipe/framework/formats/image.h"
 #include "mediapipe/framework/formats/image_frame.h"
@@ -38,11 +39,11 @@ namespace mediapipe {
 //  IMAGE - cv::Mat, Cropped image based on detection
 //
 
-class CropCalculator : public CalculatorBase {
+class CropCalculator : public GetiCalculatorBase {
  public:
   static absl::Status GetContract(CalculatorContract *cc);
   absl::Status Open(CalculatorContext *cc) override;
-  absl::Status Process(CalculatorContext *cc) override;
+  absl::Status GetiProcess(CalculatorContext *cc) override;
   absl::Status Close(CalculatorContext *cc) override;
 };
 

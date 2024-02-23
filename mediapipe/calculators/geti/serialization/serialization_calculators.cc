@@ -18,43 +18,77 @@
 
 #include <nlohmann/json_fwd.hpp>
 
-#include "mediapipe/calculators/geti/inference/kserve.h"
+#include "../inference/kserve.h"
+#include "../inference/utils.h"
 #include "nlohmann/json.hpp"
 #include "result_serialization.h"
-#include "mediapipe/calculators/geti/utils/data_structures.h"
+#include "../utils/data_structures.h"
+#include "utils/ocv_common.hpp"
 
 namespace mediapipe {
 
-template <class T>
-absl::Status SerializationCalculator<T>::GetContract(CalculatorContract *cc) {
+absl::Status SerializationCalculator::GetContract(CalculatorContract *cc) {
   LOG(INFO) << "SerializationCalculator::GetContract()";
-  cc->Inputs().Tag("RESULT").Set<T>();
+  cc->Inputs().Tag("INFERENCE_RESULT").Set<geti::InferenceResult>().Optional();
+  cc->Inputs().Tag("RESULT").Set<geti::InferenceResult>().Optional();
+
   cc->Inputs().Tag("REQUEST").Set<const KFSRequest *>();
   cc->Outputs().Tag("RESPONSE").Set<KFSResponse *>();
 
   return absl::OkStatus();
 }
 
-template <class T>
-absl::Status SerializationCalculator<T>::Open(CalculatorContext *cc) {
+absl::Status SerializationCalculator::Open(CalculatorContext *cc) {
   LOG(INFO) << "SerializationCalculator::Open()";
   return absl::OkStatus();
 }
 
-template <class T>
-absl::Status SerializationCalculator<T>::Process(CalculatorContext *cc) {
-  LOG(INFO) << "SerializationCalculator::Process()";
-  const auto &result = cc->Inputs().Tag("RESULT").Get<T>();
+absl::Status SerializationCalculator::GetiProcess(CalculatorContext *cc) {
+  LOG(INFO) << "SerializationCalculator::GetiProcess()";
+  std::string input_tag =
+      geti::get_input_tag("INFERENCE_RESULT", {"RESULT"}, cc);
+  auto result = cc->Inputs().Tag(input_tag).Get<geti::InferenceResult>();
 
   const KFSRequest *request =
       cc->Inputs().Tag("REQUEST").Get<const KFSRequest *>();
   LOG(INFO) << "KFSRequest for model " << request->model_name();
+
   bool include_xai = false;
   if (request->parameters().find("include_xai") != request->parameters().end())
     include_xai = request->parameters().at("include_xai").bool_param();
 
+  bool label_only = false;
+  if (request->parameters().find("label_only") != request->parameters().end())
+    label_only = request->parameters().at("label_only").bool_param();
+
+  int roi_x = 0;
+  int roi_y = 0;
+  if (request->parameters().find("x") != request->parameters().end()) {
+    roi_x = (int)request->parameters().at("x").int64_param();
+    roi_y = (int)request->parameters().at("y").int64_param();
+  }
+
   auto response = std::make_unique<inference::ModelInferResponse>();
-  auto data = geti::serialize(result, include_xai);
+  if (!include_xai) {
+    result.saliency_maps.clear();
+  }
+
+  geti::translate_inference_result_by_roi(result, roi_x,
+                                          roi_y);  // Apply ROI translation
+  nlohmann::json data = result;
+  if (include_xai) {
+    geti::filter_maps_by_prediction_prevalence(data);
+  } else {
+    data.erase("maps");  // Remove empty array added by serializer.
+  }
+
+  // Remove shape if only labels need to be returned
+  if (label_only) {
+    for (auto &prediction : data["predictions"]) {
+      prediction.erase("shape");
+    }
+  }
+
   auto param = inference::InferParameter();
   param.mutable_string_param()->assign(data.dump());
   response->mutable_parameters()->insert({"predictions", param});
@@ -64,12 +98,12 @@ absl::Status SerializationCalculator<T>::Process(CalculatorContext *cc) {
                      .At(cc->InputTimestamp()));
   return absl::OkStatus();
 }
-template <class T>
-absl::Status SerializationCalculator<T>::Close(CalculatorContext *cc) {
+absl::Status SerializationCalculator::Close(CalculatorContext *cc) {
   LOG(INFO) << "SerializationCalculator::Close()";
   return absl::OkStatus();
 }
 
+REGISTER_CALCULATOR(SerializationCalculator);
 REGISTER_CALCULATOR(DetectionSerializationCalculator);
 REGISTER_CALCULATOR(DetectionClassificationSerializationCalculator);
 REGISTER_CALCULATOR(DetectionSegmentationSerializationCalculator);

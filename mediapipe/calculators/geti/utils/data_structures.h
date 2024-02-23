@@ -20,6 +20,7 @@
 
 #include <vector>
 
+namespace geti {
 struct Label {
   std::string label_id;
   std::string label;
@@ -31,75 +32,33 @@ struct SaliencyMap {
   Label label;
 };
 
-struct GetiDetectedObject {
-  Label label;
-  cv::Rect shape;
-  float confidence;
-};
-
-struct GetiDetectionResult {
-  cv::Size image_size;
-  std::vector<GetiDetectedObject> objects;
-  std::vector<SaliencyMap> maps;
-};
-
-struct GetiClassification {
-  Label label;
-  float score;
-  cv::Rect roi;
-};
-
-struct GetiClassificationResult {
-  std::vector<GetiClassification> predictions;
-  std::vector<SaliencyMap> maps;
-};
-struct RotatedDetectedObject {
-  Label label;
-  float confidence;
-  cv::RotatedRect rotatedRectangle;
-};
-
-struct RotatedDetectionResult {
-  std::vector<RotatedDetectedObject> objects;
-  std::vector<SaliencyMap> maps;
-  ov::Tensor feature_vector;
-};
-
-struct DetectionClassification {
-  GetiDetectedObject detection;
-  GetiClassificationResult classifications;
-};
-
-struct DetectionClassificationResult {
-  std::vector<DetectionClassification> predictions;
-};
-
-struct GetiContour {
-  Label label;
+struct LabelResult {
   float probability;
+  Label label;
+};
+
+struct PolygonPrediction {
+  std::vector<LabelResult> labels;
   std::vector<cv::Point> shape;
 };
 
-struct SegmentationResult {
-  std::vector<GetiContour> contours;
-  std::vector<SaliencyMap> maps;
-  ov::Tensor feature_vector;
+struct RectanglePrediction {
+  std::vector<LabelResult> labels;
+  cv::Rect shape;
 };
 
-struct GetiAnomalyResult {
-  std::vector<GetiDetectedObject> detections;
-  std::vector<GetiContour> segmentations;
-  std::vector<SaliencyMap> maps;
+struct RotatedRectanglePrediction {
+  std::vector<LabelResult> labels;
+  cv::RotatedRect shape;
 };
 
-struct DetectionSegmentation {
-  GetiDetectedObject detection_result;
-  SegmentationResult segmentation_result;
+struct InferenceResult {
+  std::vector<RectanglePrediction> rectangles;
+  std::vector<RotatedRectanglePrediction> rotated_rectangles;
+  std::vector<PolygonPrediction> polygons;
+  std::vector<SaliencyMap> saliency_maps;
+  cv::Rect roi;
 };
-
-struct DetectionSegmentationResult {
-  GetiDetectionResult detection;
-  std::vector<DetectionSegmentation> segmentations;
-};
+}  // namespace geti
 
 #endif  // DATA_STRUCTURES_H

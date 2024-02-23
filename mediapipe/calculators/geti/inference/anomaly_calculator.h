@@ -22,12 +22,13 @@
 
 #include <memory>
 
+#include "../inference/geti_calculator_base.h"
 #include "mediapipe/framework/calculator_framework.h"
 #include "mediapipe/framework/formats/image_frame.h"
 #include "mediapipe/framework/formats/image_frame_opencv.h"
 #include "mediapipe/framework/port/opencv_core_inc.h"
 #include "mediapipe/framework/port/status.h"
-#include "mediapipe/calculators/geti/utils/data_structures.h"
+#include "../utils/data_structures.h"
 
 namespace mediapipe {
 
@@ -54,8 +55,8 @@ class AnomalyCalculator : public CalculatorBase {
   std::shared_ptr<InferenceAdapter> ia;
   std::unique_ptr<AnomalyModel> model;
   std::string task;
-  Label normal_label;
-  Label anomalous_label;
+  geti::Label normal_label;
+  geti::Label anomalous_label;
 };
 
 }  // namespace mediapipe

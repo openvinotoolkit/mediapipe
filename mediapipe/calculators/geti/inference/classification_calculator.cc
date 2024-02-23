@@ -31,7 +31,8 @@ absl::Status ClassificationCalculator::GetContract(CalculatorContract *cc) {
 #else
   cc->InputSidePackets().Tag("MODEL_PATH").Set<std::string>();
 #endif
-  cc->Outputs().Tag("CLASSIFICATION").Set<GetiClassificationResult>();
+  cc->Outputs().Tag("INFERENCE_RESULT").Set<geti::InferenceResult>().Optional();
+  cc->Outputs().Tag("CLASSIFICATION").Set<geti::InferenceResult>().Optional();
   return absl::OkStatus();
 }
 
@@ -53,8 +54,8 @@ absl::Status ClassificationCalculator::Open(CalculatorContext *cc) {
   return absl::OkStatus();
 }
 
-absl::Status ClassificationCalculator::Process(CalculatorContext *cc) {
-  LOG(INFO) << "ClassificationCalculator::Process()";
+absl::Status ClassificationCalculator::GetiProcess(CalculatorContext *cc) {
+  LOG(INFO) << "ClassificationCalculator::GetiProcess()";
   if (cc->Inputs().Tag("IMAGE").IsEmpty()) {
     return absl::OkStatus();
   }
@@ -65,32 +66,36 @@ absl::Status ClassificationCalculator::Process(CalculatorContext *cc) {
 
   // Run Inference model
   auto inference_result = model->infer(cvimage);
-  std::unique_ptr<GetiClassificationResult> result =
-      std::make_unique<GetiClassificationResult>();
+  std::unique_ptr<geti::InferenceResult> result =
+      std::make_unique<geti::InferenceResult>();
 
   cv::Rect roi(0, 0, cvimage.cols, cvimage.rows);
-  result->predictions = {};
-  for (const auto &classification : inference_result->topLabels) {
-    result->predictions.push_back(
-        {labels[classification.id], classification.score, roi});
-  }
+  result->roi = roi;
+  if (inference_result->topLabels.size() > 0) {
+    result->rectangles.push_back(geti::RectanglePrediction{{}, roi});
+    for (const auto &classification : inference_result->topLabels) {
+      if (classification.id < labels.size()) {
+        result->rectangles[0].labels.push_back(
+            geti::LabelResult{classification.score, labels[classification.id]});
+      }
+    }
 
-  if (inference_result->saliency_map) {
-    size_t shape_shift =
-        (inference_result->saliency_map.get_shape().size() > 3) ? 1 : 0;
+    if (inference_result->saliency_map) {
+      size_t shape_shift =
+          (inference_result->saliency_map.get_shape().size() > 3) ? 1 : 0;
 
-    inference_result->saliency_map;
-    for (size_t i = 0; i < labels.size(); i++) {
-      result->maps.push_back(
-          {wrap_saliency_map_tensor_to_mat(inference_result->saliency_map,
-                                           shape_shift, i),
-           roi, labels[i]});
+      for (size_t i = 0; i < labels.size(); i++) {
+        result->saliency_maps.push_back(
+            {geti::get_mat_from_ov_tensor(inference_result->saliency_map,
+                                          shape_shift, i),
+             roi, labels[i]});
+      }
     }
   }
 
-  cc->Outputs()
-      .Tag("CLASSIFICATION")
-      .Add(result.release(), cc->InputTimestamp());
+  std::string tag =
+      geti::get_output_tag("INFERENCE_RESULT", {"CLASSIFICATION"}, cc);
+  cc->Outputs().Tag(tag).Add(result.release(), cc->InputTimestamp());
 
   LOG(INFO) << "completed classification inference";
   return absl::OkStatus();

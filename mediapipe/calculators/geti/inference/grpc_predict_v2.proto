@@ -1,4 +1,4 @@
-// Copyright 2022 The KServe Authors.
+// Copyright 2020 kubeflow.org.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package inference;
 // Inference Server GRPC endpoints.
 service GRPCInferenceService
 {
-  // The ServerLive API indicates if the inference server is able to receive 
+  // The ServerLive API indicates if the inference server is able to receive
   // and respond to metadata and inference requests.
   rpc ServerLive(ServerLiveRequest) returns (ServerLiveResponse) {}
 
@@ -28,26 +28,23 @@ service GRPCInferenceService
   // The ModelReady API indicates if a specific model is ready for inferencing.
   rpc ModelReady(ModelReadyRequest) returns (ModelReadyResponse) {}
 
-  // The ServerMetadata API provides information about the server. Errors are 
-  // indicated by the google.rpc.Status returned for the request. The OK code 
+  // The ServerMetadata API provides information about the server. Errors are
+  // indicated by the google.rpc.Status returned for the request. The OK code
   // indicates success and other codes indicate failure.
   rpc ServerMetadata(ServerMetadataRequest) returns (ServerMetadataResponse) {}
 
-  // The per-model metadata API provides information about a model. Errors are 
-  // indicated by the google.rpc.Status returned for the request. The OK code 
+  // The per-model metadata API provides information about a model. Errors are
+  // indicated by the google.rpc.Status returned for the request. The OK code
   // indicates success and other codes indicate failure.
   rpc ModelMetadata(ModelMetadataRequest) returns (ModelMetadataResponse) {}
 
   // The ModelInfer API performs inference using the specified model. Errors are
-  // indicated by the google.rpc.Status returned for the request. The OK code 
+  // indicated by the google.rpc.Status returned for the request. The OK code
   // indicates success and other codes indicate failure.
   rpc ModelInfer(ModelInferRequest) returns (ModelInferResponse) {}
 
-  // Load or reload a model from a repository.
-  rpc RepositoryModelLoad(RepositoryModelLoadRequest) returns (RepositoryModelLoadResponse) {}
-
-  // Unload a model.
-  rpc RepositoryModelUnload(RepositoryModelUnloadRequest) returns (RepositoryModelUnloadResponse) {}
+  // Streaming endpoint
+  rpc ModelStreamInfer(stream ModelInferRequest) returns (stream ModelStreamInferResponse) {}
 }
 
 message ServerLiveRequest {}
@@ -200,8 +197,9 @@ message ModelInferRequest
   // what is expected by the tensor's shape and data type. The raw
   // data must be the flattened, one-dimensional, row-major order of
   // the tensor elements without any stride or padding between the
-  // elements. Note that the FP16 and BF16 data types must be represented as
-  // raw content as there is no specific data type for a 16-bit float type.
+  // elements. Note that the FP16 data type must be represented as raw
+  // content as there is no specific data type for a 16-bit float
+  // type.
   //
   // If this field is specified then InferInputTensor::contents must
   // not be specified for any input tensor.
@@ -254,17 +252,25 @@ message ModelInferResponse
   // what is expected by the tensor's shape and data type. The raw
   // data must be the flattened, one-dimensional, row-major order of
   // the tensor elements without any stride or padding between the
-  // elements. Note that the FP16 and BF16 data types must be represented as
-  // raw content as there is no specific data type for a 16-bit float type.
+  // elements. Note that the FP16 data type must be represented as raw
+  // content as there is no specific data type for a 16-bit float
+  // type.
   //
   // If this field is specified then InferOutputTensor::contents must
   // not be specified for any output tensor.
   repeated bytes raw_output_contents = 6;
 }
 
-// An inference parameter value. The Parameters message describes a 
+// Partial response for streaming inference
+message ModelStreamInferResponse
+{
+  string error_message = 1;
+  ModelInferResponse infer_response = 2;
+}
+
+// An inference parameter value. The Parameters message describes a
 // “name”/”value” pair, where the “name” is the name of the parameter
-// and the “value” is a boolean, integer, or string corresponding to 
+// and the “value” is a boolean, integer, or string corresponding to
 // the parameter.
 message InferParameter
 {
@@ -329,34 +335,4 @@ message InferTensorContents
   // expected by the tensor's shape. The contents must be the flattened,
   // one-dimensional, row-major order of the tensor elements.
   repeated bytes bytes_contents = 8;
-}
-
-message RepositoryModelLoadRequest
-{
-  // The name of the model to load, or reload.
-  string model_name = 1;
-}
-
-message RepositoryModelLoadResponse
-{
-  // The name of the model trying to load or reload.
-  string model_name = 1;
-
-  // boolean parameter to indicate whether model is loaded or not
-  bool isLoaded = 2;
-}
-
-message RepositoryModelUnloadRequest
-{
-  // The name of the model to unload.
-  string model_name = 1;
-}
-
-message RepositoryModelUnloadResponse
-{
-  // The name of the model trying to load or reload.
-  string model_name = 1;
-
-  // boolean parameter to indicate whether model is unloaded or not
-  bool isUnloaded = 2;
 }

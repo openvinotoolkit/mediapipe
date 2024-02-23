@@ -1,3 +1,4 @@
+
 /**
  *  INTEL CONFIDENTIAL
  *
@@ -13,13 +14,16 @@
  * or implied warranties, other than those that are expressly stated in the
  * License.
  */
-#ifndef DETECTION_CLASSIFICATION_OVERLAY_CALCULATOR_H
-#define DETECTION_CLASSIFICATION_OVERLAY_CALCULATOR_H
+#ifndef OVERLAY_CALCULATOR_H
+#define OVERLAY_CALCULATOR_H
 
 #include <models/input_data.h>
 #include <models/results.h>
 
-#include "mediapipe/calculators/geti/utils/data_structures.h"
+#include <vector>
+
+#include "data_structures.h"
+#include "../inference/geti_calculator_base.h"
 #include "mediapipe/framework/calculator_framework.h"
 #include "mediapipe/framework/formats/image_frame.h"
 #include "mediapipe/framework/formats/image_frame_opencv.h"
@@ -28,25 +32,24 @@
 
 namespace mediapipe {
 
-// Outputs image overlaying the detection classification task chain results
+// Runs detection inference on the provided image and OpenVINO model.
 //
 // Input:
 //  IMAGE - cv::Mat
-//  DETECTION_CLASSIFICATION - std::vector<DetectionClassificationResult>
+//  INFERENCE_RESULT - geti::InferenceResult
 //
 // Output:
-//  IMAGE - cv::Mat, Input image with applied detection bounding boxes and
-//  classification information
+//  IMAGE - cv::Mat, Input image with applied detection bounding boxes
 //
 
-class DetectionClassificationOverlayCalculator : public CalculatorBase {
+class OverlayCalculator : public GetiCalculatorBase {
  public:
   static absl::Status GetContract(CalculatorContract *cc);
   absl::Status Open(CalculatorContext *cc) override;
-  absl::Status Process(CalculatorContext *cc) override;
+  absl::Status GetiProcess(CalculatorContext *cc) override;
   absl::Status Close(CalculatorContext *cc) override;
 };
 
 }  // namespace mediapipe
 
-#endif  // DETECTION_CLASSIFICATION_OVERLAY_CALCULATOR_H
+#endif  // DETECTION_OVERLAY_CALCULATOR_H

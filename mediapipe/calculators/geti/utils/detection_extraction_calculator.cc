@@ -20,13 +20,24 @@
 #include <string>
 #include <vector>
 
+#include "../inference/utils.h"
+
 namespace mediapipe {
 
 absl::Status DetectionExtractionCalculator::GetContract(
     CalculatorContract *cc) {
   LOG(INFO) << "DetectionExtractionCalculator::GetContract()";
-  cc->Inputs().Tag("DETECTIONS").Set<GetiDetectionResult>();
-  cc->Outputs().Tag("DETECTED_OBJECTS").Set<std::vector<GetiDetectedObject>>();
+  cc->Inputs().Tag("DETECTIONS").Set<geti::InferenceResult>().Optional();
+  cc->Inputs().Tag("INFERENCE_RESULT").Set<geti::InferenceResult>().Optional();
+  cc->Outputs()
+      .Tag("RECTANGLE_PREDICTION")
+      .Set<std::vector<geti::RectanglePrediction>>()
+      .Optional();
+
+  cc->Outputs()
+      .Tag("DETECTED_OBJECTS")
+      .Set<std::vector<geti::RectanglePrediction>>()
+      .Optional();
   return absl::OkStatus();
 }
 
@@ -35,19 +46,19 @@ absl::Status DetectionExtractionCalculator::Open(CalculatorContext *cc) {
   return absl::OkStatus();
 }
 
-absl::Status DetectionExtractionCalculator::Process(CalculatorContext *cc) {
-  LOG(INFO) << "DetectionExtractionCalculator::Process()";
-  if (cc->Inputs().Tag("DETECTIONS").IsEmpty()) {
-    return absl::OkStatus();
-  }
+absl::Status DetectionExtractionCalculator::GetiProcess(CalculatorContext *cc) {
+  LOG(INFO) << "DetectionExtractionCalculator::GetiProcess()";
 
-  const auto &result =
-      cc->Inputs().Tag("DETECTIONS").Get<GetiDetectionResult>();
-  auto detections =
-      std::make_unique<std::vector<GetiDetectedObject>>(result.objects);
-  cc->Outputs()
-      .Tag("DETECTED_OBJECTS")
-      .Add(detections.release(), cc->InputTimestamp());
+  std::string input_tag =
+      geti::get_input_tag("INFERENCE_RESULT", {"DETECTIONS"}, cc);
+
+  const auto &result = cc->Inputs().Tag(input_tag).Get<geti::InferenceResult>();
+  auto detections = std::make_unique<std::vector<geti::RectanglePrediction>>(
+      result.rectangles);
+
+  std::string tag =
+      geti::get_output_tag("RECTANGLE_PREDICTION", {"DETECTED_OBJECTS"}, cc);
+  cc->Outputs().Tag(tag).Add(detections.release(), cc->InputTimestamp());
   return absl::OkStatus();
 }
 
