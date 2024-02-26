@@ -637,3 +637,34 @@ TEST_F(OpenVINOInferenceCalculatorTest, NoTagToInputNames) {
     ASSERT_EQ(abslStatus.code(), absl::StatusCode::kOk) << abslStatus.message();
 }
 
+TEST_F(OpenVINOInferenceCalculatorTest, UnSupportedTypeTagToInputNames) {
+    auto calculator =
+        mediapipe::ParseTextProtoOrDie<CalculatorGraphConfig::Node>(
+            R"pb(
+                calculator: "OpenVINOInferenceCalculator"
+                input_side_packet: "SESSION:session"
+                input_stream: "INPUT1:in1"
+                input_stream: "INPUT2:in2"
+                output_stream: "SUM:out"
+                node_options: {
+                    [type.googleapis.com / mediapipe.OpenVINOInferenceCalculatorOptions]: {
+                    tag_to_input_tensor_names {
+                        key: "INPUT1"
+                        value: "input1"
+                    }
+                    tag_to_input_tensor_names {
+                        key: "INPUT2"
+                        value: "input2"
+                    }
+                    tag_to_output_tensor_names {
+                        key: "SUM"
+                        value: "sum"
+                    }
+                    }
+                }
+            )pb");
+    auto cc = absl::make_unique<CalculatorContract>();
+    cc->Initialize(calculator);
+    auto abslStatus = mediapipe::OpenVINOInferenceCalculator::GetContract(cc.get());
+    ASSERT_EQ(abslStatus.code(), absl::StatusCode::kOk) << abslStatus.message();
+}
