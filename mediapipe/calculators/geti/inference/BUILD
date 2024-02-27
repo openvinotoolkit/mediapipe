@@ -112,6 +112,7 @@ cc_library(
         "//mediapipe/framework/port:opencv_imgproc",
         "//mediapipe/framework/port:opencv_highgui",
         "//mediapipe/util:image_test_utils",
+        "@nlohmann_json//:json",
     ],
     visibility = [
         "//visibility:public",

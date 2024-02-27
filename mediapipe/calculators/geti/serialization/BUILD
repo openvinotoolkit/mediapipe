@@ -5,7 +5,8 @@ cc_library(
     ],
     deps = [
         "//mediapipe/calculators/geti/utils:data_structures",
-        "//third_party/cpp-base64:cpp-base64"
+        "//third_party/cpp-base64:cpp-base64",
+        "@nlohmann_json//:json",
     ]
 )
 
