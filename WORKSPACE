@@ -706,13 +706,6 @@ git_repository(
     #        allow all http methods
 )
 
-# AWS S3 SDK
-new_local_repository(
-    name = "awssdk",
-    build_file = "@ovms//third_party/aws:BUILD",
-    path = "/awssdk",
-)
-
 # Azure Storage SDK
 new_local_repository(
     name = "azure",
