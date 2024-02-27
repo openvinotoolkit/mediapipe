@@ -706,6 +706,9 @@ git_repository(
     #        allow all http methods
 )
 
+load("@ovms//third_party/aws-sdk-cpp:aws-sdk-cpp.bzl", "aws_sdk_cpp")
+aws_sdk_cpp()
+
 # Azure Storage SDK
 new_local_repository(
     name = "azure",
