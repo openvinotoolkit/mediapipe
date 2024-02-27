@@ -191,17 +191,7 @@ exports_files(
 )
 
 filegroup(
-  name = "ovms_static_analysis",
-  srcs = [
-    "//mediapipe/calculators/ovms:ovms_calculator",
-    "//mediapipe/calculators/ovms:openvinoinferencecalculator",
-    "//mediapipe/calculators/ovms:openvinomodelserversessioncalculator",
-    "//mediapipe/calculators/ovms:modelapiovmsadapter",
-  ]
-)
-
-filegroup(
-  name = "geti_static_analysis",
+  name = "geti_targets",
   srcs = [
     "//mediapipe/calculators/geti/serialization:calculators",
     "//mediapipe/calculators/geti/inference:geti_calculator_base",
