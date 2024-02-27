@@ -186,4 +186,4 @@ RUN curl https://storage.googleapis.com/mediapipe-assets/ssdlite_object_detectio
 RUN python setup.py install
 
 # BUILD Geti calculators
-RUN
+RUN bazel build //mediapipe:geti_static_analysis
