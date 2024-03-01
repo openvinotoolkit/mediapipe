@@ -81,6 +81,8 @@ const std::string TFLITE_TENSORS_TAG{"TFLITE_TENSORS"};
 
 const std::vector<std::string> supportedTags = {SESSION_TAG, OVTENSOR_TAG, OVTENSORS_TAG, TFTENSOR_TAG, TFTENSORS_TAG, MPTENSOR_TAG, MPTENSORS_TAG, TFLITE_TENSOR_TAG, TFLITE_TENSORS_TAG};
 
+const std::vector<std::string> supportedVectorTags = {OVTENSORS_TAG, TFTENSORS_TAG, MPTENSORS_TAG, TFLITE_TENSORS_TAG};
+
 using TFSDataType = tensorflow::DataType;
 
 // Function from ovms/src/string_utils.h
@@ -356,6 +358,30 @@ class OpenVINOInferenceCalculator : public CalculatorBase {
     std::unique_ptr<tflite::Interpreter> interpreter_ = absl::make_unique<tflite::Interpreter>();
     bool initialized = false;
 
+    static bool ValidateOrderLists(std::set<std::string> calculatorTags, const google::protobuf::RepeatedPtrField<std::string>& order_list) {
+        // Get output_stream types defined in the graph
+        std::vector<std::string> inputTypes;
+        for (const std::string& tag : calculatorTags) {
+            std::vector<std::string> tokens = tokenize(tag, ':');
+            if (tokens.size() > 0) {
+                std::string inputType = tokens[0];
+
+                // Check if supported vector tag was used
+                for (const auto& supportedVectorTag : supportedVectorTags) {
+                    if ( startsWith(inputType, supportedVectorTag)){
+                        if (order_list.size() < 1)
+                        {
+                            LOG(ERROR) << "OpenVINOInferenceCalculator GetContract error. Order list is requiered for vector types: " << inputType;
+                            return false;
+                        }
+                    }
+                }
+            }
+        }
+
+        return true;
+    }
+
     static bool ValidateTagToNames(std::set<std::string> calculatorTags, const google::protobuf::Map<std::string, std::string>& tags_to_names) {
         // Get output_stream types defined in the graph
         std::vector<std::string> inputTypes;
@@ -388,11 +414,11 @@ class OpenVINOInferenceCalculator : public CalculatorBase {
                     }
                 }
 
-                // Check if no supported tag used - OV:Tensor default type
+                // Check if empty tag used - OV:Tensor default type
                 if ( tokenize(key, ':').size() == 0) {
                     // Check if used tag is defined in the input_stream
                     for (const auto& graphInput : inputTypes) {
-                        // Check if no supported tag used - OV:Tensor default type
+                        // Check if empty tag used - OV:Tensor default type
                         if (key == graphInput) {
                             nameMatch = true;
                             break;
@@ -402,6 +428,15 @@ class OpenVINOInferenceCalculator : public CalculatorBase {
 
                 // Type used in tag_to__tensor_names does match input_stream type
                 if (nameMatch){
+                    break;
+                }
+            }
+
+            // Check if no supported tag used - OV:Tensor default type
+            for (const auto& graphInput : inputTypes) {
+                // Full match required
+                if (key == graphInput) {
+                    nameMatch = true;
                     break;
                 }
             }
@@ -430,6 +465,16 @@ class OpenVINOInferenceCalculator : public CalculatorBase {
             return false;
         }
 
+        if (options.input_order_list().size() >= 1 && options.tag_to_input_tensor_names().size() > 0) {
+            LOG(ERROR) << "OpenVINOInferenceCalculator GetContract error. We allow using tag_to_input_tensor_names or input_order_list not both at once.";
+            return false;
+        }
+
+        if (options.output_order_list().size() >= 1 && options.tag_to_output_tensor_names().size() > 0) {
+            LOG(ERROR) << "OpenVINOInferenceCalculator GetContract error. We allow using tag_to_input_tensor_names or input_order_list not both at once.";
+            return false;
+        }
+
         return true;
     }
 
@@ -442,12 +487,21 @@ class OpenVINOInferenceCalculator : public CalculatorBase {
         }
 
         const auto& options = cc->Options<OpenVINOInferenceCalculatorOptions>();
-        if (!ValidateTagToNames(cc->Inputs().GetTags(), options.tag_to_input_tensor_names()))
-        {
+
+        if (!ValidateOrderLists(cc->Inputs().GetTags(), options.input_order_list())) {
+            LOG(INFO) << "OpenVINOInferenceCalculator ValidateOrderLists for inputs failed.";
+            return false;
+        }
+        if (!ValidateOrderLists(cc->Outputs().GetTags(), options.output_order_list())) {
+            LOG(INFO) << "OpenVINOInferenceCalculator ValidateOrderLists for outputs failed.";
+            return false;
+        }
+
+        if (!ValidateTagToNames(cc->Inputs().GetTags(), options.tag_to_input_tensor_names())) {
             LOG(INFO) << "OpenVINOInferenceCalculator ValidateInputTagToNames failed.";
             return false;
         }
-        if (!ValidateTagToNames(cc->Outputs().GetTags(), options.tag_to_output_tensor_names())){
+        if (!ValidateTagToNames(cc->Outputs().GetTags(), options.tag_to_output_tensor_names())) {
             LOG(INFO) << "OpenVINOInferenceCalculator ValidateOutputTagToNames failed.";
             return false;
         }
@@ -600,18 +654,15 @@ public:
             } 
 #define DESERIALIZE_TENSORS(TYPE, DESERIALIZE_FUN) \
                 auto& packet = cc->Inputs().Tag(tag).Get<std::vector<TYPE>>();                \
-                if ( packet.size() > 1 && input_order_list.size() != packet.size()) {                 \
-                    LOG(INFO) << "input_order_list not set properly in options for multiple inputs."; \
-                    RET_CHECK(false);                                                                 \
-                }                                                                                     \
-                if (this->input_order_list.size() > 0){                                               \
-                    for (size_t i = 0; i < this->input_order_list.size(); i++) {                         \
-                        auto& tensor = packet[i];                                                     \
-                        input[this->input_order_list[i]] = DESERIALIZE_FUN(tensor);                   \
-                    }                                                                                 \
-                } else if (packet.size() == 1) {                                                      \
-                    input[realInputName] = DESERIALIZE_FUN(packet[0]);                                \
-                }
+                if (packet.size() != this->input_order_list.size()) {                               \
+                    LOG(INFO) << "input_order_list size does not match the input vector size.";     \
+                    RET_CHECK(false);                                                               \
+                }                                                                                   \
+                for (size_t i = 0; i < this->input_order_list.size(); i++) {                         \
+                    auto& tensor = packet[i];                                                     \
+                    input[this->input_order_list[i]] = DESERIALIZE_FUN(tensor);                   \
+                }                                                                                 \
+
             try {
             if (startsWith(tag, OVTENSORS_TAG)) {
                 DESERIALIZE_TENSORS(ov::Tensor,);

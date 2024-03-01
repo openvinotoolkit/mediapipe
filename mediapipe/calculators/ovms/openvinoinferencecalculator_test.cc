@@ -78,6 +78,11 @@ TEST_F(OpenVINOInferenceCalculatorTest, VerifySupportedTags) {
                 output_stream: "MPTENSORS:output"
                 output_stream: "TFTENSORS:output"
                 output_stream: "TFLITE_TENSORS:output"
+                node_options: {
+                    [type.googleapis.com / mediapipe.OpenVINOInferenceCalculatorOptions]: {
+                        output_order_list :["raw_outputs/box_encodings","raw_outputs/class_predictions","3","4"]
+                    }
+                }
             )pb");
     auto cc = absl::make_unique<CalculatorContract>();
     cc->Initialize(calculator);
@@ -324,20 +329,20 @@ TEST_F(OpenVINOInferenceCalculatorTest, VerifyTagToInputNames) {
             R"pb(
                 calculator: "OpenVINOInferenceCalculator"
                 input_side_packet: "SESSION:session"
-                input_stream: "OVTENSORS:image_tensor"
-                output_stream: "OVTENSORS2:detection_tensors"
+                input_stream: "OVTENSOR:image_tensor"
+                output_stream: "OVTENSOR:detection_tensors"
                 node_options: {
                     [type.googleapis.com / mediapipe.OpenVINOInferenceCalculatorOptions]: {
                         tag_to_input_tensor_names {
-                            key: "OVTENSORS"
+                            key: "OVTENSOR"
                             value: "normalized_input_image_tensor"
                         }
                         tag_to_output_tensor_names {
-                            key: "OVTENSORS1"
+                            key: "OVTENSOR1"
                             value: "raw_outputs/box_encodings"
                         }
                         tag_to_output_tensor_names {
-                            key: "OVTENSORS2"
+                            key: "OVTENSOR2"
                             value: "raw_outputs/class_predictions"
                         }
                         }
@@ -355,22 +360,22 @@ TEST_F(OpenVINOInferenceCalculatorTest, VerifyOptions) {
             R"pb(
                 calculator: "OpenVINOInferenceCalculator"
                 input_side_packet: "SESSION:session"
-                input_stream: "OVTENSORS:image_tensor"
-                output_stream: "OVTENSORS2:detection_tensors"
+                input_stream: "OVTENSOR:image_tensor"
+                output_stream: "OVTENSORS:detection_tensors"
                 node_options: {
                     [type.googleapis.com / mediapipe.OpenVINOInferenceCalculatorOptions]: {
                         input_order_list :["normalized_input_image_tensor"]
                         output_order_list :["raw_outputs/box_encodings","raw_outputs/class_predictions"]
                         tag_to_input_tensor_names {
-                            key: "OVTENSORS"
+                            key: "OVTENSOR"
                             value: "normalized_input_image_tensor"
                         }
                         tag_to_output_tensor_names {
-                            key: "OVTENSORS1"
+                            key: "OVTENSOR1"
                             value: "raw_outputs/box_encodings"
                         }
                         tag_to_output_tensor_names {
-                            key: "OVTENSORS2"
+                            key: "OVTENSOR2"
                             value: "raw_outputs/class_predictions"
                         }
                         }
@@ -389,16 +394,16 @@ TEST_F(OpenVINOInferenceCalculatorTest, VerifyOptionsInput) {
                 calculator: "OpenVINOInferenceCalculator"
                 input_side_packet: "SESSION:session"
                 input_stream: "OVTENSORS:image_tensor"
-                output_stream: "OVTENSORS2:detection_tensors"
+                output_stream: "OVTENSOR2:detection_tensors"
                 node_options: {
                     [type.googleapis.com / mediapipe.OpenVINOInferenceCalculatorOptions]: {
                         input_order_list :["normalized_input_image_tensor"]
                         tag_to_output_tensor_names {
-                            key: "OVTENSORS1"
+                            key: "OVTENSOR1"
                             value: "raw_outputs/box_encodings"
                         }
                         tag_to_output_tensor_names {
-                            key: "OVTENSORS2"
+                            key: "OVTENSOR2"
                             value: "raw_outputs/class_predictions"
                         }
                         }
@@ -416,13 +421,13 @@ TEST_F(OpenVINOInferenceCalculatorTest, VerifyOptionsOutput) {
             R"pb(
                 calculator: "OpenVINOInferenceCalculator"
                 input_side_packet: "SESSION:session"
-                input_stream: "OVTENSORS:image_tensor"
+                input_stream: "OVTENSOR:image_tensor"
                 output_stream: "OVTENSORS2:detection_tensors"
                 node_options: {
                     [type.googleapis.com / mediapipe.OpenVINOInferenceCalculatorOptions]: {
                         output_order_list :["raw_outputs/box_encodings","raw_outputs/class_predictions"]
                         tag_to_input_tensor_names {
-                            key: "OVTENSORS"
+                            key: "OVTENSOR"
                             value: "normalized_input_image_tensor"
                         }
                         }
@@ -440,17 +445,13 @@ TEST_F(OpenVINOInferenceCalculatorTest, WrongTagToOutputNames) {
             R"pb(
                 calculator: "OpenVINOInferenceCalculator"
                 input_side_packet: "SESSION:session"
-                input_stream: "OVTENSORS:image_tensor"
-                output_stream: "OVTENSORS2:detection_tensors"
+                input_stream: "OVTENSOR:image_tensor"
+                output_stream: "OVTENSOR2:detection_tensors"
                 node_options: {
                     [type.googleapis.com / mediapipe.OpenVINOInferenceCalculatorOptions]: {
                         tag_to_input_tensor_names {
-                            key: "OVTENSORS"
+                            key: "OVTENSOR"
                             value: "normalized_input_image_tensor"
-                        }
-                        tag_to_output_tensor_names {
-                            key: "OVTENSORS1"
-                            value: "raw_outputs/box_encodings"
                         }
                         tag_to_output_tensor_names {
                             key: "RROVTENSOR2"
@@ -471,20 +472,16 @@ TEST_F(OpenVINOInferenceCalculatorTest, WrongTagToInputNames) {
             R"pb(
                 calculator: "OpenVINOInferenceCalculator"
                 input_side_packet: "SESSION:session"
-                input_stream: "OVTENSORS:image_tensor"
-                output_stream: "OVTENSORS2:detection_tensors"
+                input_stream: "OVTENSOR:image_tensor"
+                output_stream: "OVTENSOR2:detection_tensors"
                 node_options: {
                     [type.googleapis.com / mediapipe.OpenVINOInferenceCalculatorOptions]: {
                         tag_to_input_tensor_names {
-                            key: "OVTENSOR"
+                            key: "OVTENSORS"
                             value: "normalized_input_image_tensor"
                         }
                         tag_to_output_tensor_names {
-                            key: "OVTENSORS1"
-                            value: "raw_outputs/box_encodings"
-                        }
-                        tag_to_output_tensor_names {
-                            key: "OVTENSORS2"
+                            key: "OVTENSOR2"
                             value: "raw_outputs/class_predictions"
                         }
                         }
@@ -503,7 +500,7 @@ TEST_F(OpenVINOInferenceCalculatorTest, WrongTagToInputNamesNoVector) {
                 calculator: "OpenVINOInferenceCalculator"
                 input_side_packet: "SESSION:session"
                 input_stream: "OVTENSOR:image_tensor"
-                output_stream: "OVTENSORS2:detection_tensors"
+                output_stream: "OVTENSOR2:detection_tensors"
                 node_options: {
                     [type.googleapis.com / mediapipe.OpenVINOInferenceCalculatorOptions]: {
                         tag_to_input_tensor_names {
@@ -511,11 +508,11 @@ TEST_F(OpenVINOInferenceCalculatorTest, WrongTagToInputNamesNoVector) {
                             value: "normalized_input_image_tensor"
                         }
                         tag_to_output_tensor_names {
-                            key: "OVTENSORS1"
+                            key: "OVTENSOR1"
                             value: "raw_outputs/box_encodings"
                         }
                         tag_to_output_tensor_names {
-                            key: "OVTENSORS2"
+                            key: "OVTENSOR2"
                             value: "raw_outputs/class_predictions"
                         }
                         }
@@ -637,7 +634,7 @@ TEST_F(OpenVINOInferenceCalculatorTest, NoTagToInputNames) {
     ASSERT_EQ(abslStatus.code(), absl::StatusCode::kOk) << abslStatus.message();
 }
 
-TEST_F(OpenVINOInferenceCalculatorTest, UnSupportedTypeTagToInputNames) {
+TEST_F(OpenVINOInferenceCalculatorTest, UnSupportedTypeTagToInputNamesMatch) {
     auto calculator =
         mediapipe::ParseTextProtoOrDie<CalculatorGraphConfig::Node>(
             R"pb(
@@ -667,4 +664,68 @@ TEST_F(OpenVINOInferenceCalculatorTest, UnSupportedTypeTagToInputNames) {
     cc->Initialize(calculator);
     auto abslStatus = mediapipe::OpenVINOInferenceCalculator::GetContract(cc.get());
     ASSERT_EQ(abslStatus.code(), absl::StatusCode::kOk) << abslStatus.message();
+}
+
+TEST_F(OpenVINOInferenceCalculatorTest, UnSupportedTypeTagToInputNamesOutputMismatch) {
+    auto calculator =
+        mediapipe::ParseTextProtoOrDie<CalculatorGraphConfig::Node>(
+            R"pb(
+                calculator: "OpenVINOInferenceCalculator"
+                input_side_packet: "SESSION:session"
+                input_stream: "INPUT1:in1"
+                input_stream: "INPUT2:in2"
+                output_stream: "SUM:out"
+                node_options: {
+                    [type.googleapis.com / mediapipe.OpenVINOInferenceCalculatorOptions]: {
+                    tag_to_input_tensor_names {
+                        key: "INPUT1"
+                        value: "input1"
+                    }
+                    tag_to_input_tensor_names {
+                        key: "INPUT2"
+                        value: "input2"
+                    }
+                    tag_to_output_tensor_names {
+                        key: "SUM1"
+                        value: "sum"
+                    }
+                    }
+                }
+            )pb");
+    auto cc = absl::make_unique<CalculatorContract>();
+    cc->Initialize(calculator);
+    auto abslStatus = mediapipe::OpenVINOInferenceCalculator::GetContract(cc.get());
+    ASSERT_EQ(abslStatus.code(), absl::StatusCode::kInternal) << abslStatus.message();
+}
+
+TEST_F(OpenVINOInferenceCalculatorTest, UnSupportedTypeTagToInputNamesInputMismatch) {
+    auto calculator =
+        mediapipe::ParseTextProtoOrDie<CalculatorGraphConfig::Node>(
+            R"pb(
+                calculator: "OpenVINOInferenceCalculator"
+                input_side_packet: "SESSION:session"
+                input_stream: "INPUT1:in1"
+                input_stream: "INPUT2:in2"
+                output_stream: "SUM:out"
+                node_options: {
+                    [type.googleapis.com / mediapipe.OpenVINOInferenceCalculatorOptions]: {
+                    tag_to_input_tensor_names {
+                        key: "INPUT3"
+                        value: "input1"
+                    }
+                    tag_to_input_tensor_names {
+                        key: "INPUT2"
+                        value: "input2"
+                    }
+                    tag_to_output_tensor_names {
+                        key: "SUM"
+                        value: "sum"
+                    }
+                    }
+                }
+            )pb");
+    auto cc = absl::make_unique<CalculatorContract>();
+    cc->Initialize(calculator);
+    auto abslStatus = mediapipe::OpenVINOInferenceCalculator::GetContract(cc.get());
+    ASSERT_EQ(abslStatus.code(), absl::StatusCode::kInternal) << abslStatus.message();
 }
