@@ -61,7 +61,8 @@ cc_library(
         "openvinoinferencecalculator.cc"
     ],
     hdrs = [
-        "openvinoinferencecalculator.h"
+        "openvinoinferencecalculator.h",
+        "openvinoinferencecalculatoroptions.h"
     ],
     deps = [
         ":modelapiovmsadapter",
