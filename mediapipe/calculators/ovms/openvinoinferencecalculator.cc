@@ -508,17 +508,23 @@ public:
         for (const auto& tag : cc->Outputs().GetTags()) {
             LOG(INFO) << "Processing tag: " << tag;
             std::string tensorName;
-            auto it = options.tag_to_output_tensor_names().find(tag);
-            if (it == options.tag_to_output_tensor_names().end()) {
-                tensorName = tag;
-            } else {
-                tensorName = it->second;
+            auto tensorIt = output.begin();
+            bool isVectorType = false;
+            // Check if supported vector tag was used
+            if (!IsVectorTag(tag)) {
+                auto it = options.tag_to_output_tensor_names().find(tag);
+                if (it == options.tag_to_output_tensor_names().end()) {
+                    tensorName = tag;
+                } else {
+                    tensorName = it->second;
+                }
+                tensorIt = output.find(tensorName);
+                if (tensorIt == output.end()) {
+                    LOG(INFO) << "Could not find: " << tensorName << " in inference output";
+                    RET_CHECK(false);
+                }
             }
-            auto tensorIt = output.find(tensorName);
-            if (tensorIt == output.end()) {
-                LOG(INFO) << "Could not find: " << tensorName << " in inference output";
-                RET_CHECK(false);
-            }
+
             try {
             if (startsWith(tag, OVTENSORS_TAG)) {
                 LOG(INFO) << "OVMS calculator will process vector<ov::Tensor>";

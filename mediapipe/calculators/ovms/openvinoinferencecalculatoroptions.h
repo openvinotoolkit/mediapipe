@@ -99,6 +99,18 @@ static bool ValidateOrderLists(std::set<std::string> calculatorTags, const googl
     return true;
 }
 
+static bool IsVectorTag(const std::string& tag) {
+    bool isVectorType = false;
+    // Check if supported vector tag was used
+    for (const auto& supportedVectorTag : supportedVectorTags) {
+        if (startsWith(tag, supportedVectorTag)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 static bool ValidateTagToNames(std::set<std::string> calculatorTags, const google::protobuf::Map<std::string, std::string>& tags_to_names) {
     // Get output_stream types defined in the graph
     std::vector<std::string> inputTypes;
