@@ -451,16 +451,16 @@ public:
             } else {
                 realInputName = it->second.c_str();
             } 
-#define DESERIALIZE_TENSORS(TYPE, DESERIALIZE_FUN) \
-                auto& packet = cc->Inputs().Tag(tag).Get<std::vector<TYPE>>();                \
+#define DESERIALIZE_TENSORS(TYPE, DESERIALIZE_FUN)                                                  \
+                auto& packet = cc->Inputs().Tag(tag).Get<std::vector<TYPE>>();                      \
                 if (packet.size() != this->input_order_list.size()) {                               \
                     LOG(INFO) << "input_order_list size does not match the input vector size.";     \
                     RET_CHECK(false);                                                               \
                 }                                                                                   \
-                for (size_t i = 0; i < this->input_order_list.size(); i++) {                         \
-                    auto& tensor = packet[i];                                                     \
-                    input[this->input_order_list[i]] = DESERIALIZE_FUN(tensor);                   \
-                }                                                                                 \
+                for (size_t i = 0; i < this->input_order_list.size(); i++) {                        \
+                    auto& tensor = packet[i];                                                       \
+                    input[this->input_order_list[i]] = DESERIALIZE_FUN(tensor);                     \
+                }                                                                                   \
 
             try {
             if (startsWith(tag, OVTENSORS_TAG)) {
@@ -509,8 +509,8 @@ public:
             LOG(INFO) << "Processing tag: " << tag;
             std::string tensorName;
             auto tensorIt = output.begin();
-            bool isVectorType = false;
-            // Check if supported vector tag was used
+            
+            // Check if supported vector tag was not used
             if (!IsVectorTag(tag)) {
                 auto it = options.tag_to_output_tensor_names().find(tag);
                 if (it == options.tag_to_output_tensor_names().end()) {
@@ -526,60 +526,40 @@ public:
             }
 
             try {
+#define SERIALIZE_TENSORS(TYPE, SESERIALIZE_FUN) \
+                auto tensors = std::make_unique<std::vector<TYPE>>();                                           \
+                if ( output.size() > 1 && this->output_order_list.size() != this->output_order_list.size())     \
+                {                                                                                               \
+                    LOG(INFO) << "output_order_list not set properly in options for multiple outputs.";         \
+                    RET_CHECK(false);                                                                           \
+                }                                                                                               \
+                if (this->output_order_list.size() > 0) {                                                       \
+                    for (size_t i = 0; i < this->output_order_list.size(); i++) {                               \
+                        tensorName = this->output_order_list[i];                                                \
+                        tensorIt = output.find(tensorName);                                                     \
+                        if (tensorIt == output.end()) {                                                         \
+                            LOG(INFO) << "Could not find: " << tensorName << " in inference output";            \
+                            RET_CHECK(false);                                                                   \
+                        }                                                                                       \
+                        tensors->emplace_back(SESERIALIZE_FUN(tensorIt->second));                               \
+                    }                                                                                           \
+                } else {                                                                                        \
+                    for (auto& [name,tensor] : output) {                                                        \
+                        tensors->emplace_back(SESERIALIZE_FUN(tensor));                                         \
+                    }                                                                                           \
+                }                                                                                               \
+                cc->Outputs().Tag(tag).Add(                                                                     \
+                    tensors.release(),                                                                          \
+                    cc->InputTimestamp());                                                                      \
+
             if (startsWith(tag, OVTENSORS_TAG)) {
                 LOG(INFO) << "OVMS calculator will process vector<ov::Tensor>";
-                auto tensors = std::make_unique<std::vector<ov::Tensor>>();
-                if ( output.size() > 1 && this->output_order_list.size() != this->output_order_list.size())
-                {
-                    LOG(INFO) << "output_order_list not set properly in options for multiple outputs.";
-                    RET_CHECK(false);
-                }
-                if (this->output_order_list.size() > 0) {
-                    for (size_t i = 0; i < this->output_order_list.size(); i++) {
-                        tensorName = this->output_order_list[i];
-                        tensorIt = output.find(tensorName);
-                        if (tensorIt == output.end()) {
-                            LOG(INFO) << "Could not find: " << tensorName << " in inference output";
-                            RET_CHECK(false);
-                        }
-                        tensors->emplace_back(tensorIt->second);
-                    }
-                } else {
-                    for (auto& [name,tensor] : output) {
-                        tensors->emplace_back(tensor);
-                    }
-                }
-                cc->Outputs().Tag(tag).Add(
-                    tensors.release(),
-                    cc->InputTimestamp());
+                SERIALIZE_TENSORS(ov::Tensor, )
                 // no need to break since we only have one tag
                 // create concatenator calc
             } else if (startsWith(tag, MPTENSORS_TAG)) {
                 LOG(INFO) << "OVMS calculator will process vector<Tensor>";
-                auto tensors = std::make_unique<std::vector<Tensor>>();
-                if ( output.size() > 1 && this->output_order_list.size() != this->output_order_list.size())
-                {
-                    LOG(INFO) << "output_order_list not set properly in options for multiple outputs.";
-                    RET_CHECK(false);
-                }
-                if (this->output_order_list.size() > 0) {
-                    for (size_t i = 0; i < this->output_order_list.size(); i++) {
-                        tensorName = this->output_order_list[i];
-                        tensorIt = output.find(tensorName);
-                        if (tensorIt == output.end()) {
-                            LOG(INFO) << "Could not find: " << tensorName << " in inference output";
-                            RET_CHECK(false);
-                        }
-                        tensors->emplace_back(convertOVTensor2MPTensor(tensorIt->second));
-                    }
-                } else {
-                    for (auto& [name,tensor] : output) {
-                        tensors->emplace_back(convertOVTensor2MPTensor(tensor));
-                    }
-                }
-                cc->Outputs().Tag(tag).Add(
-                    tensors.release(),
-                    cc->InputTimestamp());
+                SERIALIZE_TENSORS(Tensor, convertOVTensor2MPTensor)
                 // no need to break since we only have one tag
                 // create concatenator calc
             } else if (startsWith(tag, TFLITE_TENSORS_TAG)) {
