@@ -33,6 +33,7 @@
 #include "mediapipe/framework/formats/tensor.h"
 #include "mediapipe/calculators/ovms/openvinoinferencecalculator.pb.h"
 #include "mediapipe/calculators/ovms/openvinoinferencecalculatoroptions.h"
+#include "mediapipe/calculators/ovms/openvinoinferenceutils.h"
 #include "tensorflow/lite/c/common.h"
 #pragma GCC diagnostic pop
 #pragma GCC diagnostic push

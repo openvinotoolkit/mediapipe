@@ -36,24 +36,8 @@ const std::vector<std::string> supportedTags = {SESSION_TAG, OVTENSOR_TAG, OVTEN
 const std::vector<std::string> supportedVectorTags = {OVTENSORS_TAG, TFTENSORS_TAG, MPTENSORS_TAG, TFLITE_TENSORS_TAG};
 
 namespace mediapipe {
-using std::endl;
-
-// Function from ovms/src/string_utils.h
-bool startsWith(const std::string& str, const std::string& prefix);
-
-// Function from ovms/src/string_utils.h
-std::vector<std::string> tokenize(const std::string& str, const char delimiter);
-
-// Function from ovms/src/string_utils.h
-bool endsWith(const std::string& str, const std::string& match);
-
-bool ValidateOrderLists(std::set<std::string> calculatorTags, const google::protobuf::RepeatedPtrField<std::string>& order_list);
 
 bool IsVectorTag(const std::string& tag);
-
-bool ValidateTagToNames(std::set<std::string> calculatorTags, const google::protobuf::Map<std::string, std::string>& tags_to_names);
-
-bool ValidateOptions(CalculatorContract* cc);
 
 bool ValidateCalculatorSettings(CalculatorContract* cc);
 

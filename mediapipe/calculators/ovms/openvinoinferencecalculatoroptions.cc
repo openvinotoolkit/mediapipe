@@ -21,48 +21,11 @@
 #include "mediapipe/calculators/ovms/openvinoinferencecalculator.pb.h"
 #pragma GCC diagnostic pop
 #include "mediapipe/calculators/ovms/openvinoinferencecalculatoroptions.h"
+#include "mediapipe/calculators/ovms/openvinoinferenceutils.h"
 
 namespace mediapipe {
-using std::endl;
 
-// Function from ovms/src/string_utils.h
-bool startsWith(const std::string& str, const std::string& prefix) {
-    auto it = prefix.begin();
-    bool sizeCheck = (str.size() >= prefix.size());
-    if (!sizeCheck) {
-        return false;
-    }
-    bool allOf = std::all_of(str.begin(),
-        std::next(str.begin(), prefix.size()),
-        [&it](const char& c) {
-            return c == *(it++);
-        });
-    return allOf;
-}
-
-// Function from ovms/src/string_utils.h
-std::vector<std::string> tokenize(const std::string& str, const char delimiter) {
-    std::vector<std::string> tokens;
-    std::string token;
-    std::istringstream iss(str);
-    while (std::getline(iss, token, delimiter)) {
-        tokens.push_back(token);
-    }
-
-    return tokens;
-}
-
-// Function from ovms/src/string_utils.h
-bool endsWith(const std::string& str, const std::string& match) {
-    auto it = match.begin();
-    return str.size() >= match.size() &&
-           std::all_of(std::next(str.begin(), str.size() - match.size()), str.end(), [&it](const char& c) {
-               return ::tolower(c) == ::tolower(*(it++));
-           });
-}
-
-
-bool ValidateOrderLists(std::set<std::string> calculatorTags, const google::protobuf::RepeatedPtrField<std::string>& order_list) {
+static bool ValidateOrderLists(std::set<std::string> calculatorTags, const google::protobuf::RepeatedPtrField<std::string>& order_list) {
     // Get output_stream types defined in the graph
     std::vector<std::string> inputTypes;
     for (const std::string& tag : calculatorTags) {
@@ -86,7 +49,7 @@ bool ValidateOrderLists(std::set<std::string> calculatorTags, const google::prot
     return true;
 }
 
-bool ValidateOrderListsForNonVector(std::set<std::string> calculatorTags, const google::protobuf::RepeatedPtrField<std::string>& order_list) {
+static bool ValidateOrderListsForNonVector(std::set<std::string> calculatorTags, const google::protobuf::RepeatedPtrField<std::string>& order_list) {
     // Get output_stream types defined in the graph
     std::vector<std::string> inputTypes;
     bool vectorTypeExists = false;
@@ -119,7 +82,7 @@ bool IsVectorTag(const std::string& tag) {
     return false;
 }
 
-bool ValidateTagToNames(std::set<std::string> calculatorTags, const google::protobuf::Map<std::string, std::string>& tags_to_names) {
+static bool ValidateTagToNames(std::set<std::string> calculatorTags, const google::protobuf::Map<std::string, std::string>& tags_to_names) {
     // Get output_stream types defined in the graph
     std::vector<std::string> inputTypes;
     for (const std::string& tag : calculatorTags) {
@@ -189,7 +152,7 @@ bool ValidateTagToNames(std::set<std::string> calculatorTags, const google::prot
     return true;
 }
 
-bool ValidateOptions(CalculatorContract* cc) {
+static bool ValidateOptions(CalculatorContract* cc) {
     const auto& options = cc->Options<OpenVINOInferenceCalculatorOptions>();
 
     if (options.tag_to_output_tensor_names().size() > 0 && options.output_order_list().size() > 0) {

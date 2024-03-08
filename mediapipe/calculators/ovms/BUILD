@@ -56,6 +56,33 @@ cc_library(
 )
 
 cc_library(
+    name = "openvinoinferenceutils",
+    srcs = [
+        "openvinoinferenceutils.cc"
+    ],
+    hdrs = [
+        "openvinoinferenceutils.h"
+    ],
+    alwayslink = 1,
+)
+
+cc_library(
+    name = "openvinoinferencecalculatoroptions",
+    srcs = [
+        "openvinoinferencecalculatoroptions.cc"
+    ],
+    hdrs = [
+        "openvinoinferencecalculatoroptions.h"
+    ],
+    deps = [
+        ":openvinoinferencecalculator_cc_proto",
+        ":openvinoinferenceutils",
+        "//mediapipe/framework:calculator_framework",
+    ],
+    alwayslink = 1,
+)
+
+cc_library(
     name = "openvinoinferencecalculator",
     srcs = [
         "openvinoinferencecalculator.cc",
@@ -74,21 +101,6 @@ cc_library(
         "@org_tensorflow//tensorflow/lite/c:c_api",
     ],
     copts = ["-Iexternal/ovms/src","-Isrc"],
-    alwayslink = 1,
-)
-
-cc_library(
-    name = "openvinoinferencecalculatoroptions",
-    srcs = [
-        "openvinoinferencecalculatoroptions.cc"
-    ],
-    hdrs = [
-        "openvinoinferencecalculatoroptions.h"
-    ],
-    deps = [
-        ":openvinoinferencecalculator_cc_proto",
-        "//mediapipe/framework:calculator_framework",
-    ],
     alwayslink = 1,
 )
 
