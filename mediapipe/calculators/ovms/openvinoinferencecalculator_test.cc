@@ -634,7 +634,7 @@ TEST_F(OpenVINOInferenceCalculatorTest, NoTagToInputNames) {
     ASSERT_EQ(abslStatus.code(), absl::StatusCode::kOk) << abslStatus.message();
 }
 
-TEST_F(OpenVINOInferenceCalculatorTest, UnSupportedTypeTagToInputNamesMatch) {
+TEST_F(OpenVINOInferenceCalculatorTest, UnsupportedTypeTagToInputNamesMatch) {
     auto calculator =
         mediapipe::ParseTextProtoOrDie<CalculatorGraphConfig::Node>(
             R"pb(
