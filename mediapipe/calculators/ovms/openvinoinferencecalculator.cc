@@ -534,8 +534,7 @@ public:
                     RET_CHECK(false);                                                                           \
                 }                                                                                               \
                 if (this->output_order_list.size() > 0) {                                                       \
-                    for (size_t i = 0; i < this->output_order_list.size(); i++) {                               \
-                        tensorName = this->output_order_list[i];                                                \
+                    for (const auto& tensorName : this->output_order_list) {                               \
                         tensorIt = output.find(tensorName);                                                     \
                         if (tensorIt == output.end()) {                                                         \
                             LOG(INFO) << "Could not find: " << tensorName << " in inference output";            \
