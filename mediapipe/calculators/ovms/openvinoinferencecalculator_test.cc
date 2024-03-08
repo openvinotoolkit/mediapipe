@@ -122,6 +122,37 @@ TEST_F(OpenVINOInferenceCalculatorTest, VerifyNotAllowedSideOutputPacket) {
     auto abslStatus = mediapipe::OpenVINOInferenceCalculator::GetContract(cc.get());
     EXPECT_EQ(abslStatus.code(), absl::StatusCode::kInternal) << abslStatus.message();
 }
+
+void runDummyInference(std::string& graph_proto) {
+    CalculatorGraphConfig graph_config =
+        ParseTextProtoOrDie<CalculatorGraphConfig>(graph_proto);
+    const std::string inputStreamName = "input";
+    const std::string outputStreamName = "output";
+    // avoid creating pollers, retreiving packets etc.
+    std::vector<Packet> output_packets;
+    mediapipe::tool::AddVectorSink(outputStreamName, &graph_config, &output_packets);
+    CalculatorGraph graph(graph_config);
+    MP_ASSERT_OK(graph.StartRun({}));
+    auto datatype = ov::element::Type_t::f32;
+    ov::Shape shape{1,10};
+    std::vector<float> data{0,1,2,3,4,5,6,7,8,9};
+    auto inputTensor = std::make_unique<ov::Tensor>(datatype, shape, data.data());
+    MP_ASSERT_OK(graph.AddPacketToInputStream(
+        inputStreamName, Adopt(inputTensor.release()).At(Timestamp(0))));
+    MP_ASSERT_OK(graph.CloseInputStream(inputStreamName));
+    MP_ASSERT_OK(graph.WaitUntilIdle());
+    ASSERT_EQ(1, output_packets.size());
+    const ov::Tensor& outputTensor =
+        output_packets[0].Get<ov::Tensor>();
+    MP_ASSERT_OK(graph.WaitUntilDone());
+    EXPECT_EQ(datatype, outputTensor.get_element_type());
+    EXPECT_THAT(outputTensor.get_shape(), testing::ElementsAre(1,10));
+    const void* outputData = outputTensor.data();
+    for (size_t i = 0; i < data.size(); ++i) {
+        EXPECT_EQ(data[i] + 1, *(reinterpret_cast<const float*>(outputData) + i)) << i;
+    }
+}
+
 TEST_F(OpenVINOInferenceCalculatorTest, BasicDummyInference) {
     std::string graph_proto = R"(
       input_stream: "input"
@@ -155,33 +186,42 @@ TEST_F(OpenVINOInferenceCalculatorTest, BasicDummyInference) {
         }
       }
     )";
-    CalculatorGraphConfig graph_config =
-        ParseTextProtoOrDie<CalculatorGraphConfig>(graph_proto);
-    const std::string inputStreamName = "input";
-    const std::string outputStreamName = "output";
-    // avoid creating pollers, retreiving packets etc.
-    std::vector<Packet> output_packets;
-    mediapipe::tool::AddVectorSink(outputStreamName, &graph_config, &output_packets);
-    CalculatorGraph graph(graph_config);
-    MP_ASSERT_OK(graph.StartRun({}));
-    auto datatype = ov::element::Type_t::f32;
-    ov::Shape shape{1,10};
-    std::vector<float> data{0,1,2,3,4,5,6,7,8,9};
-    auto inputTensor = std::make_unique<ov::Tensor>(datatype, shape, data.data());
-    MP_ASSERT_OK(graph.AddPacketToInputStream(
-        inputStreamName, Adopt(inputTensor.release()).At(Timestamp(0))));
-    MP_ASSERT_OK(graph.CloseInputStream(inputStreamName));
-    MP_ASSERT_OK(graph.WaitUntilIdle());
-    ASSERT_EQ(1, output_packets.size());
-    const ov::Tensor& outputTensor =
-        output_packets[0].Get<ov::Tensor>();
-    MP_ASSERT_OK(graph.WaitUntilDone());
-    EXPECT_EQ(datatype, outputTensor.get_element_type());
-    EXPECT_THAT(outputTensor.get_shape(), testing::ElementsAre(1,10));
-    const void* outputData = outputTensor.data();
-    for (size_t i = 0; i < data.size(); ++i) {
-        EXPECT_EQ(data[i] + 1, *(reinterpret_cast<const float*>(outputData) + i)) << i;
-    }
+    runDummyInference(graph_proto);
+}
+TEST_F(OpenVINOInferenceCalculatorTest, BasicDummyInferenceEmptyKey) {
+    std::string graph_proto = R"(
+      input_stream: "input"
+      output_stream: "output"
+      node {
+          calculator: "OpenVINOModelServerSessionCalculator"
+          output_side_packet: "SESSION:session"
+          node_options: {
+            [type.googleapis.com / mediapipe.OpenVINOModelServerSessionCalculatorOptions]: {
+              servable_name: "dummy"
+              server_config: "/mediapipe/mediapipe/calculators/ovms/test_data/config.json"
+            }
+          }
+      }
+      node {
+        calculator: "OpenVINOInferenceCalculator"
+        input_side_packet: "SESSION:session"
+        input_stream: "input"
+        output_stream: "output"
+        node_options: {
+            [type.googleapis.com / mediapipe.OpenVINOInferenceCalculatorOptions]: {
+                tag_to_input_tensor_names {
+                    key: ""
+                    value: "b"
+                }
+                tag_to_output_tensor_names {
+                    key: ""
+                    value: "a"
+                }
+            }
+        }
+      }
+    )";
+    runDummyInference(graph_proto);
 }
 TEST_F(OpenVINOInferenceCalculatorTest, HandleEmptyPackets) {
     std::string graph_proto = R"(
