@@ -322,10 +322,17 @@ TEST_F(OpenVINOInferenceCalculatorTest, DISABLED_HandleEmptyPacketsWithSyncSet) 
     ASSERT_EQ(0, output_packets.size());
 }
 
+void verifyGetContract(const std::string& pbtxtContent, absl::StatusCode expectedStatusCode) {
+    auto calculator = mediapipe::ParseTextProtoOrDie<CalculatorGraphConfig::Node>(pbtxtContent);
+    auto cc = absl::make_unique<CalculatorContract>();
+    cc->Initialize(calculator);
+    auto abslStatus = mediapipe::OpenVINOInferenceCalculator::GetContract(cc.get());
+    EXPECT_EQ(abslStatus.code(), expectedStatusCode) << abslStatus.message();
+}
+
 TEST_F(OpenVINOInferenceCalculatorTest, VerifyTagToInputNames) {
     // Test passes with OVTENSORS1 in tag_to_output_tensor_names because we support and check the basic type match - OVTENSORS in this case
-    auto calculator =
-        mediapipe::ParseTextProtoOrDie<CalculatorGraphConfig::Node>(
+    std::string calculator_proto =
             R"pb(
                 calculator: "OpenVINOInferenceCalculator"
                 input_side_packet: "SESSION:session"
@@ -347,16 +354,13 @@ TEST_F(OpenVINOInferenceCalculatorTest, VerifyTagToInputNames) {
                         }
                         }
                 }
-            )pb");
-    auto cc = absl::make_unique<CalculatorContract>();
-    cc->Initialize(calculator);
-    auto abslStatus = mediapipe::OpenVINOInferenceCalculator::GetContract(cc.get());
-    ASSERT_EQ(abslStatus.code(), absl::StatusCode::kOk) << abslStatus.message();
+            )pb";
+
+    verifyGetContract(calculator_proto, absl::StatusCode::kOk);
 }
 
-TEST_F(OpenVINOInferenceCalculatorTest, VerifyOptions) {
-    auto calculator =
-        mediapipe::ParseTextProtoOrDie<CalculatorGraphConfig::Node>(
+TEST_F(OpenVINOInferenceCalculatorTest, VerifyOptionsInputFail) {
+    std::string calculator_proto =
             R"pb(
                 calculator: "OpenVINOInferenceCalculator"
                 input_side_packet: "SESSION:session"
@@ -370,6 +374,23 @@ TEST_F(OpenVINOInferenceCalculatorTest, VerifyOptions) {
                             key: "OVTENSOR"
                             value: "normalized_input_image_tensor"
                         }
+                        }
+                }
+            )pb";
+    verifyGetContract(calculator_proto, absl::StatusCode::kInternal);
+}
+
+TEST_F(OpenVINOInferenceCalculatorTest, VerifyOptionsOutputFail) {
+    std::string calculator_proto =
+            R"pb(
+                calculator: "OpenVINOInferenceCalculator"
+                input_side_packet: "SESSION:session"
+                input_stream: "OVTENSOR:image_tensor"
+                output_stream: "OVTENSORS:detection_tensors"
+                node_options: {
+                    [type.googleapis.com / mediapipe.OpenVINOInferenceCalculatorOptions]: {
+                        input_order_list :["normalized_input_image_tensor"]
+                        output_order_list :["raw_outputs/box_encodings","raw_outputs/class_predictions"]
                         tag_to_output_tensor_names {
                             key: "OVTENSOR1"
                             value: "raw_outputs/box_encodings"
@@ -380,16 +401,46 @@ TEST_F(OpenVINOInferenceCalculatorTest, VerifyOptions) {
                         }
                         }
                 }
-            )pb");
-    auto cc = absl::make_unique<CalculatorContract>();
-    cc->Initialize(calculator);
-    auto abslStatus = mediapipe::OpenVINOInferenceCalculator::GetContract(cc.get());
-    ASSERT_EQ(abslStatus.code(), absl::StatusCode::kInternal) << abslStatus.message();
+            )pb";
+    verifyGetContract(calculator_proto, absl::StatusCode::kInternal);
+}
+
+TEST_F(OpenVINOInferenceCalculatorTest, VerifyOptionsInputFailSingleType) {
+    std::string calculator_proto =
+            R"pb(
+                calculator: "OpenVINOInferenceCalculator"
+                input_side_packet: "SESSION:session"
+                input_stream: "OVTENSOR:image_tensor"
+                output_stream: "OVTENSORS:detection_tensors"
+                node_options: {
+                    [type.googleapis.com / mediapipe.OpenVINOInferenceCalculatorOptions]: {
+                        input_order_list :["normalized_input_image_tensor"]
+                        output_order_list :["raw_outputs/box_encodings","raw_outputs/class_predictions"]
+                        }
+                }
+            )pb";
+    verifyGetContract(calculator_proto, absl::StatusCode::kInternal);
+}
+
+TEST_F(OpenVINOInferenceCalculatorTest, VerifyOptionsOutputFailSingleType) {
+    std::string calculator_proto =
+            R"pb(
+                calculator: "OpenVINOInferenceCalculator"
+                input_side_packet: "SESSION:session"
+                input_stream: "OVTENSORS:image_tensor"
+                output_stream: "OVTENSOR:detection_tensors"
+                node_options: {
+                    [type.googleapis.com / mediapipe.OpenVINOInferenceCalculatorOptions]: {
+                        input_order_list :["normalized_input_image_tensor"]
+                        output_order_list :["raw_outputs/box_encodings","raw_outputs/class_predictions"]
+                        }
+                }
+            )pb";
+    verifyGetContract(calculator_proto, absl::StatusCode::kInternal);
 }
 
 TEST_F(OpenVINOInferenceCalculatorTest, VerifyOptionsInput) {
-    auto calculator =
-        mediapipe::ParseTextProtoOrDie<CalculatorGraphConfig::Node>(
+    std::string calculator_proto =
             R"pb(
                 calculator: "OpenVINOInferenceCalculator"
                 input_side_packet: "SESSION:session"
@@ -408,16 +459,12 @@ TEST_F(OpenVINOInferenceCalculatorTest, VerifyOptionsInput) {
                         }
                         }
                 }
-            )pb");
-    auto cc = absl::make_unique<CalculatorContract>();
-    cc->Initialize(calculator);
-    auto abslStatus = mediapipe::OpenVINOInferenceCalculator::GetContract(cc.get());
-    ASSERT_EQ(abslStatus.code(), absl::StatusCode::kOk) << abslStatus.message();
+            )pb";
+    verifyGetContract(calculator_proto, absl::StatusCode::kOk);
 }
 
 TEST_F(OpenVINOInferenceCalculatorTest, VerifyOptionsOutput) {
-    auto calculator =
-        mediapipe::ParseTextProtoOrDie<CalculatorGraphConfig::Node>(
+    std::string calculator_proto =
             R"pb(
                 calculator: "OpenVINOInferenceCalculator"
                 input_side_packet: "SESSION:session"
@@ -432,16 +479,12 @@ TEST_F(OpenVINOInferenceCalculatorTest, VerifyOptionsOutput) {
                         }
                         }
                 }
-            )pb");
-    auto cc = absl::make_unique<CalculatorContract>();
-    cc->Initialize(calculator);
-    auto abslStatus = mediapipe::OpenVINOInferenceCalculator::GetContract(cc.get());
-    ASSERT_EQ(abslStatus.code(), absl::StatusCode::kOk) << abslStatus.message();
+            )pb";
+    verifyGetContract(calculator_proto, absl::StatusCode::kOk);
 }
 
 TEST_F(OpenVINOInferenceCalculatorTest, WrongTagToOutputNames) {
-    auto calculator =
-        mediapipe::ParseTextProtoOrDie<CalculatorGraphConfig::Node>(
+    std::string calculator_proto =
             R"pb(
                 calculator: "OpenVINOInferenceCalculator"
                 input_side_packet: "SESSION:session"
@@ -459,16 +502,12 @@ TEST_F(OpenVINOInferenceCalculatorTest, WrongTagToOutputNames) {
                         }
                         }
                 }
-            )pb");
-    auto cc = absl::make_unique<CalculatorContract>();
-    cc->Initialize(calculator);
-    auto abslStatus = mediapipe::OpenVINOInferenceCalculator::GetContract(cc.get());
-    ASSERT_EQ(abslStatus.code(), absl::StatusCode::kInternal) << abslStatus.message();
+            )pb";
+    verifyGetContract(calculator_proto, absl::StatusCode::kInternal);
 }
 
 TEST_F(OpenVINOInferenceCalculatorTest, WrongTagToInputNames) {
-    auto calculator =
-        mediapipe::ParseTextProtoOrDie<CalculatorGraphConfig::Node>(
+    std::string calculator_proto =
             R"pb(
                 calculator: "OpenVINOInferenceCalculator"
                 input_side_packet: "SESSION:session"
@@ -486,16 +525,12 @@ TEST_F(OpenVINOInferenceCalculatorTest, WrongTagToInputNames) {
                         }
                         }
                 }
-            )pb");
-    auto cc = absl::make_unique<CalculatorContract>();
-    cc->Initialize(calculator);
-    auto abslStatus = mediapipe::OpenVINOInferenceCalculator::GetContract(cc.get());
-    ASSERT_EQ(abslStatus.code(), absl::StatusCode::kInternal) << abslStatus.message();
+            )pb";
+    verifyGetContract(calculator_proto, absl::StatusCode::kInternal);
 }
 
 TEST_F(OpenVINOInferenceCalculatorTest, WrongTagToInputNamesNoVector) {
-    auto calculator =
-        mediapipe::ParseTextProtoOrDie<CalculatorGraphConfig::Node>(
+    std::string calculator_proto =
             R"pb(
                 calculator: "OpenVINOInferenceCalculator"
                 input_side_packet: "SESSION:session"
@@ -517,16 +552,12 @@ TEST_F(OpenVINOInferenceCalculatorTest, WrongTagToInputNamesNoVector) {
                         }
                         }
                 }
-            )pb");
-    auto cc = absl::make_unique<CalculatorContract>();
-    cc->Initialize(calculator);
-    auto abslStatus = mediapipe::OpenVINOInferenceCalculator::GetContract(cc.get());
-    ASSERT_EQ(abslStatus.code(), absl::StatusCode::kInternal) << abslStatus.message();
+            )pb";
+    verifyGetContract(calculator_proto, absl::StatusCode::kInternal);
 }
 
 TEST_F(OpenVINOInferenceCalculatorTest, WrongTagToInputNamesNoTypeSpecifiedWithMatch) {
-    auto calculator =
-        mediapipe::ParseTextProtoOrDie<CalculatorGraphConfig::Node>(
+    std::string calculator_proto =
             R"pb(
                 calculator: "OpenVINOInferenceCalculator"
                 input_side_packet: "SESSION:session"
@@ -544,16 +575,12 @@ TEST_F(OpenVINOInferenceCalculatorTest, WrongTagToInputNamesNoTypeSpecifiedWithM
                         }
                         }
                 }
-            )pb");
-    auto cc = absl::make_unique<CalculatorContract>();
-    cc->Initialize(calculator);
-    auto abslStatus = mediapipe::OpenVINOInferenceCalculator::GetContract(cc.get());
-    ASSERT_EQ(abslStatus.code(), absl::StatusCode::kOk) << abslStatus.message();
+            )pb";
+    verifyGetContract(calculator_proto, absl::StatusCode::kOk);
 }
 
 TEST_F(OpenVINOInferenceCalculatorTest, WrongTagToOutputNamesNoTypeSpecifiedWithoutMatch) {
-    auto calculator =
-        mediapipe::ParseTextProtoOrDie<CalculatorGraphConfig::Node>(
+    std::string calculator_proto =
             R"pb(
                 calculator: "OpenVINOInferenceCalculator"
                 input_side_packet: "SESSION:session"
@@ -575,16 +602,12 @@ TEST_F(OpenVINOInferenceCalculatorTest, WrongTagToOutputNamesNoTypeSpecifiedWith
                         }
                         }
                 }
-            )pb");
-    auto cc = absl::make_unique<CalculatorContract>();
-    cc->Initialize(calculator);
-    auto abslStatus = mediapipe::OpenVINOInferenceCalculator::GetContract(cc.get());
-    ASSERT_EQ(abslStatus.code(), absl::StatusCode::kInternal) << abslStatus.message();
+            )pb";
+    verifyGetContract(calculator_proto, absl::StatusCode::kInternal);
 }
 
 TEST_F(OpenVINOInferenceCalculatorTest, WrongTagToInputNamesNoTypeSpecifiedWithoutMatch) {
-    auto calculator =
-        mediapipe::ParseTextProtoOrDie<CalculatorGraphConfig::Node>(
+    std::string calculator_proto =
             R"pb(
                 calculator: "OpenVINOInferenceCalculator"
                 input_side_packet: "SESSION:session"
@@ -606,16 +629,12 @@ TEST_F(OpenVINOInferenceCalculatorTest, WrongTagToInputNamesNoTypeSpecifiedWitho
                         }
                         }
                 }
-            )pb");
-    auto cc = absl::make_unique<CalculatorContract>();
-    cc->Initialize(calculator);
-    auto abslStatus = mediapipe::OpenVINOInferenceCalculator::GetContract(cc.get());
-    ASSERT_EQ(abslStatus.code(), absl::StatusCode::kInternal) << abslStatus.message();
+            )pb";
+    verifyGetContract(calculator_proto, absl::StatusCode::kInternal);
 }
 
 TEST_F(OpenVINOInferenceCalculatorTest, NoTagToInputNames) {
-    auto calculator =
-        mediapipe::ParseTextProtoOrDie<CalculatorGraphConfig::Node>(
+    std::string calculator_proto =
             R"pb(
                 calculator: "OpenVINOInferenceCalculator"
                 input_side_packet: "SESSION:session"
@@ -627,16 +646,12 @@ TEST_F(OpenVINOInferenceCalculatorTest, NoTagToInputNames) {
                         output_order_list :["raw_outputs/box_encodings","raw_outputs/class_predictions"]
                         }
                 }
-            )pb");
-    auto cc = absl::make_unique<CalculatorContract>();
-    cc->Initialize(calculator);
-    auto abslStatus = mediapipe::OpenVINOInferenceCalculator::GetContract(cc.get());
-    ASSERT_EQ(abslStatus.code(), absl::StatusCode::kOk) << abslStatus.message();
+            )pb";
+    verifyGetContract(calculator_proto, absl::StatusCode::kOk);
 }
 
 TEST_F(OpenVINOInferenceCalculatorTest, UnsupportedTypeTagToInputNamesMatch) {
-    auto calculator =
-        mediapipe::ParseTextProtoOrDie<CalculatorGraphConfig::Node>(
+    std::string calculator_proto =
             R"pb(
                 calculator: "OpenVINOInferenceCalculator"
                 input_side_packet: "SESSION:session"
@@ -659,16 +674,12 @@ TEST_F(OpenVINOInferenceCalculatorTest, UnsupportedTypeTagToInputNamesMatch) {
                     }
                     }
                 }
-            )pb");
-    auto cc = absl::make_unique<CalculatorContract>();
-    cc->Initialize(calculator);
-    auto abslStatus = mediapipe::OpenVINOInferenceCalculator::GetContract(cc.get());
-    ASSERT_EQ(abslStatus.code(), absl::StatusCode::kOk) << abslStatus.message();
+            )pb";
+    verifyGetContract(calculator_proto, absl::StatusCode::kOk);
 }
 
 TEST_F(OpenVINOInferenceCalculatorTest, UnsupportedTypeTagToInputNamesOutputMismatch) {
-    auto calculator =
-        mediapipe::ParseTextProtoOrDie<CalculatorGraphConfig::Node>(
+    std::string calculator_proto =
             R"pb(
                 calculator: "OpenVINOInferenceCalculator"
                 input_side_packet: "SESSION:session"
@@ -691,16 +702,12 @@ TEST_F(OpenVINOInferenceCalculatorTest, UnsupportedTypeTagToInputNamesOutputMism
                     }
                     }
                 }
-            )pb");
-    auto cc = absl::make_unique<CalculatorContract>();
-    cc->Initialize(calculator);
-    auto abslStatus = mediapipe::OpenVINOInferenceCalculator::GetContract(cc.get());
-    ASSERT_EQ(abslStatus.code(), absl::StatusCode::kInternal) << abslStatus.message();
+            )pb";
+    verifyGetContract(calculator_proto, absl::StatusCode::kInternal);
 }
 
 TEST_F(OpenVINOInferenceCalculatorTest, UnsupportedTypeTagToInputNamesInputMismatch) {
-    auto calculator =
-        mediapipe::ParseTextProtoOrDie<CalculatorGraphConfig::Node>(
+    std::string calculator_proto =
             R"pb(
                 calculator: "OpenVINOInferenceCalculator"
                 input_side_packet: "SESSION:session"
@@ -723,9 +730,6 @@ TEST_F(OpenVINOInferenceCalculatorTest, UnsupportedTypeTagToInputNamesInputMisma
                     }
                     }
                 }
-            )pb");
-    auto cc = absl::make_unique<CalculatorContract>();
-    cc->Initialize(calculator);
-    auto abslStatus = mediapipe::OpenVINOInferenceCalculator::GetContract(cc.get());
-    ASSERT_EQ(abslStatus.code(), absl::StatusCode::kInternal) << abslStatus.message();
+            )pb";
+    verifyGetContract(calculator_proto, absl::StatusCode::kInternal);
 }

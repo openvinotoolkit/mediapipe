@@ -39,194 +39,22 @@ namespace mediapipe {
 using std::endl;
 
 // Function from ovms/src/string_utils.h
-bool startsWith(const std::string& str, const std::string& prefix) {
-    auto it = prefix.begin();
-    bool sizeCheck = (str.size() >= prefix.size());
-    if (!sizeCheck) {
-        return false;
-    }
-    bool allOf = std::all_of(str.begin(),
-        std::next(str.begin(), prefix.size()),
-        [&it](const char& c) {
-            return c == *(it++);
-        });
-    return allOf;
-}
+bool startsWith(const std::string& str, const std::string& prefix);
 
 // Function from ovms/src/string_utils.h
-std::vector<std::string> tokenize(const std::string& str, const char delimiter) {
-    std::vector<std::string> tokens;
-    std::string token;
-    std::istringstream iss(str);
-    while (std::getline(iss, token, delimiter)) {
-        tokens.push_back(token);
-    }
-
-    return tokens;
-}
+std::vector<std::string> tokenize(const std::string& str, const char delimiter);
 
 // Function from ovms/src/string_utils.h
-bool endsWith(const std::string& str, const std::string& match) {
-    auto it = match.begin();
-    return str.size() >= match.size() &&
-           std::all_of(std::next(str.begin(), str.size() - match.size()), str.end(), [&it](const char& c) {
-               return ::tolower(c) == ::tolower(*(it++));
-           });
-}
+bool endsWith(const std::string& str, const std::string& match);
 
+bool ValidateOrderLists(std::set<std::string> calculatorTags, const google::protobuf::RepeatedPtrField<std::string>& order_list);
 
-static bool ValidateOrderLists(std::set<std::string> calculatorTags, const google::protobuf::RepeatedPtrField<std::string>& order_list) {
-    // Get output_stream types defined in the graph
-    std::vector<std::string> inputTypes;
-    for (const std::string& tag : calculatorTags) {
-        std::vector<std::string> tokens = tokenize(tag, ':');
-        if (tokens.size() > 0) {
-            std::string inputType = tokens[0];
+bool IsVectorTag(const std::string& tag);
 
-            // Check if supported vector tag was used
-            for (const auto& supportedVectorTag : supportedVectorTags) {
-                if ( startsWith(inputType, supportedVectorTag)){
-                    if (order_list.size() < 1)
-                    {
-                        LOG(ERROR) << "OpenVINOInferenceCalculator GetContract error. Order list is requiered for vector types: " << inputType;
-                        return false;
-                    }
-                }
-            }
-        }
-    }
+bool ValidateTagToNames(std::set<std::string> calculatorTags, const google::protobuf::Map<std::string, std::string>& tags_to_names);
 
-    return true;
-}
+bool ValidateOptions(CalculatorContract* cc);
 
-static bool IsVectorTag(const std::string& tag) {
-    bool isVectorType = false;
-    // Check if supported vector tag was used
-    for (const auto& supportedVectorTag : supportedVectorTags) {
-        if (startsWith(tag, supportedVectorTag)) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-static bool ValidateTagToNames(std::set<std::string> calculatorTags, const google::protobuf::Map<std::string, std::string>& tags_to_names) {
-    // Get output_stream types defined in the graph
-    std::vector<std::string> inputTypes;
-    for (const std::string& tag : calculatorTags) {
-        std::vector<std::string> tokens = tokenize(tag, ':');
-        if (tokens.size() > 0) {
-            inputTypes.push_back(tokens[0]);
-        } else {
-            inputTypes.push_back(tag);
-        }
-    }
-
-    for (const auto& [key, value] : tags_to_names) {
-        bool nameMatch = false;
-
-        // Check if supported tag was used
-        for (const auto& supportedTag : supportedTags) {
-            if ( startsWith(key, supportedTag)){
-                if (endsWith(key, "S") && !endsWith(supportedTag, "S"))
-                    continue;
-
-                // Check if used tag is defined in the input_stream
-                for (const auto& graphInput : inputTypes) {
-                    if (startsWith(graphInput, supportedTag)) {
-                        if (endsWith(graphInput, "S") && !endsWith(supportedTag, "S"))
-                            continue;
-                        nameMatch = true;
-                        break;
-                    }
-                }
-            }
-
-            // Check if empty tag used - OV:Tensor default type
-            if ( tokenize(key, ':').size() == 0) {
-                // Check if used tag is defined in the input_stream
-                for (const auto& graphInput : inputTypes) {
-                    // Check if empty tag used - OV:Tensor default type
-                    if (key == graphInput) {
-                        nameMatch = true;
-                        break;
-                    }                       
-                }
-            }
-
-            // Type used in tag_to__tensor_names does match input_stream type
-            if (nameMatch){
-                break;
-            }
-        }
-
-        // Check if no supported tag used - OV:Tensor default type
-        for (const auto& graphInput : inputTypes) {
-            // Full match required
-            if (key == graphInput) {
-                nameMatch = true;
-                break;
-            }
-        }
-
-        // Type used in tag_to__tensor_names does not match outputstream type
-        if (!nameMatch)
-        {
-            LOG(ERROR) << "OpenVINOInferenceCalculator GetContract error. Stream names mismatch for tag_to__tensor_names name key " << key;
-            return false;
-        } 
-    }
-
-    return true;
-}
-
-static bool ValidateOptions(CalculatorContract* cc) {
-    const auto& options = cc->Options<OpenVINOInferenceCalculatorOptions>();
-
-    if (options.tag_to_output_tensor_names().size() > 0 && options.output_order_list().size() > 0) {
-        LOG(ERROR) << "OpenVINOInferenceCalculator GetContract error. Use tag_to_output_tensor_names or output_order_list not both at once.";
-        return false;
-    }
-
-    if (options.tag_to_input_tensor_names().size() > 0 && options.input_order_list().size() > 0) {
-        LOG(ERROR) << "OpenVINOInferenceCalculator GetContract error. Use tag_to_input_tensor_names or input_order_list not both at once.";
-        return false;
-    }
-
-    return true;
-}
-
-static bool ValidateCalculatorSettings(CalculatorContract* cc)
-{
-    if (!ValidateOptions(cc))
-    {
-        LOG(INFO) << "OpenVINOInferenceCalculator ValidateOptions failed.";
-        return false;
-    }
-
-    const auto& options = cc->Options<OpenVINOInferenceCalculatorOptions>();
-
-    if (!ValidateOrderLists(cc->Inputs().GetTags(), options.input_order_list())) {
-        LOG(INFO) << "OpenVINOInferenceCalculator ValidateOrderLists for inputs failed.";
-        return false;
-    }
-    if (!ValidateOrderLists(cc->Outputs().GetTags(), options.output_order_list())) {
-        LOG(INFO) << "OpenVINOInferenceCalculator ValidateOrderLists for outputs failed.";
-        return false;
-    }
-
-    if (!ValidateTagToNames(cc->Inputs().GetTags(), options.tag_to_input_tensor_names())) {
-        LOG(INFO) << "OpenVINOInferenceCalculator ValidateInputTagToNames failed.";
-        return false;
-    }
-    if (!ValidateTagToNames(cc->Outputs().GetTags(), options.tag_to_output_tensor_names())) {
-        LOG(INFO) << "OpenVINOInferenceCalculator ValidateOutputTagToNames failed.";
-        return false;
-    }
-
-    LOG(INFO) << "OpenVINOInferenceCalculator ValidateCalculatorSettings passed.";
-    return true;
-}
+bool ValidateCalculatorSettings(CalculatorContract* cc);
 
 }  // namespace mediapipe
