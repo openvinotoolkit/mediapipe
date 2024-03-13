@@ -37,6 +37,7 @@ using ovms::OVMSInferenceAdapter;
 
 const std::string SESSION_TAG{"SESSION"};
 ov::Core UNUSED_OV_CORE;
+OVMS_LogLevel OVMS_LOG_LEVEL;
 
 #define ASSERT_CIRCULAR_ERR(C_API_CALL) \
     {                                   \
@@ -100,6 +101,22 @@ std::optional<uint32_t> stou32(const std::string& input) {
     }
 }
 
+OVMS_LogLevel stringToLogLevel(const std::string& logLevel){
+    if (logLevel == "INFO")
+        return OVMS_LOG_INFO;
+    if (logLevel == "ERROR")
+        return OVMS_LOG_ERROR;
+    if (logLevel == "DEBUG")
+        return OVMS_LOG_DEBUG;
+    if (logLevel == "TRACE")
+        return OVMS_LOG_TRACE;
+    if (logLevel == "WARNING")
+        return OVMS_LOG_WARNING;
+
+    LOG(INFO) << "OpenVINOModelServerSessionCalculator setting default log level INFO for config value: " << logLevel.empty() ? "empty" : logLevel;
+    return OVMS_LOG_INFO;
+}
+
 class SettingsGuard {
 public:
     OVMS_ServerSettings* serverSettings{nullptr};
@@ -121,6 +138,8 @@ absl::Status OpenVINOModelServerSessionCalculator::GetContract(CalculatorContrac
     cc->OutputSidePackets().Tag(SESSION_TAG.c_str()).Set<std::shared_ptr<::InferenceAdapter>>();
     const auto& options = cc->Options<OpenVINOModelServerSessionCalculatorOptions>();
     RET_CHECK(!options.servable_name().empty());
+    OVMS_LOG_LEVEL = stringToLogLevel(options.log_level());
+    LOG(INFO) << "OpenVINOModelServerSessionCalculator OVMS_LOG_LEVEL " << OVMS_LOG_LEVEL;
     LOG(INFO) << "OpenVINOModelServerSessionCalculator GetContract end";
     return absl::OkStatus();
 }
@@ -167,7 +186,7 @@ absl::Status OpenVINOModelServerSessionCalculator::Open(CalculatorContext* cc) {
             OVMS_ModelsSettingsNew(&guard.modelsSettings);
             OVMS_ModelsSettingsSetConfigPath(guard.modelsSettings, options.server_config().c_str());
             LOG(INFO) << "state config file:" << options.server_config();
-            OVMS_ServerSettingsSetLogLevel(guard.serverSettings, OVMS_LOG_DEBUG);
+            OVMS_ServerSettingsSetLogLevel(guard.serverSettings, OVMS_LOG_LEVEL);
 
             ASSERT_CAPI_STATUS_NULL(OVMS_ServerStartFromConfigurationFile(cserver, guard.serverSettings, guard.modelsSettings));
 

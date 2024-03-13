@@ -32,4 +32,6 @@ message OpenVINOModelServerSessionCalculatorOptions {
     // config_path: "/models/config.json"
     // when this field is used ensure that each calculator is using the same file
     optional string server_config = 4;
+    // when this field is used ensure that each calculator is using the same file. Available values: "DEBUG", "INFO", "ERROR" ,"WARNING", "TRACE"
+    optional string log_level = 5 [default = "INFO"];
 }

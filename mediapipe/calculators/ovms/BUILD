@@ -90,10 +90,12 @@ cc_library(
         "openvinoinferencecalculatoroptions.h"
     ],
     deps = [
+        "openvinomodelserversessioncalculator",
         ":openvinoinferencecalculator_cc_proto",
         ":openvinoinferenceutils",
         "//mediapipe/framework:calculator_framework",
     ],
+    copts = ["-Iexternal/ovms/src","-Isrc"],
     alwayslink = 1,
 )
 

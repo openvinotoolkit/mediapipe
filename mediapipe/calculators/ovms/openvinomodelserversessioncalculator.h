@@ -34,6 +34,7 @@
 namespace mediapipe {
 
 using ovms::OVMSInferenceAdapter;
+extern OVMS_LogLevel OVMS_LOG_LEVEL;
 
 class OpenVINOModelServerSessionCalculator : public CalculatorBase {
     std::shared_ptr<::InferenceAdapter> adapter;

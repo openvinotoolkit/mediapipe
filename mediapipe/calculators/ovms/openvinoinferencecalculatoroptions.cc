@@ -15,6 +15,7 @@
 //*****************************************************************************
 #include <unordered_map>
 
+#include "openvinomodelserversessioncalculator.h"
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #include "mediapipe/framework/calculator_contract.h"
@@ -175,6 +176,12 @@ bool ValidateCalculatorSettings(CalculatorContract* cc)
         LOG(INFO) << "OpenVINOInferenceCalculator ValidateOptions failed.";
         return false;
     }
+
+    LOG(INFO) << "OpenVINOInferenceCalculator OVMS_LOG_LEVEL " << OVMS_LOG_LEVEL;
+    
+    // Run deep validation only in DEBUG log level for better performance
+    if (OVMS_LOG_LEVEL == OVMS_LOG_INFO)
+        return true;
 
     const auto& options = cc->Options<OpenVINOInferenceCalculatorOptions>();
 

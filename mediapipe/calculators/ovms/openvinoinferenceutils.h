@@ -15,6 +15,7 @@
 //*****************************************************************************
 #include <string>
 #include <vector>
+
 namespace mediapipe {
 
 // Function from ovms/src/string_utils.h
@@ -25,5 +26,7 @@ std::vector<std::string> tokenize(const std::string& str, const char delimiter);
 
 // Function from ovms/src/string_utils.h
 bool endsWith(const std::string& str, const std::string& match);
+
+
 
 }  // namespace mediapipe
