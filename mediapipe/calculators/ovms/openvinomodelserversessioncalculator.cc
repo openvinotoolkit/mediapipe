@@ -117,6 +117,24 @@ OVMS_LogLevel stringToLogLevel(const std::string& logLevel){
     return OVMS_LOG_INFO;
 }
 
+std::string LogLevelToString(OVMS_LogLevel log_level) {
+    switch (log_level) {
+    case OVMS_LOG_INFO:
+        return "INFO";
+    case OVMS_LOG_ERROR:
+        return "ERROR";
+    case OVMS_LOG_DEBUG:
+        return "DEBUG";
+    case OVMS_LOG_TRACE:
+        return "TRACE";
+    case OVMS_LOG_WARNING:
+        return "WARNING";
+        
+    }
+
+    return "unsupported";
+}
+
 class SettingsGuard {
 public:
     OVMS_ServerSettings* serverSettings{nullptr};
@@ -139,7 +157,7 @@ absl::Status OpenVINOModelServerSessionCalculator::GetContract(CalculatorContrac
     const auto& options = cc->Options<OpenVINOModelServerSessionCalculatorOptions>();
     RET_CHECK(!options.servable_name().empty());
     OVMS_LOG_LEVEL = stringToLogLevel(options.log_level());
-    LOG(INFO) << "OpenVINOModelServerSessionCalculator OVMS_LOG_LEVEL " << OVMS_LOG_LEVEL;
+    LOG(INFO) << "OpenVINOModelServerSessionCalculator ovms log level setting: " << LogLevelToString(OVMS_LOG_LEVEL);
     LOG(INFO) << "OpenVINOModelServerSessionCalculator GetContract end";
     return absl::OkStatus();
 }

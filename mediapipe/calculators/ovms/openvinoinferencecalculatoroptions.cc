@@ -177,9 +177,7 @@ bool ValidateCalculatorSettings(CalculatorContract* cc)
         return false;
     }
 
-    LOG(INFO) << "OpenVINOInferenceCalculator OVMS_LOG_LEVEL " << OVMS_LOG_LEVEL;
-    
-    // Run deep validation only in DEBUG log level for better performance
+    // Run deep validation only not in INFO log level for better performance
     if (OVMS_LOG_LEVEL == OVMS_LOG_INFO)
         return true;
 
