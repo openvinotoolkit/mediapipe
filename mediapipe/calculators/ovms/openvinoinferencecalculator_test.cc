@@ -16,7 +16,6 @@
 #include "openvinoinferencecalculator.h"
 #include "openvinomodelserversessioncalculator.h"
 #include <algorithm>
-#include <csignal>
 #include <iostream>
 #include <memory>
 #include <chrono>
@@ -856,10 +855,4 @@ TEST_F(OpenVINOInferenceCalculatorTest, UnsupportedTypeTagToInputNamesInputMisma
                 }
             )pb";
     verifyGetContract(calculator_proto, absl::StatusCode::kInternal);
-}
-
-int main(int argc, char** argv) {
-    ::testing::InitGoogleTest(&argc, argv);
-    (void)(::testing::GTEST_FLAG(death_test_style) = "threadsafe");
-    return RUN_ALL_TESTS();
 }
