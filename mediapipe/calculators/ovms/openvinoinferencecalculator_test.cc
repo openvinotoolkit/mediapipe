@@ -14,7 +14,9 @@
 // limitations under the License.
 //*****************************************************************************
 #include "openvinoinferencecalculator.h"
+#include "openvinomodelserversessioncalculator.h"
 #include <algorithm>
+#include <csignal>
 #include <iostream>
 #include <memory>
 #include <chrono>
@@ -61,6 +63,7 @@ public:
         OVTENSORS_TYPE.Set<std::vector<ov::Tensor>>();
         MPTENSOR_TYPE.Set<mediapipe::Tensor>();
         MPTENSORS_TYPE.Set<std::vector<mediapipe::Tensor>>();
+        mediapipe::OVMS_LOG_LEVEL = OVMS_LOG_DEBUG;
     }
 };
 
@@ -123,15 +126,23 @@ TEST_F(OpenVINOInferenceCalculatorTest, VerifyNotAllowedSideOutputPacket) {
     EXPECT_EQ(abslStatus.code(), absl::StatusCode::kInternal) << abslStatus.message();
 }
 
-void runDummyInference(std::string& graph_proto) {
+void runDummyInference(std::string& graph_proto, bool inferenceExpectedFailure = false) {
     CalculatorGraphConfig graph_config =
         ParseTextProtoOrDie<CalculatorGraphConfig>(graph_proto);
     const std::string inputStreamName = "input";
     const std::string outputStreamName = "output";
     // avoid creating pollers, retreiving packets etc.
     std::vector<Packet> output_packets;
+    
     mediapipe::tool::AddVectorSink(outputStreamName, &graph_config, &output_packets);
-    CalculatorGraph graph(graph_config);
+
+    ::mediapipe::CalculatorGraph graph;
+    if (inferenceExpectedFailure) {
+        EXPECT_EQ(graph.Initialize(graph_config).code(), absl::StatusCode::kInternal);
+        return;
+    }
+    else
+        EXPECT_EQ(graph.Initialize(graph_config).code(), absl::StatusCode::kOk);
     MP_ASSERT_OK(graph.StartRun({}));
     auto datatype = ov::element::Type_t::f32;
     ov::Shape shape{1,10};
@@ -141,6 +152,7 @@ void runDummyInference(std::string& graph_proto) {
         inputStreamName, Adopt(inputTensor.release()).At(Timestamp(0))));
     MP_ASSERT_OK(graph.CloseInputStream(inputStreamName));
     MP_ASSERT_OK(graph.WaitUntilIdle());
+
     ASSERT_EQ(1, output_packets.size());
     const ov::Tensor& outputTensor =
         output_packets[0].Get<ov::Tensor>();
@@ -187,6 +199,78 @@ TEST_F(OpenVINOInferenceCalculatorTest, BasicDummyInference) {
       }
     )";
     runDummyInference(graph_proto);
+}
+TEST_F(OpenVINOInferenceCalculatorTest, ValidationFailedInDebug) {
+    std::string graph_proto = R"(
+      input_stream: "input"
+      output_stream: "output"
+      node {
+          calculator: "OpenVINOModelServerSessionCalculator"
+          output_side_packet: "SESSION:session"
+          node_options: {
+            [type.googleapis.com / mediapipe.OpenVINOModelServerSessionCalculatorOptions]: {
+              servable_name: "dummy"
+              server_config: "/mediapipe/mediapipe/calculators/ovms/test_data/config.json"
+              log_level: "DEBUG"
+            }
+          }
+      }
+      node {
+        calculator: "OpenVINOInferenceCalculator"
+        input_side_packet: "SESSION:session"
+        input_stream: "OVTENSORS:input"
+        output_stream: "OVTENSOR:output"
+        node_options: {
+            [type.googleapis.com / mediapipe.OpenVINOInferenceCalculatorOptions]: {
+                tag_to_input_tensor_names {
+                    key: "OVTENSOR"
+                    value: "b"
+                }
+                tag_to_output_tensor_names {
+                    key: "OVTENSOR"
+                    value: "a"
+                }
+            }
+        }
+      }
+    )";
+    runDummyInference(graph_proto, true);
+}
+TEST_F(OpenVINOInferenceCalculatorTest, ValidationFailedInDebugReorderCalculators) {
+    std::string graph_proto = R"(
+      input_stream: "input"
+      output_stream: "output"
+      node {
+        calculator: "OpenVINOInferenceCalculator"
+        input_side_packet: "SESSION:session"
+        input_stream: "OVTENSORS:input"
+        output_stream: "OVTENSOR:output"
+        node_options: {
+            [type.googleapis.com / mediapipe.OpenVINOInferenceCalculatorOptions]: {
+                tag_to_input_tensor_names {
+                    key: "OVTENSOR"
+                    value: "b"
+                }
+                tag_to_output_tensor_names {
+                    key: "OVTENSOR"
+                    value: "a"
+                }
+            }
+        }
+      }
+      node {
+          calculator: "OpenVINOModelServerSessionCalculator"
+          output_side_packet: "SESSION:session"
+          node_options: {
+            [type.googleapis.com / mediapipe.OpenVINOModelServerSessionCalculatorOptions]: {
+              servable_name: "dummy"
+              server_config: "/mediapipe/mediapipe/calculators/ovms/test_data/config.json"
+              log_level: "DEBUG"
+            }
+          }
+      }
+    )";
+    runDummyInference(graph_proto, true);
 }
 TEST_F(OpenVINOInferenceCalculatorTest, BasicDummyInferenceEmptyKey) {
     std::string graph_proto = R"(
@@ -772,4 +856,10 @@ TEST_F(OpenVINOInferenceCalculatorTest, UnsupportedTypeTagToInputNamesInputMisma
                 }
             )pb";
     verifyGetContract(calculator_proto, absl::StatusCode::kInternal);
+}
+
+int main(int argc, char** argv) {
+    ::testing::InitGoogleTest(&argc, argv);
+    (void)(::testing::GTEST_FLAG(death_test_style) = "threadsafe");
+    return RUN_ALL_TESTS();
 }

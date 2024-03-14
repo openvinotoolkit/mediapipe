@@ -49,4 +49,8 @@ public:
 
     absl::Status Process(CalculatorContext* cc) override final;
 };
+
+OVMS_LogLevel stringToLogLevel(const std::string& logLevel);
+std::string LogLevelToString(OVMS_LogLevel log_level);
+
 }  // namespace mediapipe

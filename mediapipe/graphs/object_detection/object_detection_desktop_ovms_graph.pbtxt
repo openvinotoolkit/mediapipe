@@ -51,7 +51,6 @@ node {
       servable_name: "ssdlite_object_detection"  # servable name inside OVMS
       servable_version: "1"
       server_config: "mediapipe/calculators/ovms/config.json"
-      log_level: "DEBUG"
     }
   }
 }
