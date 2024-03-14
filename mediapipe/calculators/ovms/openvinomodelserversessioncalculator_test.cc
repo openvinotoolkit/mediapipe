@@ -152,16 +152,16 @@ TEST_F(OpenVINOModelServerSessionCalculatorTest, MissingAllOptions) {
     ASSERT_EQ(abslStatus.code(), absl::StatusCode::kInternal) << abslStatus.message();
 }
 
-class OpenVINOModelServerSessionCalculatorTestLogLevel : public ::testing::TestWithParam<int> {};
+class OpenVINOModelServerSessionCalculatorTestLogLevel : public ::testing::TestWithParam<std::string> {};
 
-static const std::vector<int> TEST_OVMS_LOG_LEVEL_VALUES{
-    0,
-    1,
-    2,
-    3,
-    4,
-    -1,
-    99,
+static const std::vector<std::string> TEST_OVMS_LOG_LEVEL_VALUES{
+    "INFO",
+    "DEBUG",
+    "WARNING",
+    "TRACE",
+    "ERROR",
+    "",
+    "WRONG",
 };
 
 INSTANTIATE_TEST_SUITE_P(
@@ -171,8 +171,10 @@ INSTANTIATE_TEST_SUITE_P(
   );
 
 TEST_P(OpenVINOModelServerSessionCalculatorTestLogLevel, VerifyLogLevel) {
-    int testLogLevelVelue = GetParam();
-    OVMS_LogLevel level = static_cast<OVMS_LogLevel>(testLogLevelVelue);
+    std::string testLogLevelVelue = GetParam();
+    const std::string ovms_log_level_env = "OVMS_LOG_LEVEL";
+    setenv(ovms_log_level_env.c_str(), testLogLevelVelue.c_str(), true);
+    OVMS_LogLevel level = mediapipe::StringToLogLevel(testLogLevelVelue);
     std::string proto_text = R"pb(
                 calculator: "OpenVINOModelServerSessionCalculator"
                 output_side_packet: "SESSION:session"
@@ -180,12 +182,10 @@ TEST_P(OpenVINOModelServerSessionCalculatorTestLogLevel, VerifyLogLevel) {
                   [type.googleapis.com / mediapipe.OpenVINOModelServerSessionCalculatorOptions]: {
                     servable_name: "MODEL_NAME_0"
                     servable_version: "1"
-                    log_level: "TEST_INPUT_VALUE"
                   }
                 }
             )pb";
 
-    proto_text = proto_text.replace(proto_text.find("TEST_INPUT_VALUE"), sizeof("TEST_INPUT_VALUE") - 1, LogLevelToString(level));
     auto node =
         mediapipe::ParseTextProtoOrDie<mediapipe::CalculatorGraphConfig::Node>(proto_text);
     auto cc = absl::make_unique<CalculatorContract>();
@@ -194,7 +194,7 @@ TEST_P(OpenVINOModelServerSessionCalculatorTestLogLevel, VerifyLogLevel) {
     EXPECT_EQ(abslStatus.code(), absl::StatusCode::kOk) << abslStatus.message();
     // Check default value is set
     int ovmsDefaultInfoLevel = 2;
-    if (level < 0 || level > 4)
+    if (testLogLevelVelue == "" || testLogLevelVelue == "WRONG")
       EXPECT_TRUE(mediapipe::OVMS_LOG_LEVEL == ovmsDefaultInfoLevel);
     else
       EXPECT_TRUE(mediapipe::OVMS_LOG_LEVEL == level);

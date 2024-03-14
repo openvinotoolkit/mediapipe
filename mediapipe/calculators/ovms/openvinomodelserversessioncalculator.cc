@@ -101,7 +101,7 @@ std::optional<uint32_t> stou32(const std::string& input) {
     }
 }
 
-OVMS_LogLevel stringToLogLevel(const std::string& logLevel){
+OVMS_LogLevel StringToLogLevel(const std::string& logLevel){
     if (logLevel == "INFO")
         return OVMS_LOG_INFO;
     if (logLevel == "ERROR")
@@ -156,7 +156,8 @@ absl::Status OpenVINOModelServerSessionCalculator::GetContract(CalculatorContrac
     cc->OutputSidePackets().Tag(SESSION_TAG.c_str()).Set<std::shared_ptr<::InferenceAdapter>>();
     const auto& options = cc->Options<OpenVINOModelServerSessionCalculatorOptions>();
     RET_CHECK(!options.servable_name().empty());
-    OVMS_LOG_LEVEL = stringToLogLevel(options.log_level());
+
+    OVMS_LOG_LEVEL = StringToLogLevel(std::string(std::getenv("OVMS_LOG_LEVEL") == nullptr ? "" : std::getenv("OVMS_LOG_LEVEL")));
     LOG(INFO) << "OpenVINOModelServerSessionCalculator ovms log level setting: " << LogLevelToString(OVMS_LOG_LEVEL);
     LOG(INFO) << "OpenVINOModelServerSessionCalculator GetContract end";
     return absl::OkStatus();
