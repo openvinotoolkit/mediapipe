@@ -104,3 +104,8 @@ If the GLOG_minloglevel variable is not set Model Server will use the default lo
 |        1         |          WARNING       |
 |        2         |          ERROR         |
 |        3         |          TRACE         |
+
+Example usage:
+bash```
+GLOG_minloglevel=0 make run_object_detection
+```
