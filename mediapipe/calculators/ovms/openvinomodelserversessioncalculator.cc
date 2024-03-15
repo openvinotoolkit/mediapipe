@@ -37,7 +37,6 @@ using ovms::OVMSInferenceAdapter;
 
 const std::string SESSION_TAG{"SESSION"};
 ov::Core UNUSED_OV_CORE;
-OVMS_LogLevel OVMS_LOG_LEVEL;
 
 #define ASSERT_CIRCULAR_ERR(C_API_CALL) \
     {                                   \
@@ -102,18 +101,16 @@ std::optional<uint32_t> stou32(const std::string& input) {
 }
 
 OVMS_LogLevel StringToLogLevel(const std::string& logLevel){
-    if (logLevel == "INFO")
-        return OVMS_LOG_INFO;
-    if (logLevel == "ERROR")
+    if (logLevel == "2")
         return OVMS_LOG_ERROR;
-    if (logLevel == "DEBUG")
+    if (logLevel == "0")
         return OVMS_LOG_DEBUG;
-    if (logLevel == "TRACE")
+    if (logLevel == "3")
         return OVMS_LOG_TRACE;
-    if (logLevel == "WARNING")
+    if (logLevel == "1")
         return OVMS_LOG_WARNING;
 
-    LOG(INFO) << "OpenVINOModelServerSessionCalculator setting default log level INFO for config value: " << logLevel.empty() ? "empty" : logLevel;
+    LOG(INFO) << "OpenVINOModelServerSessionCalculator setting default log level INFO for env value: " << logLevel.empty() ? "empty" : logLevel;
     return OVMS_LOG_INFO;
 }
 
@@ -156,9 +153,9 @@ absl::Status OpenVINOModelServerSessionCalculator::GetContract(CalculatorContrac
     cc->OutputSidePackets().Tag(SESSION_TAG.c_str()).Set<std::shared_ptr<::InferenceAdapter>>();
     const auto& options = cc->Options<OpenVINOModelServerSessionCalculatorOptions>();
     RET_CHECK(!options.servable_name().empty());
-
-    OVMS_LOG_LEVEL = StringToLogLevel(std::string(std::getenv("OVMS_LOG_LEVEL") == nullptr ? "" : std::getenv("OVMS_LOG_LEVEL")));
-    LOG(INFO) << "OpenVINOModelServerSessionCalculator ovms log level setting: " << LogLevelToString(OVMS_LOG_LEVEL);
+    
+    OvmsLogLevel = StringToLogLevel(std::string(std::getenv(OvmsLogLevelEnv) == nullptr ? "" : std::getenv(OvmsLogLevelEnv)));
+    LOG(INFO) << "OpenVINOModelServerSessionCalculator ovms log level setting: " << LogLevelToString(OvmsLogLevel);
     LOG(INFO) << "OpenVINOModelServerSessionCalculator GetContract end";
     return absl::OkStatus();
 }
@@ -205,7 +202,7 @@ absl::Status OpenVINOModelServerSessionCalculator::Open(CalculatorContext* cc) {
             OVMS_ModelsSettingsNew(&guard.modelsSettings);
             OVMS_ModelsSettingsSetConfigPath(guard.modelsSettings, options.server_config().c_str());
             LOG(INFO) << "state config file:" << options.server_config();
-            OVMS_ServerSettingsSetLogLevel(guard.serverSettings, OVMS_LOG_LEVEL);
+            OVMS_ServerSettingsSetLogLevel(guard.serverSettings, OvmsLogLevel);
 
             ASSERT_CAPI_STATUS_NULL(OVMS_ServerStartFromConfigurationFile(cserver, guard.serverSettings, guard.modelsSettings));
 
@@ -243,6 +240,8 @@ absl::Status OpenVINOModelServerSessionCalculator::Process(CalculatorContext* cc
 
 bool OpenVINOModelServerSessionCalculator::triedToStartOVMS = false;
 std::mutex OpenVINOModelServerSessionCalculator::loadingMtx;
+const char* OpenVINOModelServerSessionCalculator::OvmsLogLevelEnv = "GLOG_minloglevel";
+OVMS_LogLevel OpenVINOModelServerSessionCalculator::OvmsLogLevel = OVMS_LOG_INFO;
 
 REGISTER_CALCULATOR(OpenVINOModelServerSessionCalculator);
 }  // namespace mediapipe

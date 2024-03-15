@@ -178,7 +178,8 @@ bool ValidateCalculatorSettings(CalculatorContract* cc)
     }
 
     // Run deep validation only not in INFO log level for better performance
-    if (OVMS_LOG_LEVEL == OVMS_LOG_INFO)
+    if (StringToLogLevel(std::string(std::getenv(OpenVINOModelServerSessionCalculator::OvmsLogLevelEnv) 
+        == nullptr ? "" : std::getenv(OpenVINOModelServerSessionCalculator::OvmsLogLevelEnv))) == OVMS_LOG_INFO)
         return true;
 
     const auto& options = cc->Options<OpenVINOInferenceCalculatorOptions>();

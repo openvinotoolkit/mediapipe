@@ -184,6 +184,7 @@ cc_test(
     srcs = ["openvinomodelserversessioncalculator_test.cc",
     ],
     deps = [
+        "openvinomodelserversessioncalculator",
         ":ovms_calculator",
         "@ovms//src:ovms_header",
         "@ovms//src:ovms_lib",

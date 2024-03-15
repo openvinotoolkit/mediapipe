@@ -155,13 +155,13 @@ TEST_F(OpenVINOModelServerSessionCalculatorTest, MissingAllOptions) {
 class OpenVINOModelServerSessionCalculatorTestLogLevel : public ::testing::TestWithParam<std::string> {};
 
 static const std::vector<std::string> TEST_OVMS_LOG_LEVEL_VALUES{
-    "INFO",
-    "DEBUG",
-    "WARNING",
-    "TRACE",
-    "ERROR",
+    "0",
+    "1",
+    "2",
+    "3",
     "",
-    "WRONG",
+    "-99",
+    "35",
 };
 
 INSTANTIATE_TEST_SUITE_P(
@@ -172,7 +172,7 @@ INSTANTIATE_TEST_SUITE_P(
 
 TEST_P(OpenVINOModelServerSessionCalculatorTestLogLevel, VerifyLogLevel) {
     std::string testLogLevelVelue = GetParam();
-    const std::string ovmsLogLevelEnv = "OVMS_LOG_LEVEL";
+    const std::string ovmsLogLevelEnv = "GLOG_minloglevel";
     setenv(ovmsLogLevelEnv.c_str(), testLogLevelVelue.c_str(), true);
     OVMS_LogLevel level = mediapipe::StringToLogLevel(testLogLevelVelue);
     std::string proto_text = R"pb(
@@ -194,10 +194,10 @@ TEST_P(OpenVINOModelServerSessionCalculatorTestLogLevel, VerifyLogLevel) {
     EXPECT_EQ(abslStatus.code(), absl::StatusCode::kOk) << abslStatus.message();
     // Check default value is set
     int ovmsDefaultInfoLevel = 2;
-    if (testLogLevelVelue == "" || testLogLevelVelue == "WRONG")
-      EXPECT_TRUE(mediapipe::OVMS_LOG_LEVEL == ovmsDefaultInfoLevel);
+    if (testLogLevelVelue == "-99" || testLogLevelVelue == "35" || testLogLevelVelue == "")
+      EXPECT_TRUE(OpenVINOModelServerSessionCalculator::OvmsLogLevel == ovmsDefaultInfoLevel);
     else
-      EXPECT_TRUE(mediapipe::OVMS_LOG_LEVEL == level);
+      EXPECT_TRUE(OpenVINOModelServerSessionCalculator::OvmsLogLevel == level);
 }
 TEST(OpenVINOModelServerSessionCalculatorTestLogLevel, VerifyLogLevelDefault) {
     std::string proto_text = R"pb(
@@ -219,5 +219,5 @@ TEST(OpenVINOModelServerSessionCalculatorTestLogLevel, VerifyLogLevelDefault) {
     EXPECT_EQ(abslStatus.code(), absl::StatusCode::kOk) << abslStatus.message();
     // Check default value is set
     int ovmsDefaultInfoLevel = 2;
-    EXPECT_TRUE(mediapipe::OVMS_LOG_LEVEL == ovmsDefaultInfoLevel);
+    EXPECT_TRUE(OpenVINOModelServerSessionCalculator::OvmsLogLevel == ovmsDefaultInfoLevel);
 }
