@@ -172,8 +172,8 @@ INSTANTIATE_TEST_SUITE_P(
 
 TEST_P(OpenVINOModelServerSessionCalculatorTestLogLevel, VerifyLogLevel) {
     std::string testLogLevelVelue = GetParam();
-    const std::string ovms_log_level_env = "OVMS_LOG_LEVEL";
-    setenv(ovms_log_level_env.c_str(), testLogLevelVelue.c_str(), true);
+    const std::string ovmsLogLevelEnv = "OVMS_LOG_LEVEL";
+    setenv(ovmsLogLevelEnv.c_str(), testLogLevelVelue.c_str(), true);
     OVMS_LogLevel level = mediapipe::StringToLogLevel(testLogLevelVelue);
     std::string proto_text = R"pb(
                 calculator: "OpenVINOModelServerSessionCalculator"

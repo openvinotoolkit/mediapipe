@@ -58,12 +58,16 @@ PacketType OVTENSORS_TYPE;
 PacketType MPTENSOR_TYPE;
 PacketType MPTENSORS_TYPE;
 public:
+    const std::string ovmsLogLevelEnv = "OVMS_LOG_LEVEL";
     void SetUp() override {
         OVTENSOR_TYPE.Set<ov::Tensor>();
         OVTENSORS_TYPE.Set<std::vector<ov::Tensor>>();
         MPTENSOR_TYPE.Set<mediapipe::Tensor>();
         MPTENSORS_TYPE.Set<std::vector<mediapipe::Tensor>>();
         mediapipe::OVMS_LOG_LEVEL = OVMS_LOG_DEBUG;
+    }
+    void TearDown() override {
+        unsetenv(ovmsLogLevelEnv.c_str());
     }
 };
 
@@ -238,13 +242,12 @@ std::string failed_graph_proto = R"(
       }
     )";
 
-const std::string ovms_log_level_env = "OVMS_LOG_LEVEL";
 TEST_F(OpenVINOInferenceCalculatorTest, ValidationFailedInDebug) {
-    setenv(ovms_log_level_env.c_str(), "DEBUG", true);
+    setenv(ovmsLogLevelEnv.c_str(), "DEBUG", true);
     runDummyInference(failed_graph_proto, true, true);
 }
 TEST_F(OpenVINOInferenceCalculatorTest, ValidationPassInInfo) {
-    setenv(ovms_log_level_env.c_str(), "INFO", false);
+    setenv(ovmsLogLevelEnv.c_str(), "INFO", false);
     runDummyInference(failed_graph_proto, false, true);
 }
 TEST_F(OpenVINOInferenceCalculatorTest, ValidationFailedInDebugReorderCalculators) {
@@ -280,7 +283,7 @@ TEST_F(OpenVINOInferenceCalculatorTest, ValidationFailedInDebugReorderCalculator
           }
       }
     )";
-    setenv(ovms_log_level_env.c_str(), "DEBUG", true);
+    setenv(ovmsLogLevelEnv.c_str(), "DEBUG", true);
     runDummyInference(graph_proto, true);
 }
 TEST_F(OpenVINOInferenceCalculatorTest, BasicDummyInferenceEmptyKey) {
