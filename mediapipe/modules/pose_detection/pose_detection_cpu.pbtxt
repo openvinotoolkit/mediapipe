@@ -86,7 +86,6 @@ node {
       servable_name: "pose_detection"
       servable_version: "1"
       server_config: "mediapipe/models/ovms/config_holistic.json"
-      log_level: "DEBUG"
     }
   }
 }
