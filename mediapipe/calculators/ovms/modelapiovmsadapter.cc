@@ -14,8 +14,9 @@
 // limitations under the License.
 //*****************************************************************************
 #include "modelapiovmsadapter.hpp"
+#if (OVMS_DUMP_TO_FILE == 1)
 #include "openvinoinferencedumputils.h"
-
+#endif
 #include <iostream>
 #include <map>
 #include <memory>
@@ -118,7 +119,7 @@ InferenceOutput OVMSInferenceAdapter::infer(const InferenceInput& input) {
             OVMS_BUFFERTYPE_CPU,
             NOT_USED_NUM));
     }
-#if (DUMP_TO_FILE == 1)
+#if (OVMS_DUMP_TO_FILE == 1)
     dumpOvTensorInput(input,"input");
 #endif
     //////////////////
@@ -155,7 +156,7 @@ InferenceOutput OVMSInferenceAdapter::infer(const InferenceInput& input) {
         ASSERT_CAPI_STATUS_NULL(OVMS_InferenceResponseOutput(response, i, &outputName, &datatype, &shape, &dimCount, &voutputData, &bytesize, &bufferType, &deviceId));
         output[outputName] = makeOvTensor(datatype, shape, dimCount, voutputData, bytesize);
     }
-#if (DUMP_TO_FILE == 1)
+#if (OVMS_DUMP_TO_FILE == 1)
     dumpOvTensorInput(output,"output");
 #endif
     return output;

@@ -13,6 +13,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //*****************************************************************************
+#include <ctime>
+#include <chrono>
 #include <sstream>
 #include <string>
 #include <fstream>
@@ -181,14 +183,27 @@ static void writeToFile(std::stringstream& stream, std::string name)
     return;
 }
 
+static std::string getTimestampString() {
+    time_t *rawtime = new time_t;
+    struct tm * timeinfo;
+    time(rawtime);
+    timeinfo = localtime(rawtime);
+    auto start = std::chrono::system_clock::now();
+    std::stringstream timestampStream;
+    timestampStream << timeinfo->tm_year << "_" << timeinfo->tm_mon << "_" << timeinfo->tm_mday << "_" ;
+    timestampStream << timeinfo->tm_hour << "_" << timeinfo->tm_min << "_" << timeinfo->tm_sec << "_";
+    using namespace std::chrono;
+    timestampStream << duration_cast<milliseconds>(start.time_since_epoch()).count();
+    return timestampStream.str();
+}
+
 void dumpOvTensorInput(const InferenceInput& input, const std::string& dumpDirectoryName) {
     std::stringstream dumpStream;
-    std::string fname = std::string("./");
-    fname = joinPath({fname, dumpDirectoryName});
+    std::string fname = std::string("./dump");
+    fname = joinPath({fname, getTimestampString(), dumpDirectoryName});
     for (const auto& [name, inputTensor] : input) {
-        fname = joinPath({fname, name});
         fname += std::to_string(INPUT_COUNTER++);
-
+        dumpStream << " Name: " << name;
         dumpStream << " Shape: " << inputTensor.get_shape();
         dumpStream << " Type: " << inputTensor.get_element_type();
         dumpStream << "Byte size: " << inputTensor.get_byte_size();
@@ -196,6 +211,7 @@ void dumpOvTensorInput(const InferenceInput& input, const std::string& dumpDirec
         dumpStream << dumpOvTensor(inputTensor).str();
     }
 
+    std::cout << "Filename: " << fname <<std::endl;
     writeToFile(dumpStream, fname);
 }
 
