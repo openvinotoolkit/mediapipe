@@ -31,6 +31,7 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #include "mediapipe/calculators/ovms/openvinomodelserversessioncalculator.pb.h"
+#include "mediapipe/calculators/ovms/openvinoinferenceutils.h"
 #include "mediapipe/framework/calculator_framework.h"
 #include "mediapipe/framework/port/canonical_errors.h"
 #include "mediapipe/framework/deps/status_matchers.h"

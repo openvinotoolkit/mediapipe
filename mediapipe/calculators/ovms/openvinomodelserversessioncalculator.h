@@ -51,7 +51,4 @@ public:
     static const char* OvmsLogLevelEnv;
 };
 
-OVMS_LogLevel StringToLogLevel(const std::string& logLevel);
-std::string LogLevelToString(OVMS_LogLevel log_level);
-
 }  // namespace mediapipe

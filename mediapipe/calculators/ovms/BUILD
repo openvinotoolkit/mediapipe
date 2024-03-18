@@ -64,6 +64,10 @@ cc_library(
     hdrs = [
         "openvinoinferenceutils.h"
     ],
+    deps = [
+        "@ovms//src:ovms_header",
+    ],
+    copts = ["-Iexternal/ovms/src","-Isrc"],
     alwayslink = 1,
 )
 
@@ -90,7 +94,6 @@ cc_library(
         "openvinoinferencecalculatoroptions.h"
     ],
     deps = [
-        "openvinomodelserversessioncalculator",
         ":openvinoinferencecalculator_cc_proto",
         ":openvinoinferenceutils",
         "//mediapipe/framework:calculator_framework",
@@ -132,6 +135,7 @@ cc_library(
     ],
     deps = [
         ":modelapiovmsadapter",
+        ":openvinoinferenceutils",
         ":openvinomodelserversessioncalculator_cc_proto",
         "//mediapipe/framework:calculator_framework",
         "@linux_openvino//:openvino",

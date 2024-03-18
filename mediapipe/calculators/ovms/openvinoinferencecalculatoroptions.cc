@@ -15,7 +15,7 @@
 //*****************************************************************************
 #include <unordered_map>
 
-#include "openvinomodelserversessioncalculator.h"
+#include "ovms.h"  // NOLINT
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #include "mediapipe/framework/calculator_contract.h"
@@ -25,6 +25,8 @@
 #include "mediapipe/calculators/ovms/openvinoinferenceutils.h"
 
 namespace mediapipe {
+
+const char* OvmsLogLevelEnv = "GLOG_minloglevel";
 
 static bool ValidateOrderLists(std::set<std::string> calculatorTags, const google::protobuf::RepeatedPtrField<std::string>& order_list) {
     // Get output_stream types defined in the graph
@@ -178,8 +180,8 @@ bool ValidateCalculatorSettings(CalculatorContract* cc)
     }
 
     // Run deep validation only not in INFO log level for better performance
-    if (StringToLogLevel(std::string(std::getenv(OpenVINOModelServerSessionCalculator::OvmsLogLevelEnv) 
-        == nullptr ? "" : std::getenv(OpenVINOModelServerSessionCalculator::OvmsLogLevelEnv))) == OVMS_LOG_INFO)
+    if (StringToLogLevel(std::string(std::getenv(OvmsLogLevelEnv) 
+        == nullptr ? "" : std::getenv(OvmsLogLevelEnv))) == OVMS_LogLevel::OVMS_LOG_INFO)
         return true;
 
     const auto& options = cc->Options<OpenVINOInferenceCalculatorOptions>();

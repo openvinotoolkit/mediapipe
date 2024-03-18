@@ -28,6 +28,7 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #include "mediapipe/calculators/ovms/openvinomodelserversessioncalculator.pb.h"
+#include "mediapipe/calculators/ovms/openvinoinferenceutils.h"
 #include "mediapipe/framework/calculator_framework.h"
 #include "mediapipe/framework/port/canonical_errors.h"
 #include "modelapiovmsadapter.hpp"
@@ -98,38 +99,6 @@ std::optional<uint32_t> stou32(const std::string& input) {
     } catch (...) {
         return std::nullopt;
     }
-}
-
-OVMS_LogLevel StringToLogLevel(const std::string& logLevel){
-    if (logLevel == "2")
-        return OVMS_LOG_ERROR;
-    if (logLevel == "0")
-        return OVMS_LOG_DEBUG;
-    if (logLevel == "3")
-        return OVMS_LOG_TRACE;
-    if (logLevel == "1")
-        return OVMS_LOG_WARNING;
-
-    LOG(INFO) << "OpenVINOModelServerSessionCalculator setting default log level INFO for env value: " << logLevel.empty() ? "empty" : logLevel;
-    return OVMS_LOG_INFO;
-}
-
-std::string LogLevelToString(OVMS_LogLevel log_level) {
-    switch (log_level) {
-    case OVMS_LOG_INFO:
-        return "INFO";
-    case OVMS_LOG_ERROR:
-        return "ERROR";
-    case OVMS_LOG_DEBUG:
-        return "DEBUG";
-    case OVMS_LOG_TRACE:
-        return "TRACE";
-    case OVMS_LOG_WARNING:
-        return "WARNING";
-        
-    }
-
-    return "unsupported";
 }
 
 class SettingsGuard {
