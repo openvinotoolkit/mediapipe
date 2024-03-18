@@ -15,16 +15,17 @@
 //*****************************************************************************
 #include <ctime>
 #include <chrono>
+#include <filesystem>
+#include <fstream>
 #include <sstream>
 #include <string>
-#include <fstream>
 #include <openvino/openvino.hpp>
 
 #include "mediapipe/calculators/ovms/openvinoinferencedumputils.h"
 
 namespace mediapipe {
     
-int INPUT_COUNTER = 1;
+std::unordered_map<std::string, int> dumpCounters;
 
 using InferenceInput = std::map<std::string, ov::Tensor>;
 
@@ -197,21 +198,31 @@ static std::string getTimestampString() {
     return timestampStream.str();
 }
 
+static int getAndIncerementCounter(const std::string& name) {
+    if (dumpCounters.find(name) == dumpCounters.end())
+        dumpCounters[name] = 0;
+
+    return dumpCounters[name]++;
+}
+
+static const std::string TIMESTAMP_STRING = getTimestampString();
+
 void dumpOvTensorInput(const InferenceInput& input, const std::string& dumpDirectoryName) {
     std::stringstream dumpStream;
     std::string fname = std::string("./dump");
-    fname = joinPath({fname, getTimestampString(), dumpDirectoryName});
+    fname = joinPath({fname,TIMESTAMP_STRING});
+    std::filesystem::create_directories(fname);
+    fname = joinPath({fname, dumpDirectoryName + std::to_string(getAndIncerementCounter(dumpDirectoryName))});
     for (const auto& [name, inputTensor] : input) {
-        fname += std::to_string(INPUT_COUNTER++);
         dumpStream << " Name: " << name;
         dumpStream << " Shape: " << inputTensor.get_shape();
         dumpStream << " Type: " << inputTensor.get_element_type();
-        dumpStream << "Byte size: " << inputTensor.get_byte_size();
-        dumpStream << "Size: " << inputTensor.get_size();
+        dumpStream << " Byte size: " << inputTensor.get_byte_size();
+        dumpStream << " Size: " << inputTensor.get_size();
         dumpStream << dumpOvTensor(inputTensor).str();
     }
 
-    std::cout << "Filename: " << fname <<std::endl;
+    std::cout << "Dump filename: " << fname <<std::endl;
     writeToFile(dumpStream, fname);
 }
 
