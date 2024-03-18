@@ -14,7 +14,7 @@
 // limitations under the License.
 //*****************************************************************************
 #include <string>
-#include <vector>
+#include <map>
 namespace mediapipe {
 
 class ov::Tensor;
