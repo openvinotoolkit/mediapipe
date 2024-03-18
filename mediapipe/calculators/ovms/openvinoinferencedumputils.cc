@@ -1,5 +1,5 @@
 //*****************************************************************************
-// Copyright 2023 Intel Corporation
+// Copyright 2024 Intel Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -29,109 +29,30 @@ std::unordered_map<std::string, int> dumpCounters;
 
 using InferenceInput = std::map<std::string, ov::Tensor>;
 
+#define TYPE_CASE(ENUM, TYPE)                                                       \
+    case ENUM: {                                                                    \
+        const TYPE* value = reinterpret_cast<TYPE*>(tensor.data());   \
+        dumpStream << " tensor: [ ";                                                \
+        for (int x = 0; x < tensor.get_size(); x++) {                               \
+            dumpStream << value[x] << " ";                            \
+        }                                                                           \
+        dumpStream << " ]";                                                         \
+        break;                                                                      \
+    }                                                                               \
+
 static std::stringstream dumpOvTensor(const ov::Tensor& tensor) {
     std::stringstream dumpStream;
     switch (tensor.get_element_type()) {
-        // The cosine window and square root of Hann are equivalent.
-        case ov::element::Type_t::f64: {
-            const _Float64* input_tensor_access = reinterpret_cast<_Float64*>(tensor.data());
-            dumpStream << " tensor: [ ";
-            for (int x = 0; x < tensor.get_size(); x++) {
-                dumpStream << &input_tensor_access[x] << " ";
-            }
-            dumpStream << " ]";
-            break;
-        }
-        case ov::element::Type_t::f32: {
-            const _Float32* input_tensor_access = reinterpret_cast<_Float32*>(tensor.data());
-            dumpStream << " tensor: [ ";
-            for (int x = 0; x < tensor.get_size(); x++) {
-                dumpStream << &input_tensor_access[x] << " ";
-            }
-            dumpStream << " ]";
-            break;
-        }
-        case ov::element::Type_t::i64: {
-            const int64_t* input_tensor_access = reinterpret_cast<int64_t*>(tensor.data());
-            dumpStream << " tensor: [ ";
-            for (int x = 0; x < tensor.get_size(); x++) {
-                dumpStream << &input_tensor_access[x] << " ";
-            }
-            dumpStream << " ]";
-            break;
-        }
-        case ov::element::Type_t::i32: {
-            const int32_t* input_tensor_access = reinterpret_cast<int32_t*>(tensor.data());
-            dumpStream << " tensor: [ ";
-            for (int x = 0; x < tensor.get_size(); x++) {
-                dumpStream << &input_tensor_access[x] << " ";
-            }
-            dumpStream << " ]";
-            break;
-        }
-        case ov::element::Type_t::i16: {
-            const int16_t* input_tensor_access = reinterpret_cast<int16_t*>(tensor.data());
-            dumpStream << " tensor: [ ";
-            for (int x = 0; x < tensor.get_size(); x++) {
-                dumpStream << &input_tensor_access[x] << " ";
-            }
-            dumpStream << " ]";
-            break;
-        }
-        case ov::element::Type_t::i8: {
-            const int8_t* input_tensor_access = reinterpret_cast<int8_t*>(tensor.data());
-            dumpStream << " tensor: [ ";
-            for (int x = 0; x < tensor.get_size(); x++) {
-                dumpStream << &input_tensor_access[x] << " ";
-            }
-            dumpStream << " ]";
-            break;
-        }
-        case ov::element::Type_t::u64: {
-            const u_int64_t* input_tensor_access = reinterpret_cast<uint64_t*>(tensor.data());
-            dumpStream << " tensor: [ ";
-            for (int x = 0; x < tensor.get_size(); x++) {
-                dumpStream << &input_tensor_access[x] << " ";
-            }
-            dumpStream << " ]";
-            break;
-        }
-        case ov::element::Type_t::u32: {
-            const u_int32_t* input_tensor_access = reinterpret_cast<uint32_t*>(tensor.data());
-            dumpStream << " tensor: [ ";
-            for (int x = 0; x < tensor.get_size(); x++) {
-                dumpStream << &input_tensor_access[x] << " ";
-            }
-            dumpStream << " ]";
-            break;
-        }
-        case ov::element::Type_t::u16: {
-            const u_int16_t* input_tensor_access = reinterpret_cast<uint16_t*>(tensor.data());
-            dumpStream << " tensor: [ ";
-            for (int x = 0; x < tensor.get_size(); x++) {
-                dumpStream << &input_tensor_access[x] << " ";
-            }
-            dumpStream << " ]";
-            break;
-        }
-        case ov::element::Type_t::u8: {
-            const u_int8_t* input_tensor_access = reinterpret_cast<uint8_t*>(tensor.data());
-            dumpStream << " tensor: [ ";
-            for (int x = 0; x < tensor.get_size(); x++) {
-                dumpStream << &input_tensor_access[x] << " ";
-            }
-            dumpStream << " ]";
-            break;
-        }
-        case ov::element::Type_t::boolean: {
-            const bool* input_tensor_access = reinterpret_cast<bool*>(tensor.data());
-            dumpStream << " tensor: [ ";
-            for (int x = 0; x < tensor.get_size(); x++) {
-                dumpStream << &input_tensor_access[x] << " ";
-            }
-            dumpStream << " ]";
-            break;
-        }
+        TYPE_CASE(ov::element::Type_t::f64, _Float64)
+        TYPE_CASE(ov::element::Type_t::f32, _Float32)
+        TYPE_CASE(ov::element::Type_t::i64, int64_t)
+        TYPE_CASE(ov::element::Type_t::i32, int32_t)
+        TYPE_CASE(ov::element::Type_t::i16, int16_t)
+        TYPE_CASE(ov::element::Type_t::i8, int8_t)
+        TYPE_CASE(ov::element::Type_t::u32, uint32_t)
+        TYPE_CASE(ov::element::Type_t::u16, uint16_t)
+        TYPE_CASE(ov::element::Type_t::u8, uint8_t)
+        TYPE_CASE(ov::element::Type_t::boolean, bool)
         case ov::element::Type_t::bf16:
         case ov::element::Type_t::undefined:
         case ov::element::Type_t::dynamic:
