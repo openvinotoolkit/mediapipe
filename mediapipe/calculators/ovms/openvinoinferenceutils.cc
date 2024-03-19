@@ -59,14 +59,14 @@ bool endsWith(const std::string& str, const std::string& match) {
 }
 
 OVMS_LogLevel StringToLogLevel(const std::string& logLevel){
-    if (logLevel == "2")
-        return OVMS_LOG_ERROR;
-    if (logLevel == "0")
-        return OVMS_LOG_DEBUG;
     if (logLevel == "3")
-        return OVMS_LOG_TRACE;
+        return OVMS_LOG_ERROR;
     if (logLevel == "1")
-        return OVMS_LOG_WARNING;
+        return OVMS_LOG_DEBUG;
+    if (logLevel == "0")
+        return OVMS_LOG_TRACE;
+    if (logLevel == "2")
+        return OVMS_LOG_INFO;
 
     return OVMS_LOG_INFO;
 }

@@ -90,20 +90,23 @@ and adding dump function in your specific calculator
 ```      
 # Setting log level
 
+The log level in mediapipe application can be set using GLOG_minloglevel env variable. 0 is the most verbose for debuging purposes and 3 is the least verbose with the major errors only.
+That setting is applicable both for mediapipe framework logs and also for OpenVINO inference calculator.
 Openvino Model Server has its own log_level setting that can be set to the following levels:
-    INFO, DEBUG, WARNING, TRACE, ERROR
+    TRACE, DEBUG, INFO, ERROR
 
 Recommended development log_level setting is DEBUG as it will print out usefull information and perform additional OpenVINOInferenceCalculator calculator validation.
 If you want to set the flag in the desktop examples applications you can do it by setting the GLOG_minloglevel environment variable.
 If the GLOG_minloglevel variable is not set Model Server will use the default log_level - INFO.
 
-| GLOG_minloglevel | Model Server log_level |
-:------------------| :--------------------: |
-|                  |          INFO          |
-|        0         |          DEBUG         |
-|        1         |          WARNING       |
-|        2         |          ERROR         |
-|        3         |          TRACE         |
+| GLOG_minloglevel |      value       | Model Server log_level |
+:------------------|------------------| :--------------------: |
+|      INFO        |        0         |          TRACE         |
+|      WARNING     |        1         |          DEBUG         |
+|      ERROR       |        2         |          INFO          |
+|                  |      unset       |          INFO          |
+|      FATAL       |        3         |          ERROR         |
+
 
 Example usage:
 ```bash
