@@ -98,7 +98,7 @@ OpenVINO inference calculator log level is mapped to the defined GLOG_minlogleve
 Recommended development log_level setting is DEBUG as it will print out usefull information and perform additional OpenVINOInferenceCalculator calculator validation.
 If you want to set the flag in the desktop examples applications you can do it by setting the GLOG_minloglevel environment variable.
 
-| GLOG_minloglevel |      value       | Model Server log_level |
+| GLOG_minloglevel |      MediaPipe log level      | Model Server log_level |
 :------------------|------------------| :--------------------: |
 |      INFO        |        0         |          TRACE         |
 |      WARNING     |        1         |          DEBUG         |
