@@ -103,7 +103,7 @@ If you want to set the flag in the desktop examples applications you can do it b
 |      0        |        INFO         |          TRACE         |
 |      1     |        WARNING         |          DEBUG         |
 |      ERROR       |        2         |          INFO          |
-|                  |      unset       |          INFO          |
+|                  |      ERROR       |          INFO          |
 |      FATAL       |        3         |          ERROR         |
 
 
