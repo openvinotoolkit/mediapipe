@@ -48,7 +48,7 @@ using mediapipe::OpenVINOModelServerSessionCalculator;
 using mediapipe::CalculatorState;
 using mediapipe::ParseTextProtoOrDie;
 using mediapipe::PacketType;
-using mediapipe::LogLevelToString;
+
 class OpenVINOModelServerSessionCalculatorTest : public ::testing::Test {
 PacketType OVTENSOR_TYPE;
 PacketType OVTENSORS_TYPE;
