@@ -104,7 +104,7 @@ If you want to set the flag in the desktop examples applications you can do it b
 |      1     |        WARNING         |          DEBUG         |
 |      ERROR       |        2         |          INFO          |
 |                  |      ERROR       |          INFO          |
-|      FATAL       |        3         |          ERROR         |
+|      3       |        FATAL         |          ERROR         |
 
 
 Example usage:
