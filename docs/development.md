@@ -100,7 +100,7 @@ If you want to set the flag in the desktop examples applications you can do it b
 
 | GLOG_minloglevel |      MediaPipe log level      | Model Server log_level |
 :------------------|------------------| :--------------------: |
-|      INFO        |        0         |          TRACE         |
+|      0        |        INFO         |          TRACE         |
 |      WARNING     |        1         |          DEBUG         |
 |      ERROR       |        2         |          INFO          |
 |                  |      unset       |          INFO          |
