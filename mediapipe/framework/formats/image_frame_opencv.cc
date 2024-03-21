@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+#include <opencv2/core/mat.hpp>
 
 #include "mediapipe/framework/formats/image_frame_opencv.h"
 
@@ -90,6 +91,15 @@ cv::Mat MatView(const ImageFrame* image) {
   // Use ImageFrame to initialize in-place. ImageFrame still owns memory.
   return cv::Mat(dims, sizes, type, const_cast<uint8_t*>(image->PixelData()),
                  steps);
+}
+
+// UMatUsageFlags
+// USAGE_DEFAULT, USAGE_ALLOCATE_HOST_MEMORY, USAGE_ALLOCATE_DEVICE_MEMORY, USAGE_ALLOCATE_SHARED_MEMORY , __UMAT_USAGE_FLAGS_32BIT 
+cv::UMat MatView(const ImageFrame* image, cv::UMatUsageFlags usageFlags) {
+  cv::Mat mat = MatView(image);
+  cv::UMat umat = cv::UMat(usageFlags);
+  mat.copyTo(umat);
+  return umat;
 }
 
 }  // namespace formats

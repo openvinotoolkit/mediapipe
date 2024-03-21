@@ -90,7 +90,7 @@ absl::Status RunMPPGraph() {
 
   while (grab_frames) {
     // Capture opencv camera or video frame.
-    cv::Mat camera_frame_raw;
+    cv::UMat camera_frame_raw;
     capture >> camera_frame_raw;
     if (camera_frame_raw.empty()) {
       if (!load_video) {
@@ -101,7 +101,7 @@ absl::Status RunMPPGraph() {
       break;
     }
     count_frames+=1;
-    cv::Mat camera_frame;
+    cv::UMat camera_frame;
     cv::cvtColor(camera_frame_raw, camera_frame, cv::COLOR_BGR2RGB);
     if (!load_video) {
       cv::flip(camera_frame, camera_frame, /*flipcode=HORIZONTAL*/ 1);
@@ -111,7 +111,7 @@ absl::Status RunMPPGraph() {
     auto input_frame = absl::make_unique<mediapipe::ImageFrame>(
         mediapipe::ImageFormat::SRGB, camera_frame.cols, camera_frame.rows,
         mediapipe::ImageFrame::kDefaultAlignmentBoundary);
-    cv::Mat input_frame_mat = mediapipe::formats::MatView(input_frame.get());
+    cv::UMat input_frame_mat = mediapipe::formats::MatView(input_frame.get(), cv::USAGE_ALLOCATE_SHARED_MEMORY);
     camera_frame.copyTo(input_frame_mat);
 
     // Send image packet into the graph.
@@ -127,7 +127,7 @@ absl::Status RunMPPGraph() {
     auto& output_frame = packet.Get<mediapipe::ImageFrame>();
 
     // Convert back to opencv for display or saving.
-    cv::Mat output_frame_mat = mediapipe::formats::MatView(&output_frame);
+    cv::UMat output_frame_mat = mediapipe::formats::MatView(&output_frame, cv::USAGE_ALLOCATE_SHARED_MEMORY);
     cv::cvtColor(output_frame_mat, output_frame_mat, cv::COLOR_RGB2BGR);
     if (save_video) {
       if (!writer.isOpened()) {
