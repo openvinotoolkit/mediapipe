@@ -243,6 +243,14 @@ cc_library(
 )
 
 cc_library(
+    name = "opencv_opencl",
+    hdrs = ["opencv_opencl.h"],
+    deps = [
+        "//third_party:opencv",
+    ],
+)
+
+cc_library(
     name = "opencv_imgproc",
     hdrs = ["opencv_imgproc_inc.h"],
     deps = [

@@ -12,14 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// An example of sending OpenCV webcam frames into a MediaPipe graph.
+// An example of sending OpenCV webcam frames INFO a MediaPipe graph.
 #include <cstdlib>
 #include <chrono>
+
+#include <opencv2/core/ocl.hpp>
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
 #include "mediapipe/framework/calculator_framework.h"
 #include "mediapipe/framework/formats/image_frame.h"
+#include "mediapipe/framework/formats/helpers.hpp"
 #include "mediapipe/framework/formats/image_frame_opencv.h"
 #include "mediapipe/framework/port/file_helpers.h"
 #include "mediapipe/framework/port/opencv_highgui_inc.h"
@@ -41,6 +44,16 @@ ABSL_FLAG(std::string, input_video_path, "",
 ABSL_FLAG(std::string, output_video_path, "",
           "Full path of where to save result (.mp4 only). "
           "If not provided, show result in a window.");
+
+void dumpMatToFile(std::string& fileName, cv::UMat& umat){
+  cv::FileStorage file(fileName, cv::FileStorage::WRITE);
+  cv::Mat input;
+  //file << "camera_frame_raw" << camera_frame_raw;
+  umat.copyTo(input);
+  file << "input_frame_mat" << input;
+
+  file.release();
+}
 
 absl::Status RunMPPGraph() {
   std::string calculator_graph_config_contents;
@@ -88,9 +101,29 @@ absl::Status RunMPPGraph() {
   int count_frames = 0;
   auto begin = std::chrono::high_resolution_clock::now();
 
+  OpenClWrapper ocl;
+
+  ocl.initOpenCL();
+
+  LOG(INFO) << "haveOpenCL " << cv::ocl::haveOpenCL() <<std::endl;
+  LOG(INFO) << "useOpenCL " << cv::ocl::useOpenCL() <<std::endl;
+  LOG(INFO) << "haveSVM " << cv::ocl::haveSVM() <<std::endl;
+
+  #define CL_CONTEXT_VA_API_DISPLAY_INTEL                     0x4097
+  cv::ocl::Context ctx1 = cv::ocl::Context::getDefault();
+  LOG(INFO) << "DEFAULT CL CONTEXT VA " << ctx1.getOpenCLContextProperty(CL_CONTEXT_VA_API_DISPLAY_INTEL)  <<std::endl;
+
+  cv::ocl::Context context = cv::ocl::Context::create(":GPU:0");
+  LOG(INFO) <<"CL CONTEXT VA " << context.getOpenCLContextProperty(CL_CONTEXT_VA_API_DISPLAY_INTEL) <<std::endl;
+
+  cv::ocl::Device device = cv::ocl::Device::getDefault();
+  LOG(INFO) <<"CL device doubleFPConfig() " << device.doubleFPConfig() <<std::endl;
+
+  return absl::OkStatus();;
+
   while (grab_frames) {
     // Capture opencv camera or video frame.
-    cv::UMat camera_frame_raw;
+    cv::UMat camera_frame_raw = cv::UMat(cv::USAGE_ALLOCATE_SHARED_MEMORY);
     capture >> camera_frame_raw;
     if (camera_frame_raw.empty()) {
       if (!load_video) {
@@ -101,20 +134,23 @@ absl::Status RunMPPGraph() {
       break;
     }
     count_frames+=1;
-    cv::UMat camera_frame;
+    cv::UMat camera_frame = cv::UMat(cv::USAGE_ALLOCATE_SHARED_MEMORY);
     cv::cvtColor(camera_frame_raw, camera_frame, cv::COLOR_BGR2RGB);
     if (!load_video) {
       cv::flip(camera_frame, camera_frame, /*flipcode=HORIZONTAL*/ 1);
     }
 
-    // Wrap Mat into an ImageFrame.
+    // Wrap Mat INFO an ImageFrame.
     auto input_frame = absl::make_unique<mediapipe::ImageFrame>(
         mediapipe::ImageFormat::SRGB, camera_frame.cols, camera_frame.rows,
         mediapipe::ImageFrame::kDefaultAlignmentBoundary);
     cv::UMat input_frame_mat = mediapipe::formats::MatView(input_frame.get(), cv::USAGE_ALLOCATE_SHARED_MEMORY);
     camera_frame.copyTo(input_frame_mat);
+    //std::string fileName = std::string("./input") + std::to_string(count_frames) + std::string("jpeg");
 
-    // Send image packet into the graph.
+    
+
+    // Send image packet INFO the graph.
     size_t frame_timestamp_us =
         (double)cv::getTickCount() / (double)cv::getTickFrequency() * 1e6;
     MP_RETURN_IF_ERROR(graph.AddPacketToInputStream(
@@ -127,7 +163,7 @@ absl::Status RunMPPGraph() {
     auto& output_frame = packet.Get<mediapipe::ImageFrame>();
 
     // Convert back to opencv for display or saving.
-    cv::UMat output_frame_mat = mediapipe::formats::MatView(&output_frame, cv::USAGE_ALLOCATE_SHARED_MEMORY);
+    cv::Mat output_frame_mat = mediapipe::formats::MatView(&output_frame);
     cv::cvtColor(output_frame_mat, output_frame_mat, cv::COLOR_RGB2BGR);
     if (save_video) {
       if (!writer.isOpened()) {

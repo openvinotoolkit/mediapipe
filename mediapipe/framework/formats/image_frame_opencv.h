@@ -33,7 +33,7 @@ cv::Mat MatView(const ImageFrame* image);
 
 // UMatUsageFlags
 // USAGE_DEFAULT, USAGE_ALLOCATE_HOST_MEMORY, USAGE_ALLOCATE_DEVICE_MEMORY, USAGE_ALLOCATE_SHARED_MEMORY , __UMAT_USAGE_FLAGS_32BIT 
-cv::UMat MatView(const ImageFrame* image, cv::UMatUsageFlags usageFlags);
+cv::UMat MatView(ImageFrame* image, cv::UMatUsageFlags usageFlags);
 
 }  // namespace formats
 }  // namespace mediapipe

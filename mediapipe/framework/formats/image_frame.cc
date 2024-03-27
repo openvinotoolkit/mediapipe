@@ -20,6 +20,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <CL/cl.h>
+#include <opencv2/core/ocl.hpp>
 #include <algorithm>
 #include <utility>
 
@@ -28,6 +30,7 @@
 #include "mediapipe/framework/port/aligned_malloc_and_free.h"
 #include "mediapipe/framework/port/logging.h"
 #include "mediapipe/framework/port/proto_ns.h"
+#include "mediapipe/framework/formats/helpers.hpp"
 
 namespace mediapipe {
 
@@ -45,6 +48,10 @@ int CountOnes(uint32_t n) {
 }
 
 }  // namespace
+
+const char* DEVICE_GPU = ":GPU:0";
+
+static cv::ocl::Context context = cv::ocl::Context::create(DEVICE_GPU);
 
 const ImageFrame::Deleter ImageFrame::PixelDataDeleter::kArrayDelete =
     std::default_delete<uint8_t[]>();
@@ -93,6 +100,7 @@ ImageFrame& ImageFrame::operator=(ImageFrame&& move_from) {
   return *this;
 }
 
+
 void ImageFrame::Reset(ImageFormat::Format format, int width, int height,
                        uint32_t alignment_boundary) {
   format_ = format;
@@ -101,7 +109,7 @@ void ImageFrame::Reset(ImageFormat::Format format, int width, int height,
   CHECK_NE(ImageFormat::UNKNOWN, format_);
   CHECK(IsValidAlignmentNumber(alignment_boundary));
   width_step_ = width * NumberOfChannels() * ByteDepth();
-  if (alignment_boundary == 1) {
+  /*if (alignment_boundary == 1) {
     pixel_data_ = {new uint8_t[height * width_step_],
                    PixelDataDeleter::kArrayDelete};
   } else {
@@ -113,7 +121,7 @@ void ImageFrame::Reset(ImageFormat::Format format, int width, int height,
     pixel_data_ = {reinterpret_cast<uint8_t*>(aligned_malloc(
                        height * width_step_, alignment_boundary)),
                    PixelDataDeleter::kAlignedFree};
-  }
+  }*/
 }
 
 void ImageFrame::AdoptPixelData(ImageFormat::Format format, int width,

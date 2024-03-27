@@ -825,6 +825,12 @@ new_local_repository(
     path = "/opt/intel/openvino/runtime",
 )
 
+new_git_repository(
+    name = "openvino",
+    remote = "https:///github.com/openvinotoolkit/openvino/",
+    commit = "c3c409ee133ffb26bf8fd5570ef50a7c004839a4"
+)
+
 git_repository(
     name = "oneTBB",
     branch = "v2021.10.0",

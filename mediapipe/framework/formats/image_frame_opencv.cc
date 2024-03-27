@@ -95,10 +95,11 @@ cv::Mat MatView(const ImageFrame* image) {
 
 // UMatUsageFlags
 // USAGE_DEFAULT, USAGE_ALLOCATE_HOST_MEMORY, USAGE_ALLOCATE_DEVICE_MEMORY, USAGE_ALLOCATE_SHARED_MEMORY , __UMAT_USAGE_FLAGS_32BIT 
-cv::UMat MatView(const ImageFrame* image, cv::UMatUsageFlags usageFlags) {
+cv::UMat MatView(ImageFrame* image, cv::UMatUsageFlags usageFlags) {
   cv::Mat mat = MatView(image);
   cv::UMat umat = cv::UMat(usageFlags);
   mat.copyTo(umat);
+  //*image->MutablePixelData() = static_cast<uint8_t*>(umat.u->data);
   return umat;
 }
 
