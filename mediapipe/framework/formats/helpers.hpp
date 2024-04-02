@@ -409,6 +409,8 @@ private:
 
 } // namespace opencl
 
+void dumpMatToFile(std::string& fileName, cv::UMat& umat);
+void dumpMatToFile(std::string& fileName, cv::Mat& umat);
 
 class OpenClWrapper
 {
@@ -416,9 +418,9 @@ public:
     OpenClWrapper();
     ~OpenClWrapper();
 
-    int initOpenCL();
-    int initVideoSource();
+    static int initOpenCL();
 
+    int createMemObject(cl_mem* mem_obj, cv::Mat& inputData);
     int process_frame_with_open_cl(cv::Mat& frame, bool use_buffer, cl_mem* cl_buffer);
     int process_cl_buffer_with_opencv(cl_mem buffer, size_t step, int rows, int cols, int type, cv::UMat& u);
     int process_cl_image_with_opencv(cl_mem image, cv::UMat& u);
@@ -432,13 +434,11 @@ public:
     void setRunning(bool running)      { m_running = running; }
     void setDoProcess(bool process)    { m_process = process; }
     void setUseBuffer(bool use_buffer) { m_use_buffer = use_buffer; }
+    void printInfo();
 
+    cl_mem                      m_mem_obj;
 protected:
     bool nextFrame(cv::Mat& frame) { return m_cap.read(frame); }
-    void handleKey(char key);
-    void timerStart();
-    void timerEnd();
-    std::string timeStr() const;
     std::string message() const;
 
 private:
@@ -456,16 +456,13 @@ private:
     cv::VideoCapture            m_cap;
     cv::Mat                     m_frame;
     cv::Mat                     m_frameGray;
+    
+    static bool                         m_is_initialized;
+    static cl_context                   m_context;
+    static cl_command_queue             m_queue;
 
-    opencl::PlatformInfo        m_platformInfo;
-    opencl::DeviceInfo          m_deviceInfo;
-    std::vector<cl_platform_id> m_platform_ids;
-    cl_context                  m_context;
-    cl_device_id                m_device_id;
-    cl_command_queue            m_queue;
     cl_program                  m_program;
     cl_kernel                   m_kernelBuf;
     cl_kernel                   m_kernelImg;
     cl_mem                      m_img_src; // used as src in case processing of cl image
-    cl_mem                      m_mem_obj;
 };

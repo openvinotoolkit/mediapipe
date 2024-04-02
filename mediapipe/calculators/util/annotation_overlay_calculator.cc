@@ -143,6 +143,9 @@ class AnnotationOverlayCalculator : public CalculatorBase {
   absl::Status RenderToCpu(CalculatorContext* cc,
                            const ImageFormat::Format& target_format,
                            uchar* data_image);
+  absl::Status RenderToOpencl(
+    CalculatorContext* cc, const ImageFormat::Format& target_format,
+    cv::Mat& input_mat);
 
   absl::Status GlRender(CalculatorContext* cc);
   template <typename Type, const char* Tag>
@@ -345,8 +348,10 @@ absl::Status AnnotationOverlayCalculator::Process(CalculatorContext* cc) {
 #endif  // !MEDIAPIPE_DISABLE_GPU
   } else {
     // Copy the rendered image to output.
-    uchar* image_mat_ptr = image_mat->data;
-    MP_RETURN_IF_ERROR(RenderToCpu(cc, target_format, image_mat_ptr));
+    //uchar* image_mat_ptr = image_mat->data;
+    //MP_RETURN_IF_ERROR(RenderToCpu(cc, target_format, image_mat_ptr));
+
+    MP_RETURN_IF_ERROR(RenderToOpencl(cc, target_format, *image_mat.get()));
   }
 
   return absl::OkStatus();
@@ -361,6 +366,21 @@ absl::Status AnnotationOverlayCalculator::Close(CalculatorContext* cc) {
     image_mat_tex_ = 0;
   });
 #endif  // !MEDIAPIPE_DISABLE_GPU
+
+  return absl::OkStatus();
+}
+
+absl::Status AnnotationOverlayCalculator::RenderToOpencl(
+    CalculatorContext* cc, const ImageFormat::Format& target_format,
+    cv::Mat& input_mat) {
+  std::unique_ptr<ImageFrame> output_frame(
+  new ImageFrame(input_mat, target_format, renderer_->GetImageWidth(), renderer_->GetImageHeight()));
+
+  if (cc->Outputs().HasTag(kImageFrameTag)) {
+    cc->Outputs()
+        .Tag(kImageFrameTag)
+        .Add(output_frame.release(), cc->InputTimestamp());
+  }
 
   return absl::OkStatus();
 }

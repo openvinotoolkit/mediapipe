@@ -43,6 +43,7 @@
 #include "mediapipe/framework/port.h"
 #include "mediapipe/framework/port/integral_types.h"
 #include "mediapipe/framework/tool/type_util.h"
+#include "mediapipe/framework/formats/helpers.hpp"
 
 #define IMAGE_FRAME_RAW_IMAGE MEDIAPIPE_HAS_RTTI
 
@@ -61,6 +62,7 @@ namespace mediapipe {
 //
 // Do not assume that the pixel data is stored contiguously.  It may be
 // stored with row padding for alignment purposes.
+
 class ImageFrame {
  public:
   typedef std::function<void(uint8*)> Deleter;
@@ -105,8 +107,11 @@ class ImageFrame {
   // be stored contiguously).
   ImageFrame(ImageFormat::Format format, int width, int height,
              uint32 alignment_boundary);
+  ImageFrame(cv::Mat& inputData, ImageFormat::Format format, int width, int height,
+                       uint32_t alignment_boundary);
   // Same as above, but use kDefaultAlignmentBoundary for alignment_boundary.
   ImageFrame(ImageFormat::Format format, int width, int height);
+  ImageFrame(cv::Mat& inputData, ImageFormat::Format format, int width, int height);
 
   // Acquires ownership of pixel_data.  Sets the deletion method
   // to use on pixel_data with deletion_method (which defaults
@@ -209,6 +214,9 @@ class ImageFrame {
   void Reset(ImageFormat::Format format, int width, int height,
              uint32 alignment_boundary);
 
+  void Reset(cv::Mat& inputData, ImageFormat::Format format, int width, int height,
+            uint32_t alignment_boundary);
+
   // Relinquishes ownership of the pixel data.  Notice that the unique_ptr
   // uses a non-standard deleter.
   std::unique_ptr<uint8[], Deleter> Release();
@@ -250,6 +258,8 @@ class ImageFrame {
   int width_step_;
 
   std::unique_ptr<uint8[], Deleter> pixel_data_;
+
+  OpenClWrapper ocl;
 };
 
 }  // namespace mediapipe

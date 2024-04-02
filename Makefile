@@ -23,6 +23,8 @@ INPUT_VIDEO_LINK ?= "https://www.pexels.com/download/video/3044127/?fps=24.0&h=1
 OVMS_COMMIT ?="7bf5d7fc217a81ce4b0a089c7679ecb77e6c544c"
 JOBS ?= $(shell python3 -c 'import multiprocessing as mp; print(mp.cpu_count())')
 DLDT_PACKAGE_URL ?= https://storage.openvinotoolkit.org/repositories/openvino/packages/2024.0/linux/l_openvino_toolkit_ubuntu20_2024.0.0.14509.34caeefd078_x86_64.tgz
+INSTALL_DRIVER_VERSION ?= "23.22.26516"
+GPU ?= 0
 
 # Targets to use outside running mediapipe_ovms container
 docker_build:
@@ -32,6 +34,8 @@ docker_build:
 	--build-arg JOBS=$(JOBS) . \
 	--build-arg OVMS_COMMIT=$(OVMS_COMMIT) \
 	-t $(OVMS_MEDIA_DOCKER_IMAGE):$(OVMS_MEDIA_IMAGE_TAG)
+	--build-arg INSTALL_DRIVER_VERSION=$(INSTALL_DRIVER_VERSION)\
+	--build-arg GPU=$(GPU)\
 
 tests: run_unit_tests run_hello_world run_hello_ovms
 run_hello_ovms:

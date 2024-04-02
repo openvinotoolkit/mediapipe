@@ -30,7 +30,6 @@
 #include "mediapipe/framework/port/aligned_malloc_and_free.h"
 #include "mediapipe/framework/port/logging.h"
 #include "mediapipe/framework/port/proto_ns.h"
-#include "mediapipe/framework/formats/helpers.hpp"
 
 namespace mediapipe {
 
@@ -49,9 +48,9 @@ int CountOnes(uint32_t n) {
 
 }  // namespace
 
-const char* DEVICE_GPU = ":GPU:0";
+//const char* DEVICE_GPU = ":GPU:0";
 
-static cv::ocl::Context context = cv::ocl::Context::create(DEVICE_GPU);
+//static cv::ocl::Context context = cv::ocl::Context::create(DEVICE_GPU);
 
 const ImageFrame::Deleter ImageFrame::PixelDataDeleter::kArrayDelete =
     std::default_delete<uint8_t[]>();
@@ -65,22 +64,40 @@ const uint32_t ImageFrame::kDefaultAlignmentBoundary;
 const uint32_t ImageFrame::kGlDefaultAlignmentBoundary;
 
 ImageFrame::ImageFrame()
-    : format_(ImageFormat::UNKNOWN), width_(0), height_(0), width_step_(0) {}
+    : format_(ImageFormat::UNKNOWN), width_(0), height_(0), width_step_(0) {
+      CHECK_NE(ocl.initOpenCL(), -1);
+    }
+
+ImageFrame::ImageFrame(cv::Mat& inputData, ImageFormat::Format format, int width, int height,
+                       uint32_t alignment_boundary)
+    : format_(format), width_(width), height_(height) {
+      CHECK_NE(ocl.initOpenCL(), -1);
+  Reset(inputData, format, width, height, alignment_boundary);
+}
 
 ImageFrame::ImageFrame(ImageFormat::Format format, int width, int height,
                        uint32_t alignment_boundary)
     : format_(format), width_(width), height_(height) {
+      CHECK_NE(ocl.initOpenCL(), -1);
   Reset(format, width, height, alignment_boundary);
 }
 
 ImageFrame::ImageFrame(ImageFormat::Format format, int width, int height)
     : format_(format), width_(width), height_(height) {
+      CHECK_NE(ocl.initOpenCL(), -1);
   Reset(format, width, height, kDefaultAlignmentBoundary);
+}
+
+ImageFrame::ImageFrame(cv::Mat& inputData, ImageFormat::Format format, int width, int height)
+    : format_(format), width_(width), height_(height) {
+      CHECK_NE(ocl.initOpenCL(), -1);
+  Reset(inputData, format, width, height, kDefaultAlignmentBoundary);
 }
 
 ImageFrame::ImageFrame(ImageFormat::Format format, int width, int height,
                        int width_step, uint8_t* pixel_data,
                        ImageFrame::Deleter deleter) {
+                        CHECK_NE(ocl.initOpenCL(), -1);
   AdoptPixelData(format, width, height, width_step, pixel_data, deleter);
 }
 
@@ -92,6 +109,7 @@ ImageFrame& ImageFrame::operator=(ImageFrame&& move_from) {
   width_ = move_from.width_;
   height_ = move_from.height_;
   width_step_ = move_from.width_step_;
+  ocl = move_from.ocl;
 
   move_from.format_ = ImageFormat::UNKNOWN;
   move_from.width_ = 0;
@@ -100,8 +118,7 @@ ImageFrame& ImageFrame::operator=(ImageFrame&& move_from) {
   return *this;
 }
 
-
-void ImageFrame::Reset(ImageFormat::Format format, int width, int height,
+void ImageFrame::Reset(cv::Mat& inputData, ImageFormat::Format format, int width, int height,
                        uint32_t alignment_boundary) {
   format_ = format;
   width_ = width;
@@ -122,6 +139,36 @@ void ImageFrame::Reset(ImageFormat::Format format, int width, int height,
                        height * width_step_, alignment_boundary)),
                    PixelDataDeleter::kAlignedFree};
   }*/
+
+  width_step_ = ((width_step_ - 1) | (alignment_boundary - 1)) + 1;
+  CHECK_NE(ocl.createMemObject(&ocl.m_mem_obj, inputData), -1);
+
+  pixel_data_ = { reinterpret_cast<uint8_t*>(ocl.m_mem_obj) , PixelDataDeleter::kNone};
+  }
+
+void ImageFrame::Reset(ImageFormat::Format format, int width, int height,
+                       uint32_t alignment_boundary) {
+  format_ = format;
+  width_ = width;
+  height_ = height;
+  // TODO graph execution check
+  CHECK_NE(0,0);
+  CHECK_NE(ImageFormat::UNKNOWN, format_);
+  CHECK(IsValidAlignmentNumber(alignment_boundary));
+  width_step_ = width * NumberOfChannels() * ByteDepth();
+  if (alignment_boundary == 1) {
+    pixel_data_ = {new uint8_t[height * width_step_],
+                   PixelDataDeleter::kArrayDelete};
+  } else {
+    // Increase width_step_ to the smallest multiple of alignment_boundary
+    // which is large enough to hold all the data.  This is done by
+    // twiddling bits.  alignment_boundary - 1 is a mask which sets all
+    // the low order bits.
+    width_step_ = ((width_step_ - 1) | (alignment_boundary - 1)) + 1;
+    pixel_data_ = {reinterpret_cast<uint8_t*>(aligned_malloc(
+                       height * width_step_, alignment_boundary)),
+                   PixelDataDeleter::kAlignedFree};
+  }
 }
 
 void ImageFrame::AdoptPixelData(ImageFormat::Format format, int width,

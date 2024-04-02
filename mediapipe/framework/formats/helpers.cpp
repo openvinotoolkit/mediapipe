@@ -9,6 +9,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <fstream>
+#include <mutex>
 #include <string>
 #include <sstream>
 #include <iomanip>
@@ -36,16 +37,34 @@
 
 using namespace std;
 using namespace cv;
+static std::mutex g_dump_mutex;
+static std::mutex g_dump_mutex2;
+
+void dumpMatToFile(std::string& fileName, cv::UMat& umat){
+    std::lock_guard<std::mutex> guard(g_dump_mutex);
+    cv::FileStorage file(fileName, cv::FileStorage::WRITE);
+    cv::Mat input;
+    //file << "camera_frame_raw" << camera_frame_raw;
+    umat.copyTo(input);
+    file << "input_frame_mat" << input;
+
+    file.release();
+}
+
+void dumpMatToFile(std::string& fileName, cv::Mat& umat){
+    std::lock_guard<std::mutex> guard(g_dump_mutex2);
+    cv::FileStorage file(fileName, cv::FileStorage::WRITE);
+    file << "input_frame_mat" << umat;
+
+    file.release();
+}
 
 OpenClWrapper::OpenClWrapper()
 {
-    cout << "\nPress ESC to exit\n" << endl;
-    cout << "\n      'p' to toggle ON/OFF processing\n" << endl;
-    cout << "\n       SPACE to switch between OpenCL buffer/image\n" << endl;
-
     m_camera_id  = 0; //cmd.get<int>("camera");
     m_file_name  = "0"; //cmd.get<string>("video");
 
+    m_is_initialized = false;
     m_running    = false;
     m_process    = false;
     m_use_buffer = false;
@@ -56,7 +75,7 @@ OpenClWrapper::OpenClWrapper()
     m_frequency  = (float)cv::getTickFrequency();
 
     m_context    = 0;
-    m_device_id  = 0;
+    //m_device_id  = 0;
     m_queue      = 0;
     m_program    = 0;
     m_kernelBuf  = 0;
@@ -105,11 +124,11 @@ OpenClWrapper::~OpenClWrapper()
         m_kernelImg = 0;
     }
 
-    if (m_device_id)
+    /*if (m_device_id)
     {
         clReleaseDevice(m_device_id);
         m_device_id = 0;
-    }
+    }*/
 
     if (m_context)
     {
@@ -119,14 +138,30 @@ OpenClWrapper::~OpenClWrapper()
 } // dtor
 
 
+bool OpenClWrapper::m_is_initialized = false;
+cl_context OpenClWrapper::m_context = nullptr;
+cl_command_queue OpenClWrapper::m_queue = nullptr;
+
+
 int OpenClWrapper::initOpenCL()
 {
+    if (m_is_initialized){
+        std::cout << "OpenCL already initialized." << std::endl;
+        return CL_SUCCESS;
+    }
+
     cl_int res = CL_SUCCESS;
     cl_uint num_entries = 0;
 
     res = clGetPlatformIDs(0, 0, &num_entries);
     if (CL_SUCCESS != res)
         return -1;
+
+    opencl::PlatformInfo        m_platformInfo;
+    opencl::DeviceInfo          m_deviceInfo;
+    cl_device_id                m_device_id;
+
+    std::vector<cl_platform_id> m_platform_ids;
 
     m_platform_ids.resize(num_entries);
 
@@ -158,48 +193,6 @@ int OpenClWrapper::initOpenCL()
         if (0 == m_queue || CL_SUCCESS != res)
             return -1;
 
-        const char* kernelSrc =
-            "__kernel "
-            "void bitwise_inv_buf_8uC1("
-            "    __global unsigned char* pSrcDst,"
-            "             int            srcDstStep,"
-            "             int            rows,"
-            "             int            cols)"
-            "{"
-            "    int x = get_global_id(0);"
-            "    int y = get_global_id(1);"
-            "    int idx = mad24(y, srcDstStep, x);"
-            "    pSrcDst[idx] = ~pSrcDst[idx];"
-            "}"
-            "__kernel "
-            "void bitwise_inv_img_8uC1("
-            "    read_only  image2d_t srcImg,"
-            "    write_only image2d_t dstImg)"
-            "{"
-            "    int x = get_global_id(0);"
-            "    int y = get_global_id(1);"
-            "    int2 coord = (int2)(x, y);"
-            "    uint4 val = read_imageui(srcImg, coord);"
-            "    val.x = (~val.x) & 0x000000FF;"
-            "    write_imageui(dstImg, coord, val);"
-            "}";
-        size_t len = strlen(kernelSrc);
-        m_program = clCreateProgramWithSource(m_context, 1, &kernelSrc, &len, &res);
-        if (0 == m_program || CL_SUCCESS != res)
-            return -1;
-
-        res = clBuildProgram(m_program, 1, &m_device_id, 0, 0, 0);
-        if (CL_SUCCESS != res)
-            return -1;
-
-        m_kernelBuf = clCreateKernel(m_program, "bitwise_inv_buf_8uC1", &res);
-        if (0 == m_kernelBuf || CL_SUCCESS != res)
-            return -1;
-
-        m_kernelImg = clCreateKernel(m_program, "bitwise_inv_img_8uC1", &res);
-        if (0 == m_kernelImg || CL_SUCCESS != res)
-            return -1;
-
         m_platformInfo.QueryInfo(m_platform_ids[i]);
         m_deviceInfo.QueryInfo(m_device_id);
 
@@ -209,9 +202,57 @@ int OpenClWrapper::initOpenCL()
         break;
     }
 
+    m_is_initialized = true;
+    std::cout << "OpenCL initialized for the first time." << std::endl;
+    cout << "Version : " << m_platformInfo.Version() << std::endl;
+    cout << "Name : " << m_platformInfo.Name()<< std::endl;
+    cout <<  "Device : " << m_deviceInfo.Name()<< std::endl;
+
+    if (m_device_id)
+    {
+        clReleaseDevice(m_device_id);
+        m_device_id = 0;
+    }
+
+    //printInfo();
     return m_context != 0 ? CL_SUCCESS : -1;
 } // initOpenCL()
 
+int OpenClWrapper::createMemObject(cl_mem* mem_obj, cv::Mat& inputData){
+    cl_int res = CL_SUCCESS;
+    cl_mem mem = mem_obj[0];
+
+    if (inputData.ptr() == nullptr)
+    {
+        std::cout << "Error:createMemObject nupptr as input ptr" << std::endl;
+        return -1;
+    }
+
+    cl_image_format fmt;
+    fmt.image_channel_order     = CL_R;
+    fmt.image_channel_data_type = CL_UNSIGNED_INT8;
+
+    cl_mem_flags flags_dst = CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR;
+
+    cl_image_desc desc_dst;
+    desc_dst.image_type        = CL_MEM_OBJECT_IMAGE2D;
+    desc_dst.image_width       = inputData.cols;
+    desc_dst.image_height      = inputData.rows;
+    desc_dst.image_depth       = 0;
+    desc_dst.image_array_size  = 0;
+    desc_dst.image_row_pitch   = inputData.step[0];
+    desc_dst.image_slice_pitch = 0;
+    desc_dst.num_mip_levels    = 0;
+    desc_dst.num_samples       = 0;
+    desc_dst.buffer            = 0;
+    mem = clCreateImage(m_context, flags_dst, &fmt, &desc_dst, inputData.ptr(), &res);
+    if (0 == mem || CL_SUCCESS != res)
+        return -1;
+
+    mem_obj[0] = mem;
+
+    return 0;
+}
 
 // this function is an example of "typical" OpenCL processing pipeline
 // It creates OpenCL buffer or image, depending on use_buffer flag,
@@ -393,8 +434,8 @@ int OpenClWrapper::run()
     if (0 != initOpenCL())
         return -1;
 
-    if (0 != initVideoSource())
-        return -1;
+    //if (0 != initVideoSource())
+    //    return -1;
 
     Mat img_to_show;
 
@@ -417,7 +458,7 @@ int OpenClWrapper::run()
         UMat uframe;
 
         // work
-        timerStart();
+        //timerStart();
 
         if (doProcess())
         {
@@ -434,22 +475,19 @@ int OpenClWrapper::run()
             m_frameGray.copyTo(uframe);
         }
 
-        timerEnd();
+        //timerEnd();
 
         uframe.copyTo(img_to_show);
 
-        putText(img_to_show, "Version : " + m_platformInfo.Version(), Point(5, 30), FONT_HERSHEY_SIMPLEX, 1., Scalar(255, 100, 0), 2);
-        putText(img_to_show, "Name : " + m_platformInfo.Name(), Point(5, 60), FONT_HERSHEY_SIMPLEX, 1., Scalar(255, 100, 0), 2);
-        putText(img_to_show, "Device : " + m_deviceInfo.Name(), Point(5, 90), FONT_HERSHEY_SIMPLEX, 1., Scalar(255, 100, 0), 2);
-        cv::String memtype = useBuffer() ? "buffer" : "image";
-        putText(img_to_show, "interop with OpenCL " + memtype, Point(5, 120), FONT_HERSHEY_SIMPLEX, 1., Scalar(255, 100, 0), 2);
-        putText(img_to_show, "Time : " + timeStr() + " msec", Point(5, 150), FONT_HERSHEY_SIMPLEX, 1., Scalar(255, 100, 0), 2);
-
         imshow("opencl_interop", img_to_show);
 
-        handleKey((char)waitKey(3));
+        //handleKey((char)waitKey(3));
     }
 
     return 0;
 }
 
+void OpenClWrapper::printInfo()
+{
+    // TODO
+}

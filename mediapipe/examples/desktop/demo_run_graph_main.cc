@@ -22,7 +22,6 @@
 #include "absl/flags/parse.h"
 #include "mediapipe/framework/calculator_framework.h"
 #include "mediapipe/framework/formats/image_frame.h"
-#include "mediapipe/framework/formats/helpers.hpp"
 #include "mediapipe/framework/formats/image_frame_opencv.h"
 #include "mediapipe/framework/port/file_helpers.h"
 #include "mediapipe/framework/port/opencv_highgui_inc.h"
@@ -44,16 +43,6 @@ ABSL_FLAG(std::string, input_video_path, "",
 ABSL_FLAG(std::string, output_video_path, "",
           "Full path of where to save result (.mp4 only). "
           "If not provided, show result in a window.");
-
-void dumpMatToFile(std::string& fileName, cv::UMat& umat){
-  cv::FileStorage file(fileName, cv::FileStorage::WRITE);
-  cv::Mat input;
-  //file << "camera_frame_raw" << camera_frame_raw;
-  umat.copyTo(input);
-  file << "input_frame_mat" << input;
-
-  file.release();
-}
 
 absl::Status RunMPPGraph() {
   std::string calculator_graph_config_contents;
@@ -101,9 +90,9 @@ absl::Status RunMPPGraph() {
   int count_frames = 0;
   auto begin = std::chrono::high_resolution_clock::now();
 
-  OpenClWrapper ocl;
-
-  ocl.initOpenCL();
+  //OpenClWrapper ocl;
+  //ocl.initOpenCL();
+  //ocl.printInfo();
 
   LOG(INFO) << "haveOpenCL " << cv::ocl::haveOpenCL() <<std::endl;
   LOG(INFO) << "useOpenCL " << cv::ocl::useOpenCL() <<std::endl;
@@ -119,11 +108,11 @@ absl::Status RunMPPGraph() {
   cv::ocl::Device device = cv::ocl::Device::getDefault();
   LOG(INFO) <<"CL device doubleFPConfig() " << device.doubleFPConfig() <<std::endl;
 
-  return absl::OkStatus();;
+  //return absl::OkStatus();
 
   while (grab_frames) {
     // Capture opencv camera or video frame.
-    cv::UMat camera_frame_raw = cv::UMat(cv::USAGE_ALLOCATE_SHARED_MEMORY);
+    cv::Mat camera_frame_raw;
     capture >> camera_frame_raw;
     if (camera_frame_raw.empty()) {
       if (!load_video) {
@@ -134,7 +123,7 @@ absl::Status RunMPPGraph() {
       break;
     }
     count_frames+=1;
-    cv::UMat camera_frame = cv::UMat(cv::USAGE_ALLOCATE_SHARED_MEMORY);
+    cv::Mat camera_frame;
     cv::cvtColor(camera_frame_raw, camera_frame, cv::COLOR_BGR2RGB);
     if (!load_video) {
       cv::flip(camera_frame, camera_frame, /*flipcode=HORIZONTAL*/ 1);
@@ -142,12 +131,13 @@ absl::Status RunMPPGraph() {
 
     // Wrap Mat INFO an ImageFrame.
     auto input_frame = absl::make_unique<mediapipe::ImageFrame>(
+        camera_frame,
         mediapipe::ImageFormat::SRGB, camera_frame.cols, camera_frame.rows,
         mediapipe::ImageFrame::kDefaultAlignmentBoundary);
-    cv::UMat input_frame_mat = mediapipe::formats::MatView(input_frame.get(), cv::USAGE_ALLOCATE_SHARED_MEMORY);
-    camera_frame.copyTo(input_frame_mat);
-    //std::string fileName = std::string("./input") + std::to_string(count_frames) + std::string("jpeg");
-
+    //cv::UMat input_frame_mat = mediapipe::formats::MatView(input_frame.get(), cv::USAGE_ALLOCATE_SHARED_MEMORY);
+    //camera_frame.copyTo(input_frame_mat);
+    std::string fileName = std::string("./imageDemo/input") + std::to_string(count_frames);
+    dumpMatToFile(fileName, camera_frame);
     
 
     // Send image packet INFO the graph.

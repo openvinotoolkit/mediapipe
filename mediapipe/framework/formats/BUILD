@@ -148,9 +148,9 @@ cc_library(
 cc_library(
     name = "image_frame",
     srcs = ["image_frame.cc",
-            "helpers.hpp",
             "helpers.cpp"],
-    hdrs = ["image_frame.h"],
+    hdrs = ["image_frame.h",
+            "helpers.hpp"],
     deps = [
         ":image_format_cc_proto",
         "//mediapipe/framework:port",
