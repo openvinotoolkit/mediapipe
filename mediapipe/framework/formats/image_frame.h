@@ -107,11 +107,11 @@ class ImageFrame {
   // be stored contiguously).
   ImageFrame(ImageFormat::Format format, int width, int height,
              uint32 alignment_boundary);
-  ImageFrame(cv::Mat& inputData, ImageFormat::Format format, int width, int height,
+  ImageFrame(cv::UMat& inputData, ImageFormat::Format format, int width, int height,
                        uint32_t alignment_boundary);
   // Same as above, but use kDefaultAlignmentBoundary for alignment_boundary.
   ImageFrame(ImageFormat::Format format, int width, int height);
-  ImageFrame(cv::Mat& inputData, ImageFormat::Format format, int width, int height);
+  ImageFrame(cv::UMat& inputData, ImageFormat::Format format, int width, int height);
 
   // Acquires ownership of pixel_data.  Sets the deletion method
   // to use on pixel_data with deletion_method (which defaults
@@ -214,7 +214,7 @@ class ImageFrame {
   void Reset(ImageFormat::Format format, int width, int height,
              uint32 alignment_boundary);
 
-  void Reset(cv::Mat& inputData, ImageFormat::Format format, int width, int height,
+  void Reset(cv::UMat& inputData, ImageFormat::Format format, int width, int height,
             uint32_t alignment_boundary);
 
   // Relinquishes ownership of the pixel data.  Notice that the unique_ptr
@@ -259,7 +259,7 @@ class ImageFrame {
 
   std::unique_ptr<uint8[], Deleter> pixel_data_;
 
-  OpenClWrapper ocl;
+  //OpenClWrapper ocl;
 };
 
 }  // namespace mediapipe

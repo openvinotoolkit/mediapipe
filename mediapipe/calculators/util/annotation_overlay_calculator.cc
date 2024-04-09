@@ -373,8 +373,12 @@ absl::Status AnnotationOverlayCalculator::Close(CalculatorContext* cc) {
 absl::Status AnnotationOverlayCalculator::RenderToOpencl(
     CalculatorContext* cc, const ImageFormat::Format& target_format,
     cv::Mat& input_mat) {
+      // TODO switch to umat
+      cv::UMat copy;
+      input_mat.copyTo(copy);
+
   std::unique_ptr<ImageFrame> output_frame(
-  new ImageFrame(input_mat, target_format, renderer_->GetImageWidth(), renderer_->GetImageHeight()));
+  new ImageFrame(copy, target_format, renderer_->GetImageWidth(), renderer_->GetImageHeight()));
 
   if (cc->Outputs().HasTag(kImageFrameTag)) {
     cc->Outputs()

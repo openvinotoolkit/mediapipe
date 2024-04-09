@@ -104,6 +104,7 @@ cl_channel_type GetChannelDataTypeFromOrder(cl_channel_order cl_order) {
     default:
         // Handle unsupported channel order
         std::cout<< "Using default CL_UNSIGNED_INT8 for channel order: " << cl_order << endl;
+        return CL_UNSIGNED_INT8;
         break;
     }
 }
@@ -394,7 +395,14 @@ int OpenClWrapper::initOpenCL()
     return m_context != 0 ? CL_SUCCESS : -1;
 } // initOpenCL()
 
+int OpenClWrapper::createMemObject(cl_mem* mem_obj, cv::UMat& inputData){
+    //cv::ocl::Image2D image = cv::ocl::Image2D(inputData);
+    //mem_obj[0] = image.handle;
+
+    return 0;
+}
 int OpenClWrapper::createMemObject(cl_mem* mem_obj, cv::Mat& inputData){
+    // OLD IMPLEMENTATION
     cl_int res = CL_SUCCESS;
     cl_mem mem = mem_obj[0];
 
@@ -412,8 +420,8 @@ int OpenClWrapper::createMemObject(cl_mem* mem_obj, cv::Mat& inputData){
 
     cl_mem_flags flags_dst = CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR;
     // TODO: fix CL_INVALID_IMAGE_FORMAT_DESCRIPTOR now - Hardcoded values
-    fmt.image_channel_order     = CL_R;
-    fmt.image_channel_data_type = CL_UNSIGNED_INT8;
+    // fmt.image_channel_order     = CL_R;
+    // fmt.image_channel_data_type = CL_UNSIGNED_INT8;
 
     cl_image_desc desc_dst;
     memset(&desc_dst, 0, sizeof(cl_image_desc));

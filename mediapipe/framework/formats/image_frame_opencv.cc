@@ -101,13 +101,13 @@ cv::UMat MatView(ImageFrame* image, cv::UMatUsageFlags usageFlags) {
   cv::UMat umat = cv::UMat(usageFlags);
   // mat.copyTo(umat);
   //*image->MutablePixelData() = static_cast<uint8_t*>(umat.u->data);
-  //const int type = CV_MAKETYPE(GetMatType(image->Format()), image->NumberOfChannels());
+  const int type = CV_MAKETYPE(GetMatType(image->Format()), image->NumberOfChannels());
 
   //TODO - works only for buffers:CL_MEM_OBJECT_BUFFER == mem_type
-  //cv::ocl::convertFromBuffer(reinterpret_cast<cl_mem*>(image->MutablePixelData()), static_cast<size_t>(image->WidthStep()), image->Height(), image->Width(), type, umat);
+  cv::ocl::convertFromBuffer(reinterpret_cast<cl_mem*>(image->MutablePixelData()), static_cast<size_t>(image->WidthStep()), image->Height(), image->Width(), type, umat);
 
   // CL_MEM_OBJECT_IMAGE2D == mem_type
-  cv::ocl::convertFromImage(reinterpret_cast<cl_mem*>(image->MutablePixelData()), umat);
+  //cv::ocl::convertFromImage(reinterpret_cast<cl_mem*>(image->MutablePixelData()), umat);
   return umat;
 }
 

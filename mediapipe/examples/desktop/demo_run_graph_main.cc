@@ -90,10 +90,11 @@ absl::Status RunMPPGraph() {
   int count_frames = 0;
   auto begin = std::chrono::high_resolution_clock::now();
 
-  //OpenClWrapper ocl;
-  //ocl.initOpenCL();
+  OpenClWrapper ocl;
+  ocl.initOpenCL();
   //ocl.printInfo();
 
+  /*
   LOG(INFO) << "haveOpenCL " << cv::ocl::haveOpenCL() <<std::endl;
   LOG(INFO) << "useOpenCL " << cv::ocl::useOpenCL() <<std::endl;
   LOG(INFO) << "haveSVM " << cv::ocl::haveSVM() <<std::endl;
@@ -107,7 +108,7 @@ absl::Status RunMPPGraph() {
 
   cv::ocl::Device device = cv::ocl::Device::getDefault();
   LOG(INFO) <<"CL device doubleFPConfig() " << device.doubleFPConfig() <<std::endl;
-
+*/
   //return absl::OkStatus();
 
   while (grab_frames) {
@@ -123,8 +124,11 @@ absl::Status RunMPPGraph() {
       break;
     }
     count_frames+=1;
-    cv::Mat camera_frame;
-    cv::cvtColor(camera_frame_raw, camera_frame, cv::COLOR_BGR2RGB);
+    cv::UMat camera_frame;
+    // = cv::UMat(camera_frame_raw.rows, camera_frame_raw.cols, camera_frame_raw.type ,cv::USAGE_ALLOCATE_SHARED_MEMORY)
+    // SEGFAULT icv_k0_ownsCopy_8u_repE9 cv::cvtColor(camera_frame_raw, camera_frame, cv::COLOR_BGR2RGB);
+    //cv::cvtColor(camera_frame_raw, camera_frame, cv::COLOR_BGR2RGBA);
+    camera_frame_raw.copyTo(camera_frame);
     if (!load_video) {
       cv::flip(camera_frame, camera_frame, /*flipcode=HORIZONTAL*/ 1);
     }
@@ -134,10 +138,12 @@ absl::Status RunMPPGraph() {
         camera_frame,
         mediapipe::ImageFormat::SRGB, camera_frame.cols, camera_frame.rows,
         mediapipe::ImageFrame::kDefaultAlignmentBoundary);
+
+    // mediapipe::ImageFormat::SRGBA, camera_frame.cols, camera_frame.rows,        
     //cv::UMat input_frame_mat = mediapipe::formats::MatView(input_frame.get(), cv::USAGE_ALLOCATE_SHARED_MEMORY);
     //camera_frame.copyTo(input_frame_mat);
     std::string fileName = std::string("./imageDemo/input") + std::to_string(count_frames);
-    dumpMatToFile(fileName, camera_frame);
+    //dumpMatToFile(fileName, camera_frame);
     
 
     // Send image packet INFO the graph.
@@ -153,8 +159,8 @@ absl::Status RunMPPGraph() {
     auto& output_frame = packet.Get<mediapipe::ImageFrame>();
 
     // Convert back to opencv for display or saving.
-    cv::Mat output_frame_mat = mediapipe::formats::MatView(&output_frame);
-    cv::cvtColor(output_frame_mat, output_frame_mat, cv::COLOR_RGB2BGR);
+    cv::UMat output_frame_mat = mediapipe::formats::MatView(const_cast<mediapipe::ImageFrame*>(&output_frame), cv::USAGE_ALLOCATE_SHARED_MEMORY);
+    // SEGFAULT icv_k0_ownsCopy_8u_repE9 cv::cvtColor(output_frame_mat, output_frame_mat, cv::COLOR_RGB2BGR);
     if (save_video) {
       if (!writer.isOpened()) {
         LOG(INFO) << "Prepare video writer.";

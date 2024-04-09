@@ -420,6 +420,7 @@ public:
 
     static int initOpenCL();
 
+    int createMemObject(cl_mem* mem_obj, cv::UMat& inputData);
     int createMemObject(cl_mem* mem_obj, cv::Mat& inputData);
     int process_frame_with_open_cl(cv::Mat& frame, bool use_buffer, cl_mem* cl_buffer);
     int process_cl_buffer_with_opencv(cl_mem buffer, size_t step, int rows, int cols, int type, cv::UMat& u);

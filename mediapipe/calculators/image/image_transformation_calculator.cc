@@ -446,13 +446,13 @@ absl::Status ImageTransformationCalculator::Close(CalculatorContext* cc) {
 
 absl::Status ImageTransformationCalculator::RenderOpenCl(CalculatorContext* cc) {
   // TODO UMAT
-  cv::Mat input_mat;
+  cv::UMat input_mat;
   mediapipe::ImageFormat::Format format;
 
   const auto& input = cc->Inputs().Tag(kImageFrameTag).Get<ImageFrame>();
-  std::cout << " cc->Inputs().Tag(kImageFrameTag).Get<ImageFrame>(); " << std::endl;
-  // input_mat = formats::MatView(const_cast<ImageFrame*>(&input), cv::USAGE_ALLOCATE_SHARED_MEMORY);
-  input_mat = formats::MatView(&input);
+  //std::cout << " cc->Inputs().Tag(kImageFrameTag).Get<ImageFrame>(); " << std::endl;
+  input_mat = formats::MatView(const_cast<ImageFrame*>(&input), cv::USAGE_ALLOCATE_SHARED_MEMORY);
+  //input_mat = formats::MatView(&input, cv::USAGE_ALLOCATE_SHARED_MEMORY);
   std::string fileName = std::string("./imageTrans/input") + std::to_string(cc->InputTimestamp().Value());
   //dumpMatToFile(fileName, input_mat);
 
@@ -467,7 +467,7 @@ absl::Status ImageTransformationCalculator::RenderOpenCl(CalculatorContext* cc) 
 
   if (output_width_ > 0 && output_height_ > 0) {
     // TODO umat
-    cv::Mat scaled_mat;
+    cv::UMat scaled_mat;
     if (scale_mode_ == mediapipe::ScaleMode_Mode_STRETCH) {
       int scale_flag =
           input_mat.cols > output_width_ && input_mat.rows > output_height_
@@ -515,7 +515,7 @@ absl::Status ImageTransformationCalculator::RenderOpenCl(CalculatorContext* cc) 
   }
 
   //TODO umat
-  cv::Mat rotated_mat;
+  cv::UMat rotated_mat;
   cv::Size rotated_size(output_width, output_height);
   if (input_mat.size() == rotated_size) {
     const int angle = RotationModeToDegrees(rotation_);
@@ -542,7 +542,7 @@ absl::Status ImageTransformationCalculator::RenderOpenCl(CalculatorContext* cc) 
   }
 
   // TODO UMAT
-  cv::Mat flipped_mat;
+  cv::UMat flipped_mat;
   if (flip_horizontally_ || flip_vertically_) {
     const int flip_code =
         flip_horizontally_ && flip_vertically_ ? -1 : flip_horizontally_;
