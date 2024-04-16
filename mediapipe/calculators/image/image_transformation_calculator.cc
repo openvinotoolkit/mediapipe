@@ -446,12 +446,13 @@ absl::Status ImageTransformationCalculator::Close(CalculatorContext* cc) {
 
 absl::Status ImageTransformationCalculator::RenderOpenCl(CalculatorContext* cc) {
   // TODO UMAT
-  cv::UMat input_mat;
+  cv::UMatUsageFlags usageFlags = cv::USAGE_ALLOCATE_HOST_MEMORY;
+  cv::UMat input_mat = cv::UMat(usageFlags);
   mediapipe::ImageFormat::Format format;
 
   const auto& input = cc->Inputs().Tag(kImageFrameTag).Get<ImageFrame>();
   //std::cout << " cc->Inputs().Tag(kImageFrameTag).Get<ImageFrame>(); " << std::endl;
-  input_mat = formats::MatView(const_cast<ImageFrame*>(&input), cv::USAGE_ALLOCATE_SHARED_MEMORY);
+  input_mat = formats::MatView(const_cast<ImageFrame*>(&input), usageFlags);
   //input_mat = formats::MatView(&input, cv::USAGE_ALLOCATE_SHARED_MEMORY);
   std::string fileName = std::string("./imageTrans/input") + std::to_string(cc->InputTimestamp().Value());
   //dumpMatToFile(fileName, input_mat);
@@ -467,7 +468,7 @@ absl::Status ImageTransformationCalculator::RenderOpenCl(CalculatorContext* cc) 
 
   if (output_width_ > 0 && output_height_ > 0) {
     // TODO umat
-    cv::UMat scaled_mat;
+    cv::UMat scaled_mat = cv::UMat(usageFlags);
     if (scale_mode_ == mediapipe::ScaleMode_Mode_STRETCH) {
       int scale_flag =
           input_mat.cols > output_width_ && input_mat.rows > output_height_
@@ -475,7 +476,10 @@ absl::Status ImageTransformationCalculator::RenderOpenCl(CalculatorContext* cc) 
               : cv::INTER_LINEAR;
       cv::resize(input_mat, scaled_mat, cv::Size(output_width_, output_height_),
                  0, 0, scale_flag);
+      // DEFAULT
+      // std::cout << "SCALE - STRETCH" <<std::endl;
     } else {
+      // std::cout << "SCALE - NON STRETCH" <<std::endl;
       const float scale =
           std::min(static_cast<float>(output_width_) / input_width,
                    static_cast<float>(output_height_) / input_height);
@@ -483,7 +487,7 @@ absl::Status ImageTransformationCalculator::RenderOpenCl(CalculatorContext* cc) 
       const int target_height = std::round(input_height * scale);
       int scale_flag = scale < 1.0f ? cv::INTER_AREA : cv::INTER_LINEAR;
       if (scale_mode_ == mediapipe::ScaleMode_Mode_FIT) {
-        cv::UMat intermediate_mat;
+        cv::UMat intermediate_mat = cv::UMat(usageFlags);
         cv::resize(input_mat, intermediate_mat,
                    cv::Size(target_width, target_height), 0, 0, scale_flag);
         const int top = (output_height_ - target_height) / 2;
@@ -515,7 +519,7 @@ absl::Status ImageTransformationCalculator::RenderOpenCl(CalculatorContext* cc) 
   }
 
   //TODO umat
-  cv::UMat rotated_mat;
+  cv::UMat rotated_mat = cv::UMat(usageFlags);
   cv::Size rotated_size(output_width, output_height);
   if (input_mat.size() == rotated_size) {
     const int angle = RotationModeToDegrees(rotation_);
@@ -523,10 +527,13 @@ absl::Status ImageTransformationCalculator::RenderOpenCl(CalculatorContext* cc) 
     // TODO UMAT
     cv::Mat rotation_mat = cv::getRotationMatrix2D(src_center, angle, 1.0);
     cv::warpAffine(input_mat, rotated_mat, rotation_mat, rotated_size);
+    // DEFAULT
+    // std::cout << "ROTATE - MATRIX" <<std::endl;
   } else {
     switch (rotation_) {
       case mediapipe::RotationMode_Mode_UNKNOWN:
       case mediapipe::RotationMode_Mode_ROTATION_0:
+        // std::cout << "ROTATE - COPY" <<std::endl;
         rotated_mat = input_mat;
         break;
       case mediapipe::RotationMode_Mode_ROTATION_90:
@@ -542,15 +549,19 @@ absl::Status ImageTransformationCalculator::RenderOpenCl(CalculatorContext* cc) 
   }
 
   // TODO UMAT
-  cv::UMat flipped_mat;
+  cv::UMat flipped_mat = cv::UMat(usageFlags);
   if (flip_horizontally_ || flip_vertically_) {
     const int flip_code =
         flip_horizontally_ && flip_vertically_ ? -1 : flip_horizontally_;
     cv::flip(rotated_mat, flipped_mat, flip_code);
+    // std::cout << "FLIP - FLIP" <<std::endl;
   } else {
+    // DEFAULT
+    //std::cout << "FLIP - COPY" <<std::endl;
     flipped_mat = rotated_mat;
   }
 
+  // TODO: removed FLIP pass
   std::unique_ptr<ImageFrame> output_frame(
       new ImageFrame(flipped_mat, format, output_width, output_height));
 

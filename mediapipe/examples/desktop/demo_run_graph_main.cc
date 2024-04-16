@@ -88,7 +88,7 @@ absl::Status RunMPPGraph() {
   LOG(INFO) << "Start grabbing and processing frames.";
   bool grab_frames = true;
   int count_frames = 0;
-  auto begin = std::chrono::high_resolution_clock::now();
+  
 
   OpenClWrapper ocl;
   ocl.initOpenCL();
@@ -110,7 +110,9 @@ absl::Status RunMPPGraph() {
   LOG(INFO) <<"CL device doubleFPConfig() " << device.doubleFPConfig() <<std::endl;
 */
   //return absl::OkStatus();
-
+  int max_frame = 0;
+  auto begin = std::chrono::high_resolution_clock::now();
+  cv::UMatUsageFlags usageFlags = cv::USAGE_ALLOCATE_HOST_MEMORY;
   while (grab_frames) {
     // Capture opencv camera or video frame.
     cv::Mat camera_frame_raw;
@@ -124,7 +126,7 @@ absl::Status RunMPPGraph() {
       break;
     }
     count_frames+=1;
-    cv::UMat camera_frame;
+    cv::UMat camera_frame = cv::UMat(usageFlags);
     // = cv::UMat(camera_frame_raw.rows, camera_frame_raw.cols, camera_frame_raw.type ,cv::USAGE_ALLOCATE_SHARED_MEMORY)
     // SEGFAULT icv_k0_ownsCopy_8u_repE9 cv::cvtColor(camera_frame_raw, camera_frame, cv::COLOR_BGR2RGB);
     //cv::cvtColor(camera_frame_raw, camera_frame, cv::COLOR_BGR2RGBA);
@@ -159,7 +161,7 @@ absl::Status RunMPPGraph() {
     auto& output_frame = packet.Get<mediapipe::ImageFrame>();
 
     // Convert back to opencv for display or saving.
-    cv::UMat output_frame_mat = mediapipe::formats::MatView(const_cast<mediapipe::ImageFrame*>(&output_frame), cv::USAGE_ALLOCATE_SHARED_MEMORY);
+    cv::UMat output_frame_mat = mediapipe::formats::MatView(const_cast<mediapipe::ImageFrame*>(&output_frame), usageFlags);
     // SEGFAULT icv_k0_ownsCopy_8u_repE9 cv::cvtColor(output_frame_mat, output_frame_mat, cv::COLOR_RGB2BGR);
     if (save_video) {
       if (!writer.isOpened()) {
@@ -175,6 +177,10 @@ absl::Status RunMPPGraph() {
       // Press any key to exit.
       const int pressed_key = cv::waitKey(5);
       if (pressed_key >= 0 && pressed_key != 255) grab_frames = false;
+    }
+
+    if (count_frames == max_frame) {
+      break;
     }
   }
   auto duration = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - begin);
