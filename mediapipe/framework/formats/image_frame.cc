@@ -48,10 +48,6 @@ int CountOnes(uint32_t n) {
 
 }  // namespace
 
-//const char* DEVICE_GPU = ":GPU:0";
-
-//static cv::ocl::Context context = cv::ocl::Context::create(DEVICE_GPU);
-
 const ImageFrame::Deleter ImageFrame::PixelDataDeleter::kArrayDelete =
     std::default_delete<uint8_t[]>();
 const ImageFrame::Deleter ImageFrame::PixelDataDeleter::kFree = free;
@@ -126,19 +122,6 @@ void ImageFrame::Reset(cv::UMat& inputData, ImageFormat::Format format, int widt
   CHECK_NE(ImageFormat::UNKNOWN, format_);
   CHECK(IsValidAlignmentNumber(alignment_boundary));
   width_step_ = width * NumberOfChannels() * ByteDepth();
-  /*if (alignment_boundary == 1) {
-    pixel_data_ = {new uint8_t[height * width_step_],
-                   PixelDataDeleter::kArrayDelete};
-  } else {
-    // Increase width_step_ to the smallest multiple of alignment_boundary
-    // which is large enough to hold all the data.  This is done by
-    // twiddling bits.  alignment_boundary - 1 is a mask which sets all
-    // the low order bits.
-    width_step_ = ((width_step_ - 1) | (alignment_boundary - 1)) + 1;
-    pixel_data_ = {reinterpret_cast<uint8_t*>(aligned_malloc(
-                       height * width_step_, alignment_boundary)),
-                   PixelDataDeleter::kAlignedFree};
-  }*/
 
   width_step_ = ((width_step_ - 1) | (alignment_boundary - 1)) + 1;
   //CHECK_NE(ocl.createMemObject(&ocl.m_mem_obj, inputData), -1);

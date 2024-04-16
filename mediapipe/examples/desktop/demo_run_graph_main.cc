@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// An example of sending OpenCV webcam frames INFO a MediaPipe graph.
+// An example of sending OpenCV webcam frames into a MediaPipe graph.
 #include <cstdlib>
 #include <chrono>
 
@@ -92,24 +92,7 @@ absl::Status RunMPPGraph() {
 
   OpenClWrapper ocl;
   ocl.initOpenCL();
-  //ocl.printInfo();
-
-  /*
-  LOG(INFO) << "haveOpenCL " << cv::ocl::haveOpenCL() <<std::endl;
-  LOG(INFO) << "useOpenCL " << cv::ocl::useOpenCL() <<std::endl;
-  LOG(INFO) << "haveSVM " << cv::ocl::haveSVM() <<std::endl;
-
-  #define CL_CONTEXT_VA_API_DISPLAY_INTEL                     0x4097
-  cv::ocl::Context ctx1 = cv::ocl::Context::getDefault();
-  LOG(INFO) << "DEFAULT CL CONTEXT VA " << ctx1.getOpenCLContextProperty(CL_CONTEXT_VA_API_DISPLAY_INTEL)  <<std::endl;
-
-  cv::ocl::Context context = cv::ocl::Context::create(":GPU:0");
-  LOG(INFO) <<"CL CONTEXT VA " << context.getOpenCLContextProperty(CL_CONTEXT_VA_API_DISPLAY_INTEL) <<std::endl;
-
-  cv::ocl::Device device = cv::ocl::Device::getDefault();
-  LOG(INFO) <<"CL device doubleFPConfig() " << device.doubleFPConfig() <<std::endl;
-*/
-  //return absl::OkStatus();
+  
   int max_frame = 0;
   auto begin = std::chrono::high_resolution_clock::now();
   cv::UMatUsageFlags usageFlags = cv::USAGE_ALLOCATE_HOST_MEMORY;
@@ -135,7 +118,7 @@ absl::Status RunMPPGraph() {
       cv::flip(camera_frame, camera_frame, /*flipcode=HORIZONTAL*/ 1);
     }
 
-    // Wrap Mat INFO an ImageFrame.
+    // Wrap Mat into an ImageFrame.
     auto input_frame = absl::make_unique<mediapipe::ImageFrame>(
         camera_frame,
         mediapipe::ImageFormat::SRGB, camera_frame.cols, camera_frame.rows,
