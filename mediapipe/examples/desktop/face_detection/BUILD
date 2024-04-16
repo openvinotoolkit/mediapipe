@@ -40,6 +40,7 @@ cc_binary(
     name = "face_detection_gpu",
     data = ["//mediapipe/modules/face_detection:face_detection_short_range.tflite"],
     deps = [
+        "@ovms//src:ovms_lib",
         "//mediapipe/examples/desktop:demo_run_graph_main_gpu",
         "//mediapipe/graphs/face_detection:desktop_live_gpu_calculators",
     ],
