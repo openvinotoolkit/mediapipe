@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+#include <opencv2/core/mat.hpp>
 
 #include "mediapipe/framework/formats/image_frame_opencv.h"
 
@@ -87,9 +88,27 @@ cv::Mat MatView(const ImageFrame* image) {
       CV_MAKETYPE(GetMatType(image->Format()), image->NumberOfChannels());
   const size_t steps[] = {static_cast<size_t>(image->WidthStep()),
                           static_cast<size_t>(image->ByteDepth())};
+
   // Use ImageFrame to initialize in-place. ImageFrame still owns memory.
   return cv::Mat(dims, sizes, type, const_cast<uint8_t*>(image->PixelData()),
                  steps);
+}
+
+// UMatUsageFlags
+// USAGE_DEFAULT, USAGE_ALLOCATE_HOST_MEMORY, USAGE_ALLOCATE_DEVICE_MEMORY, USAGE_ALLOCATE_SHARED_MEMORY , __UMAT_USAGE_FLAGS_32BIT 
+cv::UMat MatView(ImageFrame* image, cv::UMatUsageFlags usageFlags) {
+  //cv::Mat mat = MatView(image);
+  cv::UMat umat = cv::UMat(usageFlags);
+  // mat.copyTo(umat);
+  //*image->MutablePixelData() = static_cast<uint8_t*>(umat.u->data);
+  const int type = CV_MAKETYPE(GetMatType(image->Format()), image->NumberOfChannels());
+
+  //TODO - works only for buffers:CL_MEM_OBJECT_BUFFER == mem_type
+  cv::ocl::convertFromBuffer(reinterpret_cast<cl_mem*>(image->MutablePixelData()), static_cast<size_t>(image->WidthStep()), image->Height(), image->Width(), type, umat);
+
+  // CL_MEM_OBJECT_IMAGE2D == mem_type
+  //cv::ocl::convertFromImage(reinterpret_cast<cl_mem*>(image->MutablePixelData()), umat);
+  return umat;
 }
 
 }  // namespace formats

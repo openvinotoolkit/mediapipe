@@ -147,8 +147,10 @@ cc_library(
 
 cc_library(
     name = "image_frame",
-    srcs = ["image_frame.cc"],
-    hdrs = ["image_frame.h"],
+    srcs = ["image_frame.cc",
+            "helpers.cpp"],
+    hdrs = ["image_frame.h",
+            "helpers.hpp"],
     deps = [
         ":image_format_cc_proto",
         "//mediapipe/framework:port",
@@ -162,11 +164,13 @@ cc_library(
         "@com_google_absl//absl/base:core_headers",
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/strings",
+        "//mediapipe/framework/port:opencv_core",
     ] + select({
         "//conditions:default": [
         ],
         "//mediapipe/framework:disable_rtti_and_exceptions": [],
     }),
+    linkopts = ["-lOpenCL"],
 )
 
 cc_library(

@@ -16,6 +16,8 @@
 #include <cstdlib>
 #include <chrono>
 
+#include <opencv2/core/ocl.hpp>
+
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
 #include "mediapipe/framework/calculator_framework.h"
@@ -86,8 +88,14 @@ absl::Status RunMPPGraph() {
   LOG(INFO) << "Start grabbing and processing frames.";
   bool grab_frames = true;
   int count_frames = 0;
-  auto begin = std::chrono::high_resolution_clock::now();
+  
 
+  OpenClWrapper ocl;
+  ocl.initOpenCL();
+  
+  int max_frame = 0;
+  auto begin = std::chrono::high_resolution_clock::now();
+  cv::UMatUsageFlags usageFlags = cv::USAGE_ALLOCATE_HOST_MEMORY;
   while (grab_frames) {
     // Capture opencv camera or video frame.
     cv::Mat camera_frame_raw;
@@ -101,20 +109,29 @@ absl::Status RunMPPGraph() {
       break;
     }
     count_frames+=1;
-    cv::Mat camera_frame;
-    cv::cvtColor(camera_frame_raw, camera_frame, cv::COLOR_BGR2RGB);
+    cv::UMat camera_frame = cv::UMat(usageFlags);
+    // = cv::UMat(camera_frame_raw.rows, camera_frame_raw.cols, camera_frame_raw.type ,cv::USAGE_ALLOCATE_SHARED_MEMORY)
+    // SEGFAULT icv_k0_ownsCopy_8u_repE9 cv::cvtColor(camera_frame_raw, camera_frame, cv::COLOR_BGR2RGB);
+    //cv::cvtColor(camera_frame_raw, camera_frame, cv::COLOR_BGR2RGBA);
+    camera_frame_raw.copyTo(camera_frame);
     if (!load_video) {
       cv::flip(camera_frame, camera_frame, /*flipcode=HORIZONTAL*/ 1);
     }
 
     // Wrap Mat into an ImageFrame.
     auto input_frame = absl::make_unique<mediapipe::ImageFrame>(
+        camera_frame,
         mediapipe::ImageFormat::SRGB, camera_frame.cols, camera_frame.rows,
         mediapipe::ImageFrame::kDefaultAlignmentBoundary);
-    cv::Mat input_frame_mat = mediapipe::formats::MatView(input_frame.get());
-    camera_frame.copyTo(input_frame_mat);
 
-    // Send image packet into the graph.
+    // mediapipe::ImageFormat::SRGBA, camera_frame.cols, camera_frame.rows,        
+    //cv::UMat input_frame_mat = mediapipe::formats::MatView(input_frame.get(), cv::USAGE_ALLOCATE_SHARED_MEMORY);
+    //camera_frame.copyTo(input_frame_mat);
+    std::string fileName = std::string("./imageDemo/input") + std::to_string(count_frames);
+    //dumpMatToFile(fileName, camera_frame);
+    
+
+    // Send image packet INFO the graph.
     size_t frame_timestamp_us =
         (double)cv::getTickCount() / (double)cv::getTickFrequency() * 1e6;
     MP_RETURN_IF_ERROR(graph.AddPacketToInputStream(
@@ -127,8 +144,8 @@ absl::Status RunMPPGraph() {
     auto& output_frame = packet.Get<mediapipe::ImageFrame>();
 
     // Convert back to opencv for display or saving.
-    cv::Mat output_frame_mat = mediapipe::formats::MatView(&output_frame);
-    cv::cvtColor(output_frame_mat, output_frame_mat, cv::COLOR_RGB2BGR);
+    cv::UMat output_frame_mat = mediapipe::formats::MatView(const_cast<mediapipe::ImageFrame*>(&output_frame), usageFlags);
+    // SEGFAULT icv_k0_ownsCopy_8u_repE9 cv::cvtColor(output_frame_mat, output_frame_mat, cv::COLOR_RGB2BGR);
     if (save_video) {
       if (!writer.isOpened()) {
         LOG(INFO) << "Prepare video writer.";
@@ -143,6 +160,10 @@ absl::Status RunMPPGraph() {
       // Press any key to exit.
       const int pressed_key = cv::waitKey(5);
       if (pressed_key >= 0 && pressed_key != 255) grab_frames = false;
+    }
+
+    if (count_frames == max_frame) {
+      break;
     }
   }
   auto duration = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - begin);

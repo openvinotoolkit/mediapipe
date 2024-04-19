@@ -170,6 +170,26 @@ RUN cd flatbuffers && mkdir build && cd build && cmake -G "Unix Makefiles" -DCMA
 
 ## End of base image
 
+## GPU OCL support
+ARG INSTALL_DRIVER_VERSION="23.13.26032"
+ARG GPU=0
+if [ "$GPU" == "1" ] ; then \
+    apt-get update && apt-get install -y ocl-icd-opencl-dev libnuma1 ocl-icd-libopencl1 --no-install-recommends && rm -rf /var/lib/apt/lists/* && \
+        case $INSTALL_DRIVER_VERSION in \
+        "23.22.26516") \
+                        mkdir /tmp/gpu_deps && cd /tmp/gpu_deps ; \
+                        curl -L -O https://github.com/intel/compute-runtime/releases/download/23.22.26516.18/intel-level-zero-gpu_1.3.26516.18_amd64.deb ; \
+                        curl -L -O https://github.com/intel/intel-graphics-compiler/releases/download/igc-1.0.14062.11/intel-igc-core_1.0.14062.11_amd64.deb ; \
+                        curl -L -O https://github.com/intel/intel-graphics-compiler/releases/download/igc-1.0.14062.11/intel-igc-opencl_1.0.14062.11_amd64.deb ; \
+                        curl -L -O https://github.com/intel/compute-runtime/releases/download/23.22.26516.18/intel-opencl-icd_23.22.26516.18_amd64.deb ; \
+                        curl -L -O https://github.com/intel/compute-runtime/releases/download/23.22.26516.18/libigdgmm12_22.3.0_amd64.deb ; \
+                        dpkg -i *.deb && rm -Rf /tmp/gpu_deps ; \
+                ;; \
+        esac ; \
+fi ; \
+apt-get clean ; \
+rm -rf /var/lib/apt/lists/* && rm -rf /tmp/* ;
+
 FROM base as build
 
 RUN wget -O video.mp4 "https://www.pexels.com/download/video/3044127/?fps=24.0&h=1080&w=1920"

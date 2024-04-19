@@ -94,8 +94,11 @@ absl::Status RunMPPGraph() {
 
   LOG(INFO) << "Start grabbing and processing frames.";
   bool grab_frames = true;
+  auto begin = std::chrono::high_resolution_clock::now();
+  int count_frames = 0;
   while (grab_frames) {
     // Capture opencv camera or video frame.
+    count_frames+=1;
     cv::Mat camera_frame_raw;
     capture >> camera_frame_raw;
     if (camera_frame_raw.empty()) {
@@ -183,7 +186,13 @@ absl::Status RunMPPGraph() {
       if (pressed_key >= 0 && pressed_key != 255) grab_frames = false;
     }
   }
+  auto duration = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - begin);
+  auto totalTime = duration.count();
+  float avgFps = (1000000 * (float)(count_frames) / (float)totalTime);
+  float avgLatencyms = 1000 / avgFps;
 
+  LOG(INFO) << "Frames:" << count_frames << ", Duration [ms]:" << totalTime / 1000 << ", FPS:" << avgFps << ", Avg latency [ms]:" << avgLatencyms;   
+  
   LOG(INFO) << "Shutting down.";
   if (writer.isOpened()) writer.release();
   MP_RETURN_IF_ERROR(graph.CloseInputStream(kInputStream));

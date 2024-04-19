@@ -20,6 +20,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <CL/cl.h>
+#include <opencv2/core/ocl.hpp>
 #include <algorithm>
 #include <utility>
 
@@ -58,22 +60,40 @@ const uint32_t ImageFrame::kDefaultAlignmentBoundary;
 const uint32_t ImageFrame::kGlDefaultAlignmentBoundary;
 
 ImageFrame::ImageFrame()
-    : format_(ImageFormat::UNKNOWN), width_(0), height_(0), width_step_(0) {}
+    : format_(ImageFormat::UNKNOWN), width_(0), height_(0), width_step_(0) {
+      //CHECK_NE(ocl.initOpenCL(), -1);
+    }
+
+ImageFrame::ImageFrame(cv::UMat& inputData, ImageFormat::Format format, int width, int height,
+                       uint32_t alignment_boundary)
+    : format_(format), width_(width), height_(height) {
+      //CHECK_NE(ocl.initOpenCL(), -1);
+  Reset(inputData, format, width, height, alignment_boundary);
+}
 
 ImageFrame::ImageFrame(ImageFormat::Format format, int width, int height,
                        uint32_t alignment_boundary)
     : format_(format), width_(width), height_(height) {
+      //CHECK_NE(ocl.initOpenCL(), -1);
   Reset(format, width, height, alignment_boundary);
 }
 
 ImageFrame::ImageFrame(ImageFormat::Format format, int width, int height)
     : format_(format), width_(width), height_(height) {
+      //CHECK_NE(ocl.initOpenCL(), -1);
   Reset(format, width, height, kDefaultAlignmentBoundary);
+}
+
+ImageFrame::ImageFrame(cv::UMat& inputData, ImageFormat::Format format, int width, int height)
+    : format_(format), width_(width), height_(height) {
+      //CHECK_NE(ocl.initOpenCL(), -1);
+  Reset(inputData, format, width, height, kDefaultAlignmentBoundary);
 }
 
 ImageFrame::ImageFrame(ImageFormat::Format format, int width, int height,
                        int width_step, uint8_t* pixel_data,
                        ImageFrame::Deleter deleter) {
+                        //CHECK_NE(ocl.initOpenCL(), -1);
   AdoptPixelData(format, width, height, width_step, pixel_data, deleter);
 }
 
@@ -85,6 +105,7 @@ ImageFrame& ImageFrame::operator=(ImageFrame&& move_from) {
   width_ = move_from.width_;
   height_ = move_from.height_;
   width_step_ = move_from.width_step_;
+  //ocl = move_from.ocl;
 
   move_from.format_ = ImageFormat::UNKNOWN;
   move_from.width_ = 0;
@@ -93,11 +114,28 @@ ImageFrame& ImageFrame::operator=(ImageFrame&& move_from) {
   return *this;
 }
 
+void ImageFrame::Reset(cv::UMat& inputData, ImageFormat::Format format, int width, int height,
+                       uint32_t alignment_boundary) {
+  format_ = format;
+  width_ = width;
+  height_ = height;
+  CHECK_NE(ImageFormat::UNKNOWN, format_);
+  CHECK(IsValidAlignmentNumber(alignment_boundary));
+  width_step_ = width * NumberOfChannels() * ByteDepth();
+
+  width_step_ = ((width_step_ - 1) | (alignment_boundary - 1)) + 1;
+  //CHECK_NE(ocl.createMemObject(&ocl.m_mem_obj, inputData), -1);
+
+  pixel_data_ = { reinterpret_cast<uint8_t*>(inputData.handle(ACCESS_RW)) , PixelDataDeleter::kNone};
+  }
+
 void ImageFrame::Reset(ImageFormat::Format format, int width, int height,
                        uint32_t alignment_boundary) {
   format_ = format;
   width_ = width;
   height_ = height;
+  // TODO graph execution check
+  CHECK_NE(0,0);
   CHECK_NE(ImageFormat::UNKNOWN, format_);
   CHECK(IsValidAlignmentNumber(alignment_boundary));
   width_step_ = width * NumberOfChannels() * ByteDepth();
