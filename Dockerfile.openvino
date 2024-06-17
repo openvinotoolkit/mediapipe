@@ -105,7 +105,7 @@ azel-${BAZEL_VERSION}-installer-linux-x86_64.sh" && \
     rm -f /bazel/installer.sh
 
 #OPENVINO
-ARG DLDT_PACKAGE_URL=https://storage.openvinotoolkit.org/repositories/openvino/packages/2023.0/linux/l_openvino_toolkit_ubuntu20_2023.0.0.10926.b4452d56304_x86_64.tgz
+ARG DLDT_PACKAGE_URL=https://storage.openvinotoolkit.org/repositories/openvino/packages/2024.2/linux/l_openvino_toolkit_ubuntu20_2024.2.0.15519.5c0f38f83f6_x86_64.tgz
 # OV toolkit package
 RUN wget -nv $DLDT_PACKAGE_URL && \
     mkdir /opt/intel && \
@@ -126,7 +126,7 @@ install
 
 # Main at Fix building without MediaPipe (#2129)
 # Update SHA in two places here and in WORKSPACE ovms git repository
-ARG OVMS_COMMIT="7f372bc9b0a94cf546ef5f1a43e4a9bf768d6f85"
+ARG OVMS_COMMIT="1ae2b4f9a0b6da682bfff4ee2f870a9d97e1cbbe"
 RUN mkdir /opt/ovms
 RUN wget -nv -P /opt/ovms https://raw.githubusercontent.com/openvinotoolkit/model_server/${OVMS_COMMIT}/third_party/cpprest/rest_sdk_v2.10.16.patch
 RUN wget -nv -P /opt/ovms https://raw.githubusercontent.com/openvinotoolkit/model_server/${OVMS_COMMIT}/third_party/azure/azure_sdk.patch
