@@ -127,7 +127,7 @@ install
 
 # Main at Fix building without MediaPipe (#2129)
 # Update SHA in two places here and in WORKSPACE ovms git repository
-ARG OVMS_COMMIT="80f22f2ad9bdbdba55917f3da9e13166dbe2838a"
+ARG OVMS_COMMIT="20703d28ab24e291be35cdebdd0afd53fb522d43"
 RUN mkdir /opt/ovms
 RUN wget -nv -P /opt/ovms https://raw.githubusercontent.com/openvinotoolkit/model_server/${OVMS_COMMIT}/third_party/cpprest/rest_sdk_v2.10.16.patch
 RUN wget -nv -P /opt/ovms https://raw.githubusercontent.com/openvinotoolkit/model_server/${OVMS_COMMIT}/third_party/azure/azure_sdk.patch
