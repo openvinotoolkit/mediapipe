@@ -103,7 +103,7 @@ azel-${BAZEL_VERSION}-installer-linux-x86_64.sh" && \
     rm -f /bazel/installer.sh
 
 #OPENVINO
-ARG DLDT_PACKAGE_URL=https://storage.openvinotoolkit.org/repositories/openvino/packages/nightly/2024.3.0-15708-0e7313e5440/l_openvino_toolkit_ubuntu22_2024.3.0.dev20240617_x86_64.tgz
+ARG DLDT_PACKAGE_URL=https://storage.openvinotoolkit.org/repositories/openvino/packages/2024.2/linux/l_openvino_toolkit_ubuntu20_2024.2.0.15519.5c0f38f83f6_x86_64.tgz
 # OV toolkit package
 RUN wget -nv $DLDT_PACKAGE_URL && \
     mkdir /opt/intel && \
@@ -181,7 +181,7 @@ RUN bazel build //mediapipe:geti_targets
 # BUILD examples
 ENV GLOG_logtostderr=1
 ENV LD_LIBRARY_PATH="/opt/intel/openvino/runtime/lib/intel64/:${LD_LIBRARY_PATH}"
-RUN python setup_ovms.py --get_models
+RUN python setup_ovms.py --get_models && python setup_ovms.py --convert_pose --force
 RUN bash build_desktop_examples.sh -b
 RUN curl https://storage.googleapis.com/mediapipe-assets/ssdlite_object_detection_labelmap.txt -o mediapipe/models/ssdlite_object_detection_labelmap.txt
 
