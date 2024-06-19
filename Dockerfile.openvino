@@ -75,7 +75,6 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
     vim \
     ca-certificates \
     python3 \
-    python3-numpy \
     pip \
     libopencv-core-dev \
     libopencv-highgui-dev \
@@ -85,6 +84,8 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
     libopencv-video-dev \
     build-essential \
     unzip
+
+RUN python3 -m pip install "numpy<2.0.0" --no-cache-dir
 
 # install ovms_lib requirements
 # xml2, uuid for azure
