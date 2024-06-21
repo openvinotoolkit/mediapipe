@@ -53,13 +53,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# python setup.py requirements switch to python 3.9 - python 3.10 does not work with samples
-RUN apt-get update && apt-get install -y software-properties-common gpg gpg-agent --no-install-recommends && \
-    add-apt-repository ppa:deadsnakes/ppa && \
-    apt-get install -y python3.9 python3.9-dev python3.9-distutils python3-pip --no-install-recommends && \
-    apt-get clean && rm -rf /var/lib/apt/lists/* && \
-    update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9 1
-
 RUN pip3 install --upgrade setuptools
 RUN pip3 install attrs matplotlib wheel future absl-py opencv-contrib-python numpy==1.26.4 tensorflow==2.9.0 protobuf==3.20.1 six==1.14.0 tf_slim
 
@@ -108,7 +101,7 @@ azel-${BAZEL_VERSION}-installer-linux-x86_64.sh" && \
     rm -f /bazel/installer.sh
 
 #OPENVINO
-ARG DLDT_PACKAGE_URL=https://storage.openvinotoolkit.org/repositories/openvino/packages/2024.2/linux/l_openvino_toolkit_ubuntu20_2024.2.0.15519.5c0f38f83f6_x86_64.tgz
+ARG DLDT_PACKAGE_URL=https://storage.openvinotoolkit.org/repositories/openvino/packages/2024.2/linux/l_openvino_toolkit_ubuntu22_2024.2.0.15519.5c0f38f83f6_x86_64.tgz
 # OV toolkit package
 RUN wget -nv $DLDT_PACKAGE_URL && \
     mkdir /opt/intel && \
@@ -131,7 +124,7 @@ install
 
 # Main at Fix building without MediaPipe (#2129)
 # Update SHA in two places here and in WORKSPACE ovms git repository
-ARG OVMS_COMMIT="20703d28ab24e291be35cdebdd0afd53fb522d43"
+ARG OVMS_COMMIT="0f60f49bbdf170a58d4a791c3afbb4136135c149"
 RUN mkdir /opt/ovms
 RUN wget -nv -P /opt/ovms https://raw.githubusercontent.com/openvinotoolkit/model_server/${OVMS_COMMIT}/third_party/cpprest/rest_sdk_v2.10.16.patch
 RUN wget -nv -P /opt/ovms https://raw.githubusercontent.com/openvinotoolkit/model_server/${OVMS_COMMIT}/third_party/azure/azure_sdk.patch
