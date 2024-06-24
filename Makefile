@@ -93,18 +93,18 @@ run_pose_tracking:
 
 run_python_object_detection:
 	echo "Running python ovms object detection demo"
-	cp lib.linux-x86_64-cpython-38/mediapipe/examples/python/ovms_object_detection.py build/lib.linux-x86_64-3.8
-	python lib.linux-x86_64-cpython-38/ovms_object_detection.py
+	cp build/lib.linux-x86_64-cpython-38/mediapipe/examples/python/ovms_object_detection.py build/lib.linux-x86_64-3.8
+	python build/lib.linux-x86_64-cpython-38/ovms_object_detection.py
 
 run_python_holistic_tracking:
 	echo "Running python ovms holistic tracking demo"
 	if [ ! -f video.mp4 ]; then wget -O video.mp4 $(INPUT_VIDEO_LINK); fi
-	cp lib.linux-x86_64-cpython-38/mediapipe/examples/python/ovms_holistic_tracking.py build/lib.linux-x86_64-3.8
-	python lib.linux-x86_64-cpython-38/ovms_holistic_tracking.py
+	cp build/lib.linux-x86_64-cpython-38/mediapipe/examples/python/ovms_holistic_tracking.py build/lib.linux-x86_64-3.8
+	python build/lib.linux-x86_64-cpython-38/ovms_holistic_tracking.py
 
 run_python_face_detection:
 	echo "Running python ovms face detection demo"
 	if [ ! -f video.mp4 ]; then wget -O video.mp4 $(INPUT_VIDEO_LINK); fi
-	cp lib.linux-x86_64-cpython-38/mediapipe/examples/python/ovms_face_detection.py build/lib.linux-x86_64-3.8
-	python lib.linux-x86_64-cpython-38/ovms_face_detection.py
+	cp build/lib.linux-x86_64-cpython-38/mediapipe/examples/python/ovms_face_detection.py build/lib.linux-x86_64-3.8
+	python build/lib.linux-x86_64-cpython-38/ovms_face_detection.py
 
