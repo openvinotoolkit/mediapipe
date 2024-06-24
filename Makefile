@@ -19,10 +19,10 @@ HTTPS_PROXY := "$(https_proxy)"
 OVMS_MEDIA_DOCKER_IMAGE ?= mediapipe_ovms
 OVMS_MEDIA_IMAGE_TAG ?= latest
 INPUT_VIDEO_LINK ?= "https://www.pexels.com/download/video/3044127/?fps=24.0&h=1080&w=1920"
-# Main at Fix building without MediaPipe (#2129)
-OVMS_COMMIT ?="9bb7942622d30a3272128db03f5e8b158ee81dcc"
+# ov 2024.2RC2 (#2484)
+OVMS_COMMIT ?="f18aa027a13e2a1672f3fe131bbddfea5f70a986"
 JOBS ?= $(shell python3 -c 'import multiprocessing as mp; print(mp.cpu_count())')
-DLDT_PACKAGE_URL ?= https://storage.openvinotoolkit.org/repositories/openvino/packages/2024.1/linux/l_openvino_toolkit_ubuntu20_2024.1.0.15008.f4afc983258_x86_64.tgz
+DLDT_PACKAGE_URL ?= https://storage.openvinotoolkit.org/repositories/openvino/packages/2024.2/linux/l_openvino_toolkit_ubuntu22_2024.2.0.15519.5c0f38f83f6_x86_64.tgz
 
 # Targets to use outside running mediapipe_ovms container
 docker_build:
@@ -93,18 +93,18 @@ run_pose_tracking:
 
 run_python_object_detection:
 	echo "Running python ovms object detection demo"
-	cp build/lib.linux-x86_64-cpython-38/mediapipe/examples/python/ovms_object_detection.py build/lib.linux-x86_64-cpython-38
-	python build/lib.linux-x86_64-cpython-38/ovms_object_detection.py
+	cp build/lib.linux-x86_64-cpython-310/mediapipe/examples/python/ovms_object_detection.py build/lib.linux-x86_64-cpython-310
+	python build/lib.linux-x86_64-cpython-310/ovms_object_detection.py
 
 run_python_holistic_tracking:
 	echo "Running python ovms holistic tracking demo"
 	if [ ! -f video.mp4 ]; then wget -O video.mp4 $(INPUT_VIDEO_LINK); fi
-	cp build/lib.linux-x86_64-cpython-38/mediapipe/examples/python/ovms_holistic_tracking.py build/lib.linux-x86_64-cpython-38
-	python build/lib.linux-x86_64-cpython-38/ovms_holistic_tracking.py
+	cp build/lib.linux-x86_64-cpython-310/mediapipe/examples/python/ovms_holistic_tracking.py build/lib.linux-x86_64-cpython-310
+	python build/lib.linux-x86_64-cpython-310/ovms_holistic_tracking.py
 
 run_python_face_detection:
 	echo "Running python ovms face detection demo"
 	if [ ! -f video.mp4 ]; then wget -O video.mp4 $(INPUT_VIDEO_LINK); fi
-	cp build/lib.linux-x86_64-cpython-38/mediapipe/examples/python/ovms_face_detection.py build/lib.linux-x86_64-cpython-38
-	python build/lib.linux-x86_64-cpython-38/ovms_face_detection.py
+	cp build/lib.linux-x86_64-cpython-310/mediapipe/examples/python/ovms_face_detection.py build/lib.linux-x86_64-cpython-310
+	python build/lib.linux-x86_64-cpython-310/ovms_face_detection.py
 
