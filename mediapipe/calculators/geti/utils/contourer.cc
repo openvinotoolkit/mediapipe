@@ -52,10 +52,12 @@ bool Contourer::busy() {
 }
 void Contourer::contour(const SegmentedObject &object) {
   std::vector<std::vector<cv::Point>> contours;
-  cv::Mat mask;
-  object.mask.convertTo(mask, CV_8U);
-  cv::resize(mask, mask, object.size());
+  cv::Rect extended_box = expand_box(object, float(object.mask.cols) / (object.mask.cols - 2));
+  cv::Mat mask = resize(object, object.mask, extended_box);
+  cv::threshold(mask, mask, 1, 999, cv::THRESH_OTSU);
   cv::findContours(mask, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_NONE);
+
+  cv::Point offset = extended_box.tl() - cv::Point(object.tl());
 
   if (contours.size() > 0) {
     double biggest_area = 0.0;
@@ -72,6 +74,9 @@ void Contourer::contour(const SegmentedObject &object) {
       cv::approxPolyDP(biggest_contour, approxCurve, 1.0f, true);
       if (approxCurve.size() > 2) {
         position_contour(approxCurve, mask.size(), object);
+        for (auto& point: approxCurve) {
+            point += offset;
+        }
 
         store({{geti::LabelResult{object.confidence, labels[object.labelID]}},
                approxCurve});
@@ -115,6 +120,17 @@ void Contourer::store(const PolygonPrediction &prediction) {
     std::unique_lock<std::mutex> lock(store_mutex);
     contours.push_back(prediction);
   }
+}
+
+cv::Mat Contourer::resize(const SegmentedObject& box, const cv::Mat& unpadded, const cv::Rect& area) {
+    // Add zero border to prevent upsampling artifacts on segment borders.
+    cv::Mat raw_cls_mask;
+    cv::copyMakeBorder(unpadded, raw_cls_mask, 1, 1, 1, 1, cv::BORDER_CONSTANT, {0});
+    cv::Mat resized;
+    cv::Mat converted;
+    cv::resize(raw_cls_mask, resized, area.size());
+    resized.convertTo(converted, CV_8UC1);
+    return converted;
 }
 
 }  // namespace geti

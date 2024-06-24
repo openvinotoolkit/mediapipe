@@ -14,6 +14,15 @@
 
 namespace geti {
 
+
+
+inline cv::Rect expand_box(const cv::Rect2f& box, float scale) {
+    float w_half = box.width * 0.5f * scale,
+        h_half = box.height * 0.5f * scale;
+    const cv::Point2f& center = (box.tl() + box.br()) * 0.5f;
+    return {cv::Point(int(center.x - w_half), int(center.y - h_half)), cv::Point(int(center.x + w_half), int(center.y + h_half))};
+}
+
 class Contourer {
  private:
   std::mutex queue_mutex;
@@ -46,6 +55,9 @@ class Contourer {
                         const cv::Size &mask_size, const cv::Rect &obj);
   void thread_loop();
   void store(const PolygonPrediction &prediction);
+
+  cv::Mat resize(const SegmentedObject& box, const cv::Mat& unpadded, const cv::Rect& area);
+
 };
 
 }  // namespace geti

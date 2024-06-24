@@ -29,11 +29,11 @@ namespace mediapipe {
 //  INFERENCE_ADAPTER
 //
 
-class AnomalyCalculator : public CalculatorBase {
+class AnomalyCalculator : public GetiCalculatorBase {
  public:
   static absl::Status GetContract(CalculatorContract *cc);
   absl::Status Open(CalculatorContext *cc) override;
-  absl::Status Process(CalculatorContext *cc) override;
+  absl::Status GetiProcess(CalculatorContext *cc) override;
   absl::Status Close(CalculatorContext *cc) override;
 
  private:

@@ -30,10 +30,10 @@ ABSL_FLAG(std::string, output_image_path, "/data/mp_dep_output.jpg",
           "Full path of where to save image result (.jpg only). "
           "If not provided, show result in a window.");
 ABSL_FLAG(std::string, graph_config_path,
-          "mediapipe/calculators/geti/graphs/examples/mapi_anomaly_calculator.pbtxt",
+          "mediapipe/calculators/geti/graphs/examples/mapi_instance_segmentation_calculator.pbtxt",
           "Full path to the graph description file.");
 ABSL_FLAG(std::string, model_xml_path,
-          "/data/geti/anomaly_classification_padim.xml",
+          "/data/geti/instance_segmentation_maskrcnn_resnet50.xml",
           "Full path to the model xml file.");
 
 namespace {

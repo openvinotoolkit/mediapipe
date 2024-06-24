@@ -129,7 +129,6 @@ absl::Status InstanceSegmentationCalculator::Close(CalculatorContext *cc) {
   LOG(INFO) << "InstanceSegmentationCalculator::Close()";
   return absl::OkStatus();
 }
-
 REGISTER_CALCULATOR(InstanceSegmentationCalculator);
 
 }  // namespace mediapipe

@@ -25,8 +25,8 @@ cc_library(
 )
 
 cc_binary(
-    name = "anomaly_calculator_demo",
-    srcs = ["anomaly_calculator_demo.cc"],
+    name = "calculator_demo",
+    srcs = ["calculator_demo.cc"],
     data = [
         "//mediapipe/calculators/geti/graphs:graphs",
     ],

@@ -47,6 +47,7 @@ class InstanceSegmentationCalculator : public GetiCalculatorBase {
   bool use_ellipse_shapes = false;
 };
 
+
 }  // namespace mediapipe
 
 #endif  // INSTANCE_SEGMENTATION_CALCULATOR_H

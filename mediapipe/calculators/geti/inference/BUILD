@@ -66,6 +66,7 @@ cc_library(
         "//mediapipe/framework/port:opencv_imgcodecs",
         "//mediapipe/framework/port:opencv_imgproc",
         "//mediapipe/calculators/geti/utils:data_structures",
+        "//mediapipe/calculators/geti/utils:contourer",
         "//mediapipe/calculators/geti/utils:emptylabel_cc_proto",
         ":inference_utils",
         "@model_api//:model_api",
