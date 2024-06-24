@@ -840,7 +840,7 @@ new_git_repository(
     name = "model_api",
     remote = "https:///github.com/openvinotoolkit/model_api/",
     build_file = "@_model-api//:BUILD",
-    commit = "0ba6bee38fb77484c559d65d654b05b267f9f35c"
+    commit = "9022adeb26ac0e5afe9814afa260fd208d09383a"
 )
 
 git_repository(

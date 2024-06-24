@@ -1,19 +1,3 @@
-/**
- *  INTEL CONFIDENTIAL
- *
- *  Copyright (C) 2023 Intel Corporation
- *
- *  This software and the related documents are Intel copyrighted materials, and
- * your use of them is governed by the express license under which they were
- * provided to you ("License"). Unless the License provides otherwise, you may
- * not use, modify, copy, publish, distribute, disclose or transmit this
- * software or the related documents without Intel's prior written permission.
- *
- *  This software and the related documents are provided as is, with no express
- * or implied warranties, other than those that are expressly stated in the
- * License.
- */
-
 #include "anomaly_calculator.h"
 
 #include <memory>
@@ -66,7 +50,7 @@ absl::Status AnomalyCalculator::Open(CalculatorContext *cc) {
   return absl::OkStatus();
 }
 
-absl::Status AnomalyCalculator::Process(CalculatorContext *cc) {
+absl::Status AnomalyCalculator::GetiProcess(CalculatorContext *cc) {
   LOG(INFO) << "AnomalyCalculator::GetiProcess()";
   if (cc->Inputs().Tag("IMAGE").IsEmpty()) {
     return absl::OkStatus();
@@ -81,14 +65,11 @@ absl::Status AnomalyCalculator::Process(CalculatorContext *cc) {
   cv::Rect image_roi(0, 0, cvimage.cols, cvimage.rows);
   result->roi = image_roi;
 
-  {  // global classification is added as full image detection
-    auto label = infer_result->pred_label == normal_label.label
-                     ? normal_label
-                     : anomalous_label;
-    result->rectangles.push_back(
-        {{geti::LabelResult{(float)infer_result->pred_score, label}},
-         image_roi});
-  }
+  auto label = infer_result->pred_label == normal_label.label ? normal_label
+                                                              : anomalous_label;
+
+  result->rectangles.push_back(
+      {{geti::LabelResult{(float)infer_result->pred_score, label}}, image_roi});
 
   if (infer_result->pred_label != normal_label.label) {
     if (task == "detection") {
@@ -131,7 +112,7 @@ absl::Status AnomalyCalculator::Process(CalculatorContext *cc) {
   }
 
   result->saliency_maps.push_back(
-      {infer_result->anomaly_map, image_roi, anomalous_label});
+      {infer_result->anomaly_map, image_roi, label});
 
   std::string tag = geti::get_output_tag("INFERENCE_RESULT", {"RESULT"}, cc);
   cc->Outputs().Tag(tag).Add(result.release(), cc->InputTimestamp());

@@ -1,19 +1,3 @@
-/**
- *  INTEL CONFIDENTIAL
- *
- *  Copyright (C) 2023 Intel Corporation
- *
- *  This software and the related documents are Intel copyrighted materials, and
- * your use of them is governed by the express license under which they were
- * provided to you ("License"). Unless the License provides otherwise, you may
- * not use, modify, copy, publish, distribute, disclose or transmit this
- * software or the related documents without Intel's prior written permission.
- *
- *  This software and the related documents are provided as is, with no express
- * or implied warranties, other than those that are expressly stated in the
- * License.
- */
-
 #include "instance_segmentation_calculator.h"
 
 #include <memory>
@@ -23,6 +7,7 @@
 #include "utils.h"
 #include "models/image_model.h"
 #include "mediapipe/calculators/geti/utils/emptylabel.pb.h"
+#include "mediapipe/calculators/geti/utils/contourer.h"
 
 namespace mediapipe {
 
@@ -54,10 +39,19 @@ absl::Status InstanceSegmentationCalculator::Open(CalculatorContext *cc) {
   auto property = configuration.find("tile_size");
   if (property == configuration.end()) {
     model = MaskRCNNModel::create_model(ia);
+    model->postprocess_semantic_masks = false;
   } else {
+    auto model = MaskRCNNModel::create_model(ia);
     tiler = std::unique_ptr<InstanceSegmentationTiler>(
-        new InstanceSegmentationTiler(
-            std::move(MaskRCNNModel::create_model(ia)), {}));
+        new InstanceSegmentationTiler(std::move(model), {}));
+    tiler->postprocess_semantic_masks = false;
+  }
+
+  {
+    auto property = configuration.find("use_ellipse_shapes");
+    if (property != configuration.end()) {
+      use_ellipse_shapes = property->second.as<std::string>() == "True";
+    }
   }
 #else
   auto model_path = cc->InputSidePackets().Tag("MODEL_PATH").Get<std::string>();
@@ -78,64 +72,45 @@ absl::Status InstanceSegmentationCalculator::GetiProcess(
 
   std::unique_ptr<InstanceSegmentationResult> inference_result;
 
-  if (tiler) {
-    auto tiler_result = tiler->run(cvimage);
-    inference_result = std::unique_ptr<InstanceSegmentationResult>(
-        static_cast<InstanceSegmentationResult *>(tiler_result.release()));
-  } else {
-    inference_result = model->infer(cvimage);
-  }
-
-  // Build contours ourselves since model api does not handle multiple contours
-  // from one segmented object. Model API resolves the issue by throwing an
-  // exception Our solution returns the biggest area contour.
   const auto &options = cc->Options<EmptyLabelOptions>();
   std::string label_name =
       options.label().empty() ? geti::GETI_EMPTY_LABEL : options.label();
   std::unique_ptr<geti::InferenceResult> result =
       std::make_unique<geti::InferenceResult>();
+
   bool isEmpty = false;
   cv::Rect roi(0, 0, cvimage.cols, cvimage.rows);
   result->roi = roi;
 
-  for (auto &obj : inference_result->segmentedObjects) {
-    if (labels.size() > obj.labelID) {
-      if (labels[obj.labelID].label == label_name) {
-        if (!isEmpty) {
-          result->rectangles.push_back(
-              {{geti::LabelResult{obj.confidence, labels[obj.labelID]}}, roi});
-          isEmpty = true;
-        }
-      } else {
-        auto mask = obj.mask.clone();
-        std::vector<std::vector<cv::Point>> contours;
-        cv::threshold(mask, mask, 1, 999, cv::THRESH_OTSU);
-        cv::findContours(mask, contours, cv::RETR_EXTERNAL,
-                         cv::CHAIN_APPROX_NONE);
+  if (tiler) {
+    auto tiler_result = tiler->run(cvimage);
+    LOG(INFO) << "Using tiling";
+    inference_result = std::unique_ptr<InstanceSegmentationResult>(static_cast<InstanceSegmentationResult *>(tiler_result.release()));
+  } else {
+    inference_result = model->infer(cvimage);
+  }
 
-        if (contours.size() == 0) {
-          LOG(INFO) << "findContours() returned no contours";
-        } else {
-          double biggest_area = 0.0;
-          std::vector<cv::Point> biggest_contour, approxCurve;
-          for (auto contour : contours) {
-            double area = cv::contourArea(contour);
-            if (biggest_area < area) {
-              biggest_area = area;
-              biggest_contour = contour;
-            }
-          }
-
-          if (biggest_contour.size() > 0) {
-            cv::approxPolyDP(biggest_contour, approxCurve, 1.0f, true);
-            if (approxCurve.size() > 2)
-              result->polygons.push_back(
-                  {{geti::LabelResult{obj.confidence, labels[obj.labelID]}},
-                   approxCurve});
-          }
-        }
-      }
+  if (use_ellipse_shapes) {
+    for (auto& obj: inference_result->segmentedObjects) {
+      float radius = std::max(obj.width, obj.height) / 2;
+      result->circles.push_back(
+        {{geti::LabelResult{obj.confidence, labels[obj.labelID]}}, geti::Circle{obj.x + obj.width / 2, obj.y + obj.height / 2, radius}});
     }
+
+  } else {
+    geti::Contourer contourer(labels);
+
+    if (inference_result->segmentedObjects.size() < geti::Contourer::INSTANCE_THRESHOLD) {
+      LOG(INFO) << "Single core post processing since " << inference_result->segmentedObjects.size() << " objects were found";
+      for (const auto &obj: inference_result->segmentedObjects) {
+        contourer.contour(obj);
+      }
+    } else {
+      LOG(INFO) << "Multi core post processing since " << inference_result->segmentedObjects.size() << " objects were found";
+      contourer.queue(inference_result->segmentedObjects);
+      contourer.process();
+    }
+    result->polygons = contourer.contours;
   }
 
   for (size_t i = 0; i < inference_result->saliency_map.size(); i++) {
