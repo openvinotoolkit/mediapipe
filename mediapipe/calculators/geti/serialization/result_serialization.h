@@ -43,6 +43,17 @@ static inline std::string base64_encode_mat(cv::Mat image) {
 }
 
 inline void to_json(nlohmann ::json& nlohmann_json_j,
+                    const Circle& nlohmann_json_t) {
+  // Currently the shape output to geti UI is a bounding box with type ellipse.
+  //{ type: SHAPE_TYPE_DTO.ELLIPSE; x: number; y: number; height: number; width: number };
+  nlohmann_json_j["x"] = nlohmann_json_t.x - nlohmann_json_t.radius;
+  nlohmann_json_j["y"] = nlohmann_json_t.y - nlohmann_json_t.radius;
+  nlohmann_json_j["height"] = nlohmann_json_t.radius * 2;
+  nlohmann_json_j["width"] = nlohmann_json_t.radius * 2;
+  nlohmann_json_j["type"] = "ELLIPSE";
+}
+
+inline void to_json(nlohmann ::json& nlohmann_json_j,
                     const SaliencyMap& nlohmann_json_t) {
   nlohmann_json_j["data"] = base64_encode_mat(nlohmann_json_t.image);
   nlohmann_json_j["label_id"] = nlohmann_json_t.label.label_id;
@@ -73,15 +84,23 @@ inline void to_json(nlohmann ::json& nlohmann_json_j,
 }
 
 inline void to_json(nlohmann ::json& nlohmann_json_j,
+                    const CirclePrediction& nlohmann_json_t) {
+  nlohmann_json_j["labels"] = nlohmann_json_t.labels;
+  nlohmann_json_j["shape"] = nlohmann_json_t.shape;
+}
+
+inline void to_json(nlohmann ::json& nlohmann_json_j,
                     const InferenceResult& nlohmann_json_t) {
   nlohmann::json rects = nlohmann_json_t.rectangles;
   nlohmann::json rotated_rects = nlohmann_json_t.rotated_rectangles;
   nlohmann::json polygons = nlohmann_json_t.polygons;
+  nlohmann::json circles = nlohmann_json_t.circles;
   auto predictions = nlohmann::json::array();
   predictions.insert(predictions.end(), rects.begin(), rects.end());
   predictions.insert(predictions.end(), rotated_rects.begin(),
                      rotated_rects.end());
   predictions.insert(predictions.end(), polygons.begin(), polygons.end());
+  predictions.insert(predictions.end(), circles.begin(), circles.end());
   nlohmann_json_j["predictions"] = predictions;
   nlohmann_json_j["maps"] = nlohmann_json_t.saliency_maps;
 }
@@ -128,6 +147,11 @@ static inline void translate_inference_result_by_roi(InferenceResult& result,
   for (auto& rect : result.rotated_rectangles) {
     rect.shape.center.x += roi_x;
     rect.shape.center.y += roi_y;
+  }
+
+  for (auto& rect : result.circles) {
+    rect.shape.x += roi_x;
+    rect.shape.y += roi_y;
   }
 }
 
