@@ -300,3 +300,29 @@ static ov::Tensor makeOvTensor(OVMS_DataType datatype, const int64_t* shape, siz
 #pragma GCC diagnostic pop
 }  // namespace ovms
 }  // namespace mediapipe
+
+void OVMSInferenceAdapter::inferAsync(const InferenceInput& input, CallbackData callback_args) {
+    throw std::runtime_error("Model_api async calls not implemented exception.");
+}
+
+void OVMSInferenceAdapter::setCallback(std::function<void(ov::InferRequest, CallbackData)> callback) {
+    throw std::runtime_error("Model_api async calls not implemented exception.");
+}
+
+bool OVMSInferenceAdapter::isReady() {
+    throw std::runtime_error("Model_api async calls not implemented exception.");
+    return false;
+}
+
+void OVMSInferenceAdapter::awaitAll() {
+    throw std::runtime_error("Model_api async calls not implemented exception.");
+}
+
+void OVMSInferenceAdapter::awaitAny() {
+    throw std::runtime_error("Model_api async calls not implemented exception.");
+}
+
+size_t OVMSInferenceAdapter::getNumAsyncExecutors() const {
+    throw std::runtime_error("Model_api async calls not implemented exception.");
+    return 0;
+}
