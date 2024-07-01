@@ -322,7 +322,7 @@ void OVMSInferenceAdapter::awaitAny() {
     throw std::runtime_error("Model_api async calls not implemented exception.");
 }
 
-size_t OVMSInferenceAdapter::getNumAsyncExecutors() const {
+size_t OVMSInferenceAdapter::getNumAsyncExecutors() {
     throw std::runtime_error("Model_api async calls not implemented exception.");
     return 0;
 }
