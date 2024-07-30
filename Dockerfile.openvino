@@ -57,7 +57,7 @@ RUN pip3 install --upgrade setuptools
 RUN pip3 install attrs matplotlib wheel future absl-py opencv-contrib-python numpy==1.24.4 tensorflow==2.9.0 protobuf==3.20.1 six==1.14.0 tf_slim
 
 RUN ln -s /usr/bin/python3 /usr/bin/python
-RUN apt-get update && apt-get install -y protobuf-compiler
+RUN apt-get update && apt-get install --no-install-recommends -y protobuf-compiler
     
 # Install unit tests and examples requierments
 RUN wget https://github.com/bazelbuild/bazelisk/releases/download/v1.17.0/bazelisk-linux-amd64 && \
@@ -185,3 +185,7 @@ RUN curl https://storage.googleapis.com/mediapipe-assets/ssdlite_object_detectio
 
 # BUILD python framework
 RUN python setup.py install
+
+RUN groupadd --gid 5000 ovms ; \
+    useradd --home-dir /home/ovms --create-home --uid 5000 --gid 5000 --groups 39,44 --shell /bin/bash --skel /dev/null ovms
+USER ovms
