@@ -57,7 +57,7 @@ RUN pip3 install --upgrade setuptools
 RUN pip3 install attrs matplotlib wheel future absl-py opencv-contrib-python numpy==1.24.4 tensorflow==2.9.0 protobuf==3.20.1 six==1.14.0 tf_slim
 
 RUN ln -s /usr/bin/python3 /usr/bin/python
-RUN apt-get update && apt-get install --no-install-recommends -y protobuf-compiler
+RUN apt-get update && apt-get install -y protobuf-compiler
     
 # Install unit tests and examples requierments
 RUN wget https://github.com/bazelbuild/bazelisk/releases/download/v1.17.0/bazelisk-linux-amd64 && \
