@@ -101,7 +101,7 @@ azel-${BAZEL_VERSION}-installer-linux-x86_64.sh" && \
     rm -f /bazel/installer.sh
 
 #OPENVINO
-ARG DLDT_PACKAGE_URL=https://storage.openvinotoolkit.org/repositories/openvino/packages/2024.2/linux/l_openvino_toolkit_ubuntu20_2024.2.0.15519.5c0f38f83f6_x86_64.tgz
+ARG DLDT_PACKAGE_URL=https://storage.openvinotoolkit.org/repositories/openvino/packages/2024.3/linux/l_openvino_toolkit_ubuntu20_2024.3.0.16041.1e3b88e4e3f_x86_64.tgz
 # OV toolkit package
 RUN wget -nv $DLDT_PACKAGE_URL && \
     mkdir /opt/intel && \
