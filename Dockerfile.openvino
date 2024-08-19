@@ -53,7 +53,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-RUN pip3 install --upgrade setuptools
+RUN pip3 install setuptools==70.1.0
 RUN pip3 install attrs matplotlib wheel future absl-py opencv-contrib-python numpy==1.24.4 tensorflow==2.9.0 protobuf==3.20.1 six==1.14.0 tf_slim
 
 RUN ln -s /usr/bin/python3 /usr/bin/python
