@@ -108,3 +108,7 @@ run_python_face_detection:
 	cp build/lib.linux-x86_64-cpython-38/mediapipe/examples/python/ovms_face_detection.py build/lib.linux-x86_64-cpython-38
 	python build/lib.linux-x86_64-cpython-38/ovms_face_detection.py
 
+bandit:
+	@echo "Checking python files..."
+	@bash -c "./ci/bandit.sh"
+
