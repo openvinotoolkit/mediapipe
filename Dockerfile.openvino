@@ -186,13 +186,65 @@ RUN curl https://storage.googleapis.com/mediapipe-assets/ssdlite_object_detectio
 # BUILD python framework
 RUN python setup.py install
 
-FROM build as demos
+FROM ubuntu:20.04 as demos
+ENV DEBIAN_FRONTEND noninteractive
+RUN apt-get update && apt-get install --no-install-recommends -y curl libpugixml1v5 libtbb2 libxml2-dev uuid-dev uuid libssl-dev --no-install-recommends
+RUN apt-get update && apt-get install --no-install-recommends -y \
+    libopencv-core-dev \
+    libopencv-highgui-dev \
+    libopencv-calib3d-dev \
+    libopencv-features2d-dev \
+    libopencv-imgproc-dev \
+    libopencv-video-dev \
+    ffmpeg
+
+RUN apt-get update && apt-get install -y libavformat-dev libdc1394-dev libgtk2.0-dev
+
+#Openvino
+RUN mkdir -p /opt/intel/openvino/runtime/lib/intel64/
+COPY --from=build /opt/intel/openvino/runtime/lib/intel64/ /opt/intel/openvino/runtime/lib/intel64/
+RUN mkdir -p /opt/intel/openvino/runtime/3rdparty/tbb/lib/
+COPY --from=build /opt/intel/openvino/runtime/3rdparty/tbb/lib/ /opt/intel/openvino/runtime/3rdparty/tbb/lib/
+
+ENV LD_LIBRARY_PATH=/usr/local/lib:/opt/intel/openvino/runtime/lib/intel64/:/opt/intel/openvino/runtime/3rdparty/tbb/lib/
+
+# 2GB with python 3.8 - currently excluded
+COPY --from=build /usr/local/lib/*.so* /usr/local/lib/
+
+# Models
 RUN mkdir -p /mediapipe/mediapipe/models/
-COPY --from=build /mediapipe/mediapipe/models/* /mediapipe/mediapipe/models/
+COPY --from=build /mediapipe/mediapipe/models/ /mediapipe/mediapipe/models/
 
+# Graphs
 RUN mkdir -p /mediapipe/mediapipe/graphs/
-COPY --from=build /mediapipe/mediapipe/graphs/* /mediapipe/mediapipe/graphs/
+COPY --from=build /mediapipe/mediapipe/graphs/ /mediapipe/mediapipe/graphs/
 
+# Object detection
 RUN mkdir -p /mediapipe/mediapipe/examples/desktop/object_detection/
 COPY --from=build /mediapipe/mediapipe/examples/desktop/object_detection/test_video.mp4 /mediapipe/mediapipe/examples/desktop/object_detection/ 
+COPY --from=build /mediapipe/bazel-bin/mediapipe/examples/desktop/object_detection/object_detection_ovms /mediapipe/bazel-bin/mediapipe/examples/desktop/object_detection/ 
 COPY --from=build /mediapipe/video.mp4 /mediapipe/
+
+# Face detection
+RUN mkdir -p /mediapipe/bazel-bin/mediapipe/examples/desktop/face_detection/
+COPY --from=build /mediapipe/bazel-bin/mediapipe/examples/desktop/face_detection/face_detection_cpu /mediapipe/bazel-bin/mediapipe/examples/desktop/face_detection/
+
+# Holistic tracking
+RUN mkdir -p /mediapipe/bazel-bin/mediapipe/examples/desktop/holistic_tracking/
+COPY --from=build /mediapipe/bazel-bin/mediapipe/examples/desktop/holistic_tracking/holistic_tracking_cpu /mediapipe/bazel-bin/mediapipe/examples/desktop/holistic_tracking/
+
+# Iris tracking
+RUN mkdir -p /mediapipe/bazel-bin/mediapipe/examples/desktop/iris_tracking/
+COPY --from=build /mediapipe/bazel-bin/mediapipe/examples/desktop/iris_tracking/iris_tracking_cpu /mediapipe/bazel-bin/mediapipe/examples/desktop/iris_tracking/
+
+# Pose tracking
+RUN mkdir -p /mediapipe/bazel-bin/mediapipe/examples/desktop/pose_tracking/
+COPY --from=build /mediapipe/bazel-bin/mediapipe/examples/desktop/pose_tracking/pose_tracking_cpu /mediapipe/bazel-bin/mediapipe/examples/desktop/pose_tracking/
+
+#OVMS Config
+RUN mkdir -p /mediapipe/mediapipe/calculators/ovms/
+COPY --from=build /mediapipe/mediapipe/calculators/ovms/config.json /mediapipe/mediapipe/calculators/ovms/
+
+# Makefile
+COPY --from=build /mediapipe/Makefile /mediapipe/
+WORKDIR /mediapipe

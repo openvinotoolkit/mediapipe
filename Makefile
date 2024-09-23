@@ -47,7 +47,7 @@ run_hello_world:
 	docker run $(OVMS_MEDIA_DOCKER_IMAGE):$(OVMS_MEDIA_IMAGE_TAG) bazel-bin/mediapipe/examples/desktop/hello_world/hello_world
 
 run_demos_in_docker:
-	docker run $(OVMS_MEDIA_DOCKER_IMAGE):$(OVMS_MEDIA_IMAGE_TAG) make run_demos 2>&1 | tee test_demos.log 
+	docker run $(OVMS_MEDIA_DOCKER_IMAGE)-demos:$(OVMS_MEDIA_IMAGE_TAG) make run_demos 2>&1 | tee test_demos.log 
 	cat test_demos.log | grep -a FPS | grep -v echo
 	if [ `cat test_demos.log | grep -a FPS: | wc -l` != "5" ]; then echo "Some demo was not executed correctly. Check the logs"; fi
 
