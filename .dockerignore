@@ -1,2 +1,7 @@
+.github
 .git
+.vscode
 Dockerfile
+Dockerfile.openvino
+Makefile
+*.mp4

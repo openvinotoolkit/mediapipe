@@ -185,3 +185,14 @@ RUN curl https://storage.googleapis.com/mediapipe-assets/ssdlite_object_detectio
 
 # BUILD python framework
 RUN python setup.py install
+
+FROM build as demos
+RUN mkdir -p /mediapipe/mediapipe/models/
+COPY --from=build /mediapipe/mediapipe/models/* /mediapipe/mediapipe/models/
+
+RUN mkdir -p /mediapipe/mediapipe/graphs/
+COPY --from=build /mediapipe/mediapipe/graphs/* /mediapipe/mediapipe/graphs/
+
+RUN mkdir -p /mediapipe/mediapipe/examples/desktop/object_detection/
+COPY --from=build /mediapipe/mediapipe/examples/desktop/object_detection/test_video.mp4 /mediapipe/mediapipe/examples/desktop/object_detection/ 
+COPY --from=build /mediapipe/video.mp4 /mediapipe/

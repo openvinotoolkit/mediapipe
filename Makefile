@@ -108,3 +108,11 @@ run_python_face_detection:
 	cp build/lib.linux-x86_64-cpython-38/mediapipe/examples/python/ovms_face_detection.py build/lib.linux-x86_64-cpython-38
 	python build/lib.linux-x86_64-cpython-38/ovms_face_detection.py
 
+ovms_demos_image:
+	docker build -f Dockerfile.openvino \
+	--build-arg http_proxy=$(HTTP_PROXY) --build-arg https_proxy=$(HTTPS_PROXY) \
+	--build-arg DLDT_PACKAGE_URL=$(DLDT_PACKAGE_URL) \
+	--build-arg JOBS=$(JOBS) . \
+	--build-arg OVMS_COMMIT=$(OVMS_COMMIT) \
+	-t $(OVMS_MEDIA_DOCKER_IMAGE)-demos:$(OVMS_MEDIA_IMAGE_TAG) \
+	--target=demos
