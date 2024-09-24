@@ -18,6 +18,8 @@ HTTP_PROXY := "$(http_proxy)"
 HTTPS_PROXY := "$(https_proxy)"
 OVMS_MEDIA_DOCKER_IMAGE ?= mediapipe_ovms
 OVMS_MEDIA_IMAGE_TAG ?= latest
+BASE_IMAGE := "ubuntu:20.04"
+
 INPUT_VIDEO_LINK ?= "https://www.pexels.com/download/video/3044127/?fps=24.0&h=1080&w=1920"
 # ovms 2024.3RC2 (#2578)
 OVMS_COMMIT ?="0e33a366b16a6d1b477d0b791100a7e7206c6ec0"
@@ -29,6 +31,7 @@ docker_build:
 	docker build -f Dockerfile.openvino \
 	--build-arg http_proxy=$(HTTP_PROXY) --build-arg https_proxy=$(HTTPS_PROXY) \
 	--build-arg DLDT_PACKAGE_URL=$(DLDT_PACKAGE_URL) \
+	--build-arg BASE_IMAGE=$(BASE_IMAGE) \
 	--build-arg JOBS=$(JOBS) . \
 	--build-arg OVMS_COMMIT=$(OVMS_COMMIT) \
 	-t $(OVMS_MEDIA_DOCKER_IMAGE):$(OVMS_MEDIA_IMAGE_TAG)
@@ -112,6 +115,7 @@ ovms_demos_image:
 	docker build -f Dockerfile.openvino \
 	--build-arg http_proxy=$(HTTP_PROXY) --build-arg https_proxy=$(HTTPS_PROXY) \
 	--build-arg DLDT_PACKAGE_URL=$(DLDT_PACKAGE_URL) \
+	--build-arg BASE_IMAGE=$(BASE_IMAGE) \
 	--build-arg JOBS=$(JOBS) . \
 	--build-arg OVMS_COMMIT=$(OVMS_COMMIT) \
 	-t $(OVMS_MEDIA_DOCKER_IMAGE)-demos:$(OVMS_MEDIA_IMAGE_TAG) \

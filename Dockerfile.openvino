@@ -15,7 +15,8 @@
 #
 
 ARG BASE_IMAGE
-FROM ubuntu:20.04 as base
+## Start of base image ############################################
+FROM $BASE_IMAGE as base
 
 LABEL version="0.0.1"
 ARG JOBS=16
@@ -166,8 +167,9 @@ RUN wget https://github.com/PINTO0309/tflite2tensorflow/raw/main/schema/schema.f
 RUN git clone -b v2.0.8 https://github.com/google/flatbuffers.git
 RUN cd flatbuffers && mkdir build && cd build && cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release .. && make -j$(nproc) && cd ../..
 
-## End of base image
-
+## End of base image ###############################################################
+####################################################################################
+## Start of build image ############################################################
 FROM base as build
 
 RUN wget -O video.mp4 "https://www.pexels.com/download/video/3044127/?fps=24.0&h=1080&w=1920"
@@ -186,6 +188,7 @@ COPY platform_mappings /mediapipe/
 COPY README.md /mediapipe/
 COPY platform_mappings /mediapipe/
 COPY tsconfig.json /mediapipe/
+COPY requirements.txt /mediapipe/
 
 # BUILD Geti calculators
 RUN bazel build //mediapipe:geti_targets
@@ -199,8 +202,10 @@ RUN curl https://storage.googleapis.com/mediapipe-assets/ssdlite_object_detectio
 
 # BUILD python framework
 RUN python setup.py install
-
-FROM ubuntu:20.04 as demos
+## End of build image ################################################################
+######################################################################################
+## Start of demos image - minimal size ###############################################
+FROM $BASE_IMAGE as demos
 ENV DEBIAN_FRONTEND noninteractive
 RUN apt-get update && apt-get install --no-install-recommends -y curl libpugixml1v5 libtbb2 libxml2-dev uuid-dev uuid libssl-dev --no-install-recommends
 RUN apt-get update && apt-get install --no-install-recommends -y \
@@ -266,3 +271,5 @@ COPY --from=build /mediapipe/Makefile /mediapipe/
 ENV GLOG_logtostderr=1
 ENV LD_LIBRARY_PATH=/usr/local/lib:/opt/intel/openvino/runtime/lib/intel64/:/opt/intel/openvino/runtime/3rdparty/tbb/lib/
 WORKDIR /mediapipe
+
+## End of demos image #########################################################
