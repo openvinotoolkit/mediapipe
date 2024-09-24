@@ -208,14 +208,7 @@ RUN python setup.py install
 FROM $BASE_IMAGE as demos
 ENV DEBIAN_FRONTEND noninteractive
 RUN apt-get update && apt-get install --no-install-recommends -y curl libpugixml1v5 libtbb2 libxml2-dev uuid-dev uuid libssl-dev --no-install-recommends
-RUN apt-get update && apt-get install --no-install-recommends -y \
-    libopencv-core-dev \
-    libopencv-highgui-dev \
-    libopencv-calib3d-dev \
-    libopencv-features2d-dev \
-    libopencv-imgproc-dev \
-    libopencv-video-dev \
-    ffmpeg
+RUN apt-get update && apt-get install --no-install-recommends -y ffmpeg
 
 # Python samples requirements start
 RUN apt-get update && apt-get install --no-install-recommends -y \
