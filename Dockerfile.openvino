@@ -171,7 +171,21 @@ RUN cd flatbuffers && mkdir build && cd build && cmake -G "Unix Makefiles" -DCMA
 FROM base as build
 
 RUN wget -O video.mp4 "https://www.pexels.com/download/video/3044127/?fps=24.0&h=1080&w=1920"
-COPY . /mediapipe/
+COPY mediapipe /mediapipe/mediapipe/
+COPY third_party /mediapipe/third_party/
+COPY .bazelrc /mediapipe/
+COPY .bazelversion /mediapipe/
+COPY *.sh /mediapipe/
+COPY *.py /mediapipe/
+COPY BUILD.bazel /mediapipe/
+COPY LICENSE /mediapipe/
+COPY Makefile /mediapipe/
+COPY MANIFEST.in /mediapipe/
+COPY package.json /mediapipe/
+COPY platform_mappings /mediapipe/
+COPY README.md /mediapipe/
+COPY platform_mappings /mediapipe/
+COPY tsconfig.json /mediapipe/
 
 # BUILD Geti calculators
 RUN bazel build //mediapipe:geti_targets
@@ -200,13 +214,11 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
 
 RUN apt-get update && apt-get install -y libavformat-dev libdc1394-dev libgtk2.0-dev
 
-#Openvino
+# Openvino
 RUN mkdir -p /opt/intel/openvino/runtime/lib/intel64/
 COPY --from=build /opt/intel/openvino/runtime/lib/intel64/ /opt/intel/openvino/runtime/lib/intel64/
 RUN mkdir -p /opt/intel/openvino/runtime/3rdparty/tbb/lib/
 COPY --from=build /opt/intel/openvino/runtime/3rdparty/tbb/lib/ /opt/intel/openvino/runtime/3rdparty/tbb/lib/
-
-ENV LD_LIBRARY_PATH=/usr/local/lib:/opt/intel/openvino/runtime/lib/intel64/:/opt/intel/openvino/runtime/3rdparty/tbb/lib/
 
 # 2GB with python 3.8 - currently excluded
 COPY --from=build /usr/local/lib/*.so* /usr/local/lib/
@@ -232,6 +244,8 @@ COPY --from=build /mediapipe/bazel-bin/mediapipe/examples/desktop/face_detection
 # Holistic tracking
 RUN mkdir -p /mediapipe/bazel-bin/mediapipe/examples/desktop/holistic_tracking/
 COPY --from=build /mediapipe/bazel-bin/mediapipe/examples/desktop/holistic_tracking/holistic_tracking_cpu /mediapipe/bazel-bin/mediapipe/examples/desktop/holistic_tracking/
+RUN mkdir -p /mediapipe/mediapipe/modules/hand_landmark/
+COPY --from=build /mediapipe/mediapipe/modules/hand_landmark/handedness.txt /mediapipe/mediapipe/modules/hand_landmark/
 
 # Iris tracking
 RUN mkdir -p /mediapipe/bazel-bin/mediapipe/examples/desktop/iris_tracking/
@@ -247,4 +261,8 @@ COPY --from=build /mediapipe/mediapipe/calculators/ovms/config.json /mediapipe/m
 
 # Makefile
 COPY --from=build /mediapipe/Makefile /mediapipe/
+
+# Environment variables
+ENV GLOG_logtostderr=1
+ENV LD_LIBRARY_PATH=/usr/local/lib:/opt/intel/openvino/runtime/lib/intel64/:/opt/intel/openvino/runtime/3rdparty/tbb/lib/
 WORKDIR /mediapipe
