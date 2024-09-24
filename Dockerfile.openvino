@@ -217,15 +217,24 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
     libopencv-video-dev \
     ffmpeg
 
-RUN apt-get update && apt-get install -y libavformat-dev libdc1394-dev libgtk2.0-dev
+# Python samples requirements start
+RUN apt-get update && apt-get install --no-install-recommends -y \
+    python3 \
+    python3-opencv \
+    python3-pip
+
+RUN pip3 install attrs matplotlib protobuf==3.20.1 numpy==1.24.4
+RUN ln -s /usr/bin/python3 /usr/bin/python
+# Python samples requirements end
 
 # Openvino
+RUN apt-get update && apt-get install -y libavformat-dev libdc1394-dev libgtk2.0-dev
 RUN mkdir -p /opt/intel/openvino/runtime/lib/intel64/
 COPY --from=build /opt/intel/openvino/runtime/lib/intel64/ /opt/intel/openvino/runtime/lib/intel64/
 RUN mkdir -p /opt/intel/openvino/runtime/3rdparty/tbb/lib/
 COPY --from=build /opt/intel/openvino/runtime/3rdparty/tbb/lib/ /opt/intel/openvino/runtime/3rdparty/tbb/lib/
 
-# 2GB with python 3.8 - currently excluded
+# 2GB with python 3.8 - currently excluded as only .so libs are copied
 COPY --from=build /usr/local/lib/*.so* /usr/local/lib/
 
 # Models
@@ -266,6 +275,9 @@ COPY --from=build /mediapipe/mediapipe/calculators/ovms/config.json /mediapipe/m
 
 # Makefile
 COPY --from=build /mediapipe/Makefile /mediapipe/
+
+# Add python solutions
+COPY --from=build /mediapipe/build/ /mediapipe/build/
 
 # Environment variables
 ENV GLOG_logtostderr=1

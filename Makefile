@@ -58,7 +58,7 @@ run_demos_in_docker:
 	cat test_demos.log | grep -a FPS: | wc -l | grep -q "5"
 
 run_python_demos_in_docker:
-	docker run $(OVMS_MEDIA_DOCKER_IMAGE):$(OVMS_MEDIA_IMAGE_TAG) make run_python_demos
+	docker run $(OVMS_MEDIA_DOCKER_IMAGE)-demos:$(OVMS_MEDIA_IMAGE_TAG) make run_python_demos
 
 # Targets to use inside running mediapipe_ovms container
 run_demos: run_holistic_tracking run_face_detection run_iris_tracking run_object_detection run_pose_tracking
