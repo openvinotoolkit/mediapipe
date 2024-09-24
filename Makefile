@@ -34,7 +34,8 @@ docker_build:
 	--build-arg BASE_IMAGE=$(BASE_IMAGE) \
 	--build-arg JOBS=$(JOBS) . \
 	--build-arg OVMS_COMMIT=$(OVMS_COMMIT) \
-	-t $(OVMS_MEDIA_DOCKER_IMAGE):$(OVMS_MEDIA_IMAGE_TAG)
+	-t $(OVMS_MEDIA_DOCKER_IMAGE):$(OVMS_MEDIA_IMAGE_TAG) \
+	--target=build
 
 tests: run_unit_tests run_hello_world run_hello_ovms
 run_hello_ovms:
