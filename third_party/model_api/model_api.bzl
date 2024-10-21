@@ -57,7 +57,7 @@ cc_library(
     name = "model_api",
     deps = [
         "@mediapipe//mediapipe/framework/port:opencv_core",
-        "@linux_openvino//:openvino",
+        "@mediapipe//third_party:openvino",
         ":model_api_cmake",
     ],
     visibility = ["//visibility:public"],

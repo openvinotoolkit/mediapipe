@@ -816,6 +816,12 @@ new_local_repository(
     path = "/opt/intel/openvino/runtime",
 )
 
+new_local_repository(
+    name = "windows_openvino",
+    build_file = "@ovms//third_party/openvino:openvino_windows.BUILD",
+    path = "C:\\opt\\intel\\openvino_2024\\runtime",
+)
+
 git_repository(
     name = "oneTBB",
     branch = "v2021.10.0",
