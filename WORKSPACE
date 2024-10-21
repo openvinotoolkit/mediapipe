@@ -845,3 +845,15 @@ git_repository(
     remote = "https://github.com/nlohmann/json/",
     tag = "v3.11.3",
 )
+
+new_local_repository(
+    name = "windows_opencl",
+    build_file = "@ovms//third_party/opencl:opencl_windows.BUILD",
+    path = "C:\\opt\\opencl\\external\\OpenCL-CLHPP",
+)
+
+new_local_repository(
+    name = "windows_opencl2",
+    build_file = "@ovms//third_party/opencl:opencl_windows2.BUILD",
+    path = "C:\\opt\\opencl\\external\\OpenCL-Headers",
+)
