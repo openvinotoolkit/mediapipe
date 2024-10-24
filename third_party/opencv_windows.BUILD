@@ -20,7 +20,7 @@ licenses(["notice"])  # BSD license
 
 exports_files(["LICENSE"])
 
-OPENCV_VERSION = "470"  # 4.7.0
+OPENCV_VERSION = "4100"  # 4.10.0
 
 config_setting(
     name = "opt_build",

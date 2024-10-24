@@ -192,6 +192,7 @@ http_archive(
         "https://github.com/google/glog/archive/3a0d4d22c5ae0b9a2216988411cfa6bf860cc372.zip",
     ],
 )
+
 http_archive(
     name = "com_github_glog_glog_no_gflags",
     strip_prefix = "glog-3a0d4d22c5ae0b9a2216988411cfa6bf860cc372",
