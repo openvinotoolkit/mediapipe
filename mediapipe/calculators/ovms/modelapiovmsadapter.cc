@@ -34,56 +34,24 @@
 #pragma GCC diagnostic pop
 // here we need to decide if we have several calculators (1 for OVMS repository, 1-N inside mediapipe)
 // for the one inside OVMS repo it makes sense to reuse code from ovms lib
-namespace mediapipe {
-
+namespace mediapipe::ovms {
+    
 using std::endl;
-
-
-#define THROW_IF_CIRCULAR_ERR(C_API_CALL)                                       \
-    {                                                                           \
-        auto* fatalErr = C_API_CALL;                                            \
-        if (fatalErr != nullptr) {                                              \
-            std::runtime_error exc("Getting status details circular error");    \
-            throw exc;                                                          \
-        }                                                                       \ 
-    }
-
-#define ASSERT_CAPI_STATUS_NULL(C_API_CALL)                                                 \
-    {                                                                                       \
-        auto* err = C_API_CALL;                                                             \
-        if (err != nullptr) {                                                               \
-            uint32_t code = 0;                                                              \
-            const char* msg = nullptr;                                                      \
-            THROW_IF_CIRCULAR_ERR(OVMS_StatusCode(err, &code));                             \
-            THROW_IF_CIRCULAR_ERR(OVMS_StatusDetails(err, &msg));                           \
-            LOG(INFO) << "Error encountred in OVMSCalculator:" << msg << " code: " << code; \
-            std::runtime_error exc(msg);                                                    \
-            OVMS_StatusDelete(err);                                                         \
-            throw exc;                                                                      \
-        }                                                                                   \
-    }
-#define CREATE_GUARD(GUARD_NAME, CAPI_TYPE, CAPI_PTR) \
-    std::unique_ptr<CAPI_TYPE, decltype(&(CAPI_TYPE##Delete))> GUARD_NAME(CAPI_PTR, &(CAPI_TYPE##Delete));
-
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-function"
 using InferenceOutput = std::map<std::string, ov::Tensor>;
 using InferenceInput = std::map<std::string, ov::Tensor>;
 
-namespace ovms {
+#define THROW_IF_CIRCULAR_ERR(C_API_CALL)
+
+#define ASSERT_CAPI_STATUS_NULL(C_API_CALL)
+
+#define CREATE_GUARD(GUARD_NAME, CAPI_TYPE, CAPI_PTR) \
+    std::unique_ptr<CAPI_TYPE, decltype(&(CAPI_TYPE##Delete))> GUARD_NAME(CAPI_PTR, &(CAPI_TYPE##Delete));
+
 static OVMS_DataType OVPrecision2CAPI(ov::element::Type_t datatype);
 static ov::element::Type_t CAPI2OVPrecision(OVMS_DataType datatype);
 static ov::Tensor makeOvTensor(OVMS_DataType datatype, const int64_t* shape, size_t dimCount, const void* voutputData, size_t bytesize);
-
-OVMSInferenceAdapter::OVMSInferenceAdapter(const std::string& servableName, uint32_t servableVersion, OVMS_Server* cserver) :
-    servableName(servableName),
-    servableVersion(servableVersion) {
-    if (nullptr != cserver) {
-        this->cserver = cserver;
-    } else {
-        OVMS_ServerNew(&this->cserver);
-    }
-}
 
 OVMSInferenceAdapter::~OVMSInferenceAdapter() {
     LOG(INFO) << "OVMSAdapter destr";
@@ -326,5 +294,4 @@ static ov::Tensor makeOvTensor(OVMS_DataType datatype, const int64_t* shape, siz
 }
 
 #pragma GCC diagnostic pop
-}  // namespace ovms
-}  // namespace mediapipe
+}  // namespace mediapipe::ovms

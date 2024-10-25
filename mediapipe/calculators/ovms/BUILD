@@ -36,6 +36,7 @@ cc_library(
     copts = ["-Iexternal/ovms/src","-Isrc"],
     linkopts = ["-Lmediapipe/"],
     alwayslink = 1,
+    linkstatic = True,
 )
 
 cc_library(
@@ -54,6 +55,7 @@ cc_library(
         "//third_party:openvino",
     ],
     copts = ["-Iexternal/ovms/src","-Isrc"],
+    alwayslink = 1,
 )
 
 cc_library(
