@@ -42,9 +42,22 @@ using std::endl;
 using InferenceOutput = std::map<std::string, ov::Tensor>;
 using InferenceInput = std::map<std::string, ov::Tensor>;
 
-#define THROW_IF_CIRCULAR_ERR(C_API_CALL)
+#define THROW_IF_CIRCULAR_ERR(C_API_CALL) { auto* fatalErr = C_API_CALL;if (fatalErr != nullptr) {std::runtime_error exc("Getting status details circular error");throw exc; } }
 
-#define ASSERT_CAPI_STATUS_NULL(C_API_CALL)
+#define ASSERT_CAPI_STATUS_NULL(C_API_CALL)                                                 \
+    {                                                                                       \
+        auto* err = C_API_CALL;                                                             \
+        if (err != nullptr) {                                                               \
+            uint32_t code = 0;                                                              \
+            const char* msg = nullptr;                                                      \
+            THROW_IF_CIRCULAR_ERR(OVMS_StatusCode(err, &code));                             \
+            THROW_IF_CIRCULAR_ERR(OVMS_StatusDetails(err, &msg));                           \
+            LOG(INFO) << "Error encountred in OVMSCalculator:" << msg << " code: " << code; \
+            std::runtime_error exc(msg);                                                    \
+            OVMS_StatusDelete(err);                                                         \
+            throw exc;                                                                      \
+        }                                                                                   \
+    }
 
 #define CREATE_GUARD(GUARD_NAME, CAPI_TYPE, CAPI_PTR) \
     std::unique_ptr<CAPI_TYPE, decltype(&(CAPI_TYPE##Delete))> GUARD_NAME(CAPI_PTR, &(CAPI_TYPE##Delete));
