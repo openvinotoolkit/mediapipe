@@ -846,7 +846,7 @@ new_git_repository(
     remote = "https:///github.com/atobiszei/model_api/",
     build_file = "@_model-api//:BUILD",
     #commit = "eb9fcfb1e1eebc047ff144707f76203b132e1a6" # master Jun 24 15:02:17 2024 [cpp] Fix num classes check
-    commit = "cbd2522421ef16757e94d6efc46c3c821d7e9792" # master Jun 24 15:02:17 2024 [cpp] Fix num classes check
+    commit = "d619bb72f58147ca8042b59c3b9a865a0bc05c4e" # master Jun 24 15:02:17 2024 [cpp] Fix num classes check
 )
 
 git_repository(
