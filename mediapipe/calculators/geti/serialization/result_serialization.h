@@ -95,7 +95,9 @@ inline void to_json(nlohmann::json& nlohmann_json_j,
                     const LabelResult& nlohmann_json_t) {
   nlohmann_json_j["probability"] = nlohmann_json_t.probability;
   nlohmann_json_j["id"] = nlohmann_json_t.label.label_id;
+  nlohmann_json_j["name"] = nlohmann_json_t.label.label;
 }
+
 inline void to_json(nlohmann::json& nlohmann_json_j,
                     const PolygonPrediction& nlohmann_json_t) {
   nlohmann_json_j["labels"] = nlohmann_json_t.labels;
