@@ -230,11 +230,7 @@ InferenceOutput OVMSInferenceAdapter::infer(const InferenceInput& input) {
     const char* outputName{nullptr};
     for (size_t i = 0; i < outputCount; ++i) {
         ASSERT_CAPI_STATUS_NULL(OVMS_InferenceResponseOutput(response, i, &outputName, &datatype, &shape, &dimCount, &voutputData, &bytesize, &bufferType, &deviceId));
-        if (std::find(outputsSet.begin(), outputsSet.end(), outputName) == outputsSet.end()) {
-            output.emplace(outputName, std::move(makeOvTensor(datatype, shape, dimCount, voutputData, bytesize)));
-        } else {
-            output.emplace(outputName, input.at(outputName));
-        }
+        output.emplace(outputName, std::move(makeOvTensor(datatype, shape, dimCount, voutputData, bytesize)));
     }
 #if (OVMS_DUMP_TO_FILE == 1)
     dumpOvTensorInput(output,"output");
