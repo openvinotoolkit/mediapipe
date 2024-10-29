@@ -18,6 +18,7 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "../inference/utils.h"
 #include "models/image_model.h"
