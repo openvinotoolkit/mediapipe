@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+
 def _is_windows(ctx):
     return ctx.os.name.lower().find("windows") != -1
 
@@ -63,48 +64,48 @@ cc_library(
 
 def _get_linux_build_file():
     build_file_content = """
-    load("@rules_foreign_cc//foreign_cc:cmake.bzl", "cmake")
+load("@rules_foreign_cc//foreign_cc:cmake.bzl", "cmake")
 
-    visibility = ["//visibility:public"]
+visibility = ["//visibility:public"]
 
-    filegroup(
-        name = "all_srcs",
-        srcs = glob(["model_api/cpp/**"]),
-        visibility = ["//visibility:public"],
-    )
+filegroup(
+    name = "all_srcs",
+    srcs = glob(["model_api/cpp/**"]),
+    visibility = ["//visibility:public"],
+)
 
-    cmake(
-        name = "model_api_cmake",
-        build_args = [
-            "--verbose",
-            "--",  # <- Pass remaining options to the native tool.
-            # https://github.com/bazelbuild/rules_foreign_cc/issues/329
-            # there is no elegant paralell compilation support
-            "VERBOSE=1",
-            "-j 24",
-        ],
-        cache_entries = {{
-            "CMAKE_POSITION_INDEPENDENT_CODE": "ON",
-            "OpenVINO_DIR": "/opt/intel/openvino/runtime/cmake",
-        }},
-        env = {{
-            "HTTP_PROXY": "{http_proxy}",
-            "HTTPS_PROXY": "{https_proxy}",
-        }},
-        lib_source = ":all_srcs",
-        out_static_libs = ["libmodel_api.a"],
-        tags = ["requires-network"],
-    )
+cmake(
+    name = "model_api_cmake",
+    build_args = [
+        "--verbose",
+        "--",  # <- Pass remaining options to the native tool.
+        # https://github.com/bazelbuild/rules_foreign_cc/issues/329
+        # there is no elegant paralell compilation support
+        "VERBOSE=1",
+        "-j 24",
+    ],
+    cache_entries = {{
+        "CMAKE_POSITION_INDEPENDENT_CODE": "ON",
+        "OpenVINO_DIR": "/opt/intel/openvino/runtime/cmake",
+    }},
+    env = {{
+        "HTTP_PROXY": "{http_proxy}",
+        "HTTPS_PROXY": "{https_proxy}",
+    }},
+    lib_source = ":all_srcs",
+    out_static_libs = ["libmodel_api.a"],
+    tags = ["requires-network"],
+)
 
-    cc_library(
-        name = "model_api",
-        deps = [
-            "@mediapipe//mediapipe/framework/port:opencv_core",
-            "@mediapipe//third_party:openvino",
-            ":model_api_cmake",
-        ],
-        visibility = ["//visibility:public"],
-    )"""
+cc_library(
+    name = "model_api",
+    deps = [
+        "@mediapipe//mediapipe/framework/port:opencv_core",
+        "@mediapipe//third_party:openvino",
+        ":model_api_cmake",
+    ],
+    visibility = ["//visibility:public"],
+)"""
     return build_file_content
 
 def _impl(repository_ctx):
