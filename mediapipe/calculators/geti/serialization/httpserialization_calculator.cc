@@ -84,7 +84,7 @@ absl::Status HttpSerializationCalculator::GetiProcess(CalculatorContext *cc) {
       prediction.erase("shape");
     }
   }
-  std::string response = "{" + data.dump() + "}";
+  std::string response = data.dump();
   cc->Outputs()
       .Tag("HTTP_RESPONSE_PAYLOAD")
       .AddPacket(MakePacket<std::string>(response).At(cc->InputTimestamp()));
