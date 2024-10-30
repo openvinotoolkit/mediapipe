@@ -52,6 +52,7 @@ class OVMSInferenceAdapter : public ::InferenceAdapter {
     ov::AnyMap modelConfig;
 
 public:
+    // TODO Windows: Fix definition in header - does not compile in cpp.
     OVMSInferenceAdapter(const std::string& servableName, uint32_t servableVersion = 0, OVMS_Server* server = nullptr) :
         servableName(servableName),
         servableVersion(servableVersion) {

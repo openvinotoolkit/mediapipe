@@ -104,7 +104,7 @@ RUN ln -s libOpenCL.so.1 libOpenCL.so
 
 # install ovms_lib requirements
 # xml2, uuid for azure
-RUN apt-get install -y curl libpugixml1v5 libtbb2 libxml2-dev uuid-dev uuid libssl-dev --no-install-recommends
+RUN apt-get update && apt-get install -y curl libpugixml1v5 libtbb2 libxml2-dev uuid-dev uuid libssl-dev --no-install-recommends
 
 RUN apt-get update && apt-get install --no-install-recommends -y libtool
 
