@@ -718,9 +718,15 @@ new_local_repository(
 # Boost (needed for Azure Storage SDK)
 
 new_local_repository(
-    name = "boost",
+    name = "linux_boost",
     path = "/usr/local/lib/",
     build_file = "@ovms//third_party/boost:BUILD"
+)
+
+new_local_repository(
+    name = "windows_boost",
+    path = "C:\\local\\boost_1_69_0",
+    build_file = "@ovms//third_party/boost:boost_windows.BUILD"
 )
 
 # Google Cloud SDK
