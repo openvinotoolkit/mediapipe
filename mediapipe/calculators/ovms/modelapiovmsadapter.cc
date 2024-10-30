@@ -100,22 +100,22 @@ void OVMSInferenceAdapter::infer(const InferenceInput& input, InferenceOutput& o
             OVMS_BUFFERTYPE_CPU,
             NOT_USED_NUM));
     }
-    for (const auto& [name, input_tensor] : output) {
+    for (const auto& [name, output_tensor] : output) {
         outputsSet.emplace_back(name);
         const char* realInputName = name.c_str();
-        const auto& ovinputShape = input_tensor.get_shape();
+        const auto& ovinputShape = output_tensor.get_shape();
         if (std::any_of(ovinputShape.begin(), ovinputShape.end(), [](size_t dim) {
                 return dim > std::numeric_limits<int64_t>::max();})) {
             throw std::runtime_error("Cannot use C-API with dimension size greater than int64_t max value");
         }
         std::vector<int64_t> inputShape{ovinputShape.begin(), ovinputShape.end()};
-        OVMS_DataType inputDataType = OVPrecision2CAPI(input_tensor.get_element_type());
+        OVMS_DataType inputDataType = OVPrecision2CAPI(output_tensor.get_element_type());
         ASSERT_CAPI_STATUS_NULL(OVMS_InferenceRequestAddOutput(request, realInputName, inputDataType, inputShape.data(), inputShape.size()));
         const uint32_t NOT_USED_NUM = 0;
         ASSERT_CAPI_STATUS_NULL(OVMS_InferenceRequestOutputSetData(request,
             realInputName,
-            reinterpret_cast<void*>(input_tensor.data()),
-            input_tensor.get_byte_size(),
+            reinterpret_cast<void*>(output_tensor.data()),
+            output_tensor.get_byte_size(),
             OVMS_BUFFERTYPE_CPU,
             NOT_USED_NUM));
 
@@ -127,19 +127,7 @@ void OVMSInferenceAdapter::infer(const InferenceInput& input, InferenceOutput& o
     //  INFERENCE
     //////////////////
     OVMS_InferenceResponse* response = nullptr;
-    status = OVMS_Inference(cserver, request, &response);
-    if (nullptr != status) {
-        uint32_t code = 0;
-        const char* msg = nullptr;
-        THROW_IF_CIRCULAR_ERR(OVMS_StatusCode(status, &code));
-        THROW_IF_CIRCULAR_ERR(OVMS_StatusDetails(status, &msg));
-        std::stringstream ss;
-        ss << "Inference in OVMSAdapter failed: ";
-        ss << msg << " code: " << code;
-        LOG(INFO) << ss.str();
-        OVMS_StatusDelete(status);
-        return;
-    }
+    ASSERT_CAPI_STATUS_NULL(OVMS_Inference(cserver, request, &response));
     CREATE_GUARD(responseGuard, OVMS_InferenceResponse, response);
     uint32_t outputCount = 42;
     ASSERT_CAPI_STATUS_NULL(OVMS_InferenceResponseOutputCount(response, &outputCount));
@@ -305,11 +293,11 @@ ov::PartialShape OVMSInferenceAdapter::getInputShape(const std::string& inputNam
     }
     return ovShape;
 }
-ov::PartialShape OVMSInferenceAdapter::getOutputShape(const std::string& inputName) const {
-    auto it = outShapesMinMaxes.find(inputName);
+ov::PartialShape OVMSInferenceAdapter::getOutputShape(const std::string& outputName) const {
+    auto it = outShapesMinMaxes.find(outputName);
     if (it == outShapesMinMaxes.end()) {
-        LOG(INFO) << "Could not find input:" << inputName;
-        throw std::runtime_error(std::string("Adapter could not find input:") + inputName);
+        LOG(INFO) << "Could not find output:" << outputName;
+        throw std::runtime_error(std::string("Adapter could not find output:") + outputName);
     }
 
     ov::PartialShape ovShape;
