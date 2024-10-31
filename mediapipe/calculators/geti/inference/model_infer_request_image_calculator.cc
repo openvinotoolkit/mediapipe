@@ -44,7 +44,9 @@ absl::Status ModelInferRequestImageCalculator::GetiProcess(
 
   LOG(INFO) << "KFSRequest for model " << request->model_name();
   auto data = request->raw_input_contents().Get(0);
+  LOG(INFO) << "data size:  " << data.size();
   const std::vector<uint8_t> image_data(data.begin(), data.end());
+  LOG(INFO) << "image_data size:  " << image_data.size();
   auto out = load_image(image_data);
   cv::cvtColor(out, out, cv::COLOR_BGR2RGB);
 
