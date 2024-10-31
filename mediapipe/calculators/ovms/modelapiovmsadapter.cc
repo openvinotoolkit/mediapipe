@@ -70,7 +70,7 @@ OVMSInferenceAdapter::~OVMSInferenceAdapter() {
     LOG(INFO) << "OVMSAdapter destr";
 }
 
-inline std::vector<int64_t> ensureShapeAcceptableByCAPI(const ov::Shape& shape) {
+inline std::vector<int64_t> getShapeAcceptableByCAPI(const ov::Shape& shape) {
     if (std::any_of(shape.begin(), shape.end(), [](size_t dim) {
             return dim > std::numeric_limits<int64_t>::max();})) {
         throw std::runtime_error("Cannot use C-API with dimension size greater than int64_t max value");

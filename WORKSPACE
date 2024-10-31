@@ -837,16 +837,8 @@ git_repository(
     patches = ["@ovms//external:mwaitpkg.patch",]
 )
 
-load("@rules_foreign_cc//foreign_cc:cmake.bzl", "cmake")
-load("@//third_party/model_api:model_api.bzl", "model_api_repository")
-model_api_repository(name="_model-api")
-new_git_repository(
-    name = "model_api",
-    #remote = "https:///github.com/openvinotoolkit/model_api/",
-    remote = "https:///github.com/atobiszei/model_api/",
-    build_file = "@_model-api//:BUILD",
-    commit = "fbb05596150f96657c2217e716e108ef973b5789" # master Jun 24 15:02:17 2024 [cpp] Fix num classes check
-)
+load("@//third_party/model_api:model_api.bzl", "workspace_model_api")
+workspace_model_api()
 
 git_repository(
     name = "nlohmann_json",
