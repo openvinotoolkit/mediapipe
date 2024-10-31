@@ -70,6 +70,14 @@ OVMSInferenceAdapter::~OVMSInferenceAdapter() {
     LOG(INFO) << "OVMSAdapter destr";
 }
 
+inline std::vector<int64_t> ensureShapeAcceptableByCAPI(const ov::Shape& shape) {
+    if (std::any_of(shape.begin(), shape.end(), [](size_t dim) {
+            return dim > std::numeric_limits<int64_t>::max();})) {
+        throw std::runtime_error("Cannot use C-API with dimension size greater than int64_t max value");
+    }
+    return std::vector<int64_t>{shape.begin(), shape.end()};
+}
+
 void OVMSInferenceAdapter::infer(const InferenceInput& input, InferenceOutput& output) {
     /////////////////////
     // PREPARE REQUEST
@@ -83,18 +91,14 @@ void OVMSInferenceAdapter::infer(const InferenceInput& input, InferenceOutput& o
     // PREPARE EACH INPUT
     // extract single tensor
     for (const auto& [name, input_tensor] : input) {
-        const char* realInputName = name.c_str();
-        const auto& ovinputShape = input_tensor.get_shape();
-        if (std::any_of(ovinputShape.begin(), ovinputShape.end(), [](size_t dim) {
-                return dim > std::numeric_limits<int64_t>::max();})) {
-            throw std::runtime_error("Cannot use C-API with dimension size greater than int64_t max value");
-        }
-        std::vector<int64_t> inputShape{ovinputShape.begin(), ovinputShape.end()};
+        const char* realName = name.c_str();
+        const auto& ovShape = input_tensor.get_shape();
+        std::vector<int64_t> capiShape = getShapeAcceptableByCAPI(ovShape);
         OVMS_DataType inputDataType = OVPrecision2CAPI(input_tensor.get_element_type());
-        ASSERT_CAPI_STATUS_NULL(OVMS_InferenceRequestAddInput(request, realInputName, inputDataType, inputShape.data(), inputShape.size()));
+        ASSERT_CAPI_STATUS_NULL(OVMS_InferenceRequestAddInput(request, realName, inputDataType, capiShape.data(), capiShape.size()));
         const uint32_t NOT_USED_NUM = 0;
         ASSERT_CAPI_STATUS_NULL(OVMS_InferenceRequestInputSetData(request,
-            realInputName,
+            realName,
             reinterpret_cast<void*>(input_tensor.data()),
             input_tensor.get_byte_size(),
             OVMS_BUFFERTYPE_CPU,
@@ -102,18 +106,14 @@ void OVMSInferenceAdapter::infer(const InferenceInput& input, InferenceOutput& o
     }
     for (const auto& [name, output_tensor] : output) {
         outputsSet.emplace_back(name);
-        const char* realInputName = name.c_str();
-        const auto& ovinputShape = output_tensor.get_shape();
-        if (std::any_of(ovinputShape.begin(), ovinputShape.end(), [](size_t dim) {
-                return dim > std::numeric_limits<int64_t>::max();})) {
-            throw std::runtime_error("Cannot use C-API with dimension size greater than int64_t max value");
-        }
-        std::vector<int64_t> inputShape{ovinputShape.begin(), ovinputShape.end()};
+        const char* realName = name.c_str();
+        const auto& ovShape = output_tensor.get_shape();
+        std::vector<int64_t> capiShape = getShapeAcceptableByCAPI(ovShape);
         OVMS_DataType inputDataType = OVPrecision2CAPI(output_tensor.get_element_type());
-        ASSERT_CAPI_STATUS_NULL(OVMS_InferenceRequestAddOutput(request, realInputName, inputDataType, inputShape.data(), inputShape.size()));
+        ASSERT_CAPI_STATUS_NULL(OVMS_InferenceRequestAddOutput(request, realName, inputDataType, capiShape.data(), capiShape.size()));
         const uint32_t NOT_USED_NUM = 0;
         ASSERT_CAPI_STATUS_NULL(OVMS_InferenceRequestOutputSetData(request,
-            realInputName,
+            realName,
             reinterpret_cast<void*>(output_tensor.data()),
             output_tensor.get_byte_size(),
             OVMS_BUFFERTYPE_CPU,
@@ -164,20 +164,15 @@ InferenceOutput OVMSInferenceAdapter::infer(const InferenceInput& input) {
     InferenceOutput output;
     OVMS_Status* status{nullptr};
     // PREPARE EACH INPUT
-    // extract single tensor
     for (const auto& [name, input_tensor] : input) {
-        const char* realInputName = name.c_str();
-        const auto& ovinputShape = input_tensor.get_shape();
-        if (std::any_of(ovinputShape.begin(), ovinputShape.end(), [](size_t dim) {
-                return dim > std::numeric_limits<int64_t>::max();})) {
-            throw std::runtime_error("Cannot use C-API with dimension size greater than int64_t max value");
-        }
-        std::vector<int64_t> inputShape{ovinputShape.begin(), ovinputShape.end()};
+        const char* realName = name.c_str();
+        const auto& ovShape = input_tensor.get_shape();
+        std::vector<int64_t> capiShape = getShapeAcceptableByCAPI(ovShape);
         OVMS_DataType inputDataType = OVPrecision2CAPI(input_tensor.get_element_type());
-        ASSERT_CAPI_STATUS_NULL(OVMS_InferenceRequestAddInput(request, realInputName, inputDataType, inputShape.data(), inputShape.size()));
+        ASSERT_CAPI_STATUS_NULL(OVMS_InferenceRequestAddInput(request, realName, inputDataType, capiShape.data(), capiShape.size()));
         const uint32_t NOT_USED_NUM = 0;
         ASSERT_CAPI_STATUS_NULL(OVMS_InferenceRequestInputSetData(request,
-            realInputName,
+            realName,
             reinterpret_cast<void*>(input_tensor.data()),
             input_tensor.get_byte_size(),
             OVMS_BUFFERTYPE_CPU,

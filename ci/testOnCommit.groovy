@@ -14,6 +14,7 @@ pipeline {
         }   
         stage("build image") {
           steps {
+              sh "echo build --remote_cache=${env.OVMS_BAZEL_REMOTE_CACHE_URL} > .user.bazelrc"
               sh script: "make docker_build OVMS_MEDIA_IMAGE_TAG=${shortCommit}"
           }    
         }

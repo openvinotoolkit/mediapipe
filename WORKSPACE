@@ -636,7 +636,7 @@ load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 git_repository(
     name = "ovms",
     remote = "https://github.com/openvinotoolkit/model_server",
-    commit = "5d8dbce1347b2b7176ea07544ca8f96b3a24fbec" # Windows groovy (#2762)
+    commit = "aa07d47407557781036e2e4f00501bfa5bf3c79b" # Windows groovy (#2762)
 )
 
 # DEV ovms - adjust local repository path for build
@@ -845,7 +845,7 @@ new_git_repository(
     #remote = "https:///github.com/openvinotoolkit/model_api/",
     remote = "https:///github.com/atobiszei/model_api/",
     build_file = "@_model-api//:BUILD",
-    commit = "c194f2e96ef7fd68a698ea55ff165300db32eaa4" # master Jun 24 15:02:17 2024 [cpp] Fix num classes check
+    commit = "fbb05596150f96657c2217e716e108ef973b5789" # master Jun 24 15:02:17 2024 [cpp] Fix num classes check
 )
 
 git_repository(
