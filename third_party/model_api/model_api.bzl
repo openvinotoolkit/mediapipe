@@ -129,9 +129,8 @@ def workspace_model_api():
     model_api_repository(name="_model-api")
     new_git_repository(
         name = "model_api",
-        #remote = "https:///github.com/openvinotoolkit/model_api/",
-        remote = "https:///github.com/atobiszei/model_api/",
+        remote = "https:///github.com/openvinotoolkit/model_api/",
         build_file = "@_model-api//:BUILD",
-        commit = "fbb05596150f96657c2217e716e108ef973b5789" # master Jun 24 15:02:17 2024 [cpp] Fix num classes check
+        commit = "25c88f8fd1ebe08447aca9a959a7a5f37751867e" # master 31th October 2024 Adjust cpp inference adapters for OVMS (#212)
     )
 
