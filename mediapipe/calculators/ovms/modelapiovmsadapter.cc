@@ -195,7 +195,7 @@ void OVMSInferenceAdapter::loadModel(const std::shared_ptr<const ov::Model>& mod
     }
     const ov::AnyMap* servableMetadataRtInfo;
     ASSERT_CAPI_STATUS_NULL(OVMS_ServableMetadataInfo(servableMetadata, reinterpret_cast<const void**>(&servableMetadataRtInfo)));
-    this->modelConfig = *servableMetadataRtInfo;
+    this->modelConfig = (*servableMetadataRtInfo).at("model_info").as<ov::AnyMap>();
 }
 
 ov::PartialShape OVMSInferenceAdapter::getInputShape(const std::string& inputName) const {
