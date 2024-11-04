@@ -145,8 +145,6 @@ void OVMSInferenceAdapter::infer(const InferenceInput& input, InferenceOutput& o
         ASSERT_CAPI_STATUS_NULL(OVMS_InferenceResponseOutput(response, i, &outputName, &datatype, &shape, &dimCount, &voutputData, &bytesize, &bufferType, &deviceId));
         if (std::find(outputsSet.begin(), outputsSet.end(), outputName) == outputsSet.end()) {
             output.emplace(outputName, std::move(makeOvTensor(datatype, shape, dimCount, voutputData, bytesize)));
-        } else {
-            //output.emplace(outputName, input.at(outputName));
         }
     }
 #if (OVMS_DUMP_TO_FILE == 1)
