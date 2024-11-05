@@ -91,12 +91,11 @@ absl::Status InstanceSegmentationCalculator::GetiProcess(
   std::unique_ptr<InstanceSegmentationResult> inference_result;
 
   const auto &options = cc->Options<EmptyLabelOptions>();
-  std::string label_name =
+  std::string empty_label_name =
       options.label().empty() ? geti::GETI_EMPTY_LABEL : options.label();
   std::unique_ptr<geti::InferenceResult> result =
       std::make_unique<geti::InferenceResult>();
 
-  bool isEmpty = false;
   cv::Rect roi(0, 0, cvimage.cols, cvimage.rows);
   result->roi = roi;
 
@@ -109,8 +108,16 @@ absl::Status InstanceSegmentationCalculator::GetiProcess(
     inference_result = model->infer(cvimage);
   }
 
+  std::vector<SegmentedObject> filtered_objects;
+  for (auto &obj : inference_result->segmentedObjects) {
+    if ((labels.size() > obj.labelID) &&
+        (labels[obj.labelID].label != empty_label_name)) {
+      filtered_objects.push_back(obj);
+    }
+  }
+
   if (use_ellipse_shapes) {
-    for (auto &obj : inference_result->segmentedObjects) {
+    for (auto &obj : filtered_objects) {
       float radius = std::max(obj.width, obj.height) / 2;
       result->circles.push_back(
           {{geti::LabelResult{obj.confidence, labels[obj.labelID]}},
@@ -121,19 +128,16 @@ absl::Status InstanceSegmentationCalculator::GetiProcess(
   } else {
     geti::Contourer contourer(labels);
 
-    if (inference_result->segmentedObjects.size() <
-        geti::Contourer::INSTANCE_THRESHOLD) {
+    if (filtered_objects.size() < geti::Contourer::INSTANCE_THRESHOLD) {
       LOG(INFO) << "Single core post processing since "
-                << inference_result->segmentedObjects.size()
-                << " objects were found";
-      for (const auto &obj : inference_result->segmentedObjects) {
+                << filtered_objects.size() << " objects were found";
+      for (const auto &obj : filtered_objects) {
         contourer.contour(obj);
       }
     } else {
       LOG(INFO) << "Multi core post processing since "
-                << inference_result->segmentedObjects.size()
-                << " objects were found";
-      contourer.queue(inference_result->segmentedObjects);
+                << filtered_objects.size() << " objects were found";
+      contourer.queue(filtered_objects);
       contourer.process();
     }
     result->polygons = contourer.contours;
