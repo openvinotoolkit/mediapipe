@@ -28,7 +28,7 @@
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #include "mediapipe/framework/calculator_framework.h"
 #include "mediapipe/framework/port/canonical_errors.h"
-#include <adapters/ovms_adapter.hpp>
+#include <adapters/ovms_adapter.h>
 #include "mediapipe/calculators/ovms/openvinomodelserversessioncalculator.pb.h"
 #pragma GCC diagnostic pop
 namespace mediapipe {
