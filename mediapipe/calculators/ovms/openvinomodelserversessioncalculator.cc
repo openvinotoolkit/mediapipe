@@ -31,7 +31,7 @@
 #include "mediapipe/calculators/ovms/openvinoinferenceutils.h"
 #include "mediapipe/framework/calculator_framework.h"
 #include "mediapipe/framework/port/canonical_errors.h"
-#include "modelapiovmsadapter.hpp"
+#include <adapters/ovms_adapter.h>
 #pragma GCC diagnostic pop
 namespace mediapipe {
 using ovms::OVMSInferenceAdapter;

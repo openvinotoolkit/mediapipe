@@ -29,31 +29,12 @@ cc_library(
         "//mediapipe/calculators/openvino:openvino_converter_calculator",
         "//mediapipe/calculators/openvino:openvino_tensors_to_classification_calculator",
         "//mediapipe/calculators/openvino:openvino_tensors_to_detections_calculator",
-        ":modelapiovmsadapter",
         ":openvinoinferencecalculator",
         ":openvinomodelserversessioncalculator",
     ],
     copts = ["-Iexternal/ovms/src","-Isrc"],
     linkopts = ["-Lmediapipe/"],
     alwayslink = 1,
-)
-
-cc_library(
-    name = "modelapiovmsadapter",
-    srcs = [
-        "modelapiovmsadapter.cc"
-    ],
-    hdrs = [
-        "modelapiovmsadapter.hpp"
-    ],
-    deps = [
-        "openvinoinferencedumputils",
-        "//mediapipe/framework/port:logging",
-        "@ovms//src:ovms_header",
-        "@model_api//:model_api",
-        "//third_party:openvino",
-    ],
-    copts = ["-Iexternal/ovms/src","-Isrc"],
 )
 
 cc_library(
@@ -112,7 +93,6 @@ cc_library(
     ],
     deps = [
         "openvinoinferencecalculatoroptions",
-        ":modelapiovmsadapter",
         ":openvinoinferencecalculator_cc_proto",
         "//mediapipe/framework:calculator_framework",
         "//mediapipe/framework/formats:tensor", # Tensor GetContract
@@ -134,7 +114,7 @@ cc_library(
         "openvinomodelserversessioncalculator.h"
     ],
     deps = [
-        ":modelapiovmsadapter",
+        "@model_api//:model_api",
         ":openvinoinferenceutils",
         ":openvinomodelserversessioncalculator_cc_proto",
         "//mediapipe/framework:calculator_framework",
