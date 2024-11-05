@@ -100,6 +100,7 @@ cc_library(
         "@org_tensorflow//tensorflow/core:framework",
         "@org_tensorflow//tensorflow/lite/c:c_api",
         "@ovms//src:ovms_header",
+        "@model_api//:model_api",
     ],
     copts = ["-Iexternal/ovms/src","-Isrc"],
     alwayslink = 1,
