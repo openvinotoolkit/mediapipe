@@ -192,6 +192,7 @@ http_archive(
         "https://github.com/google/glog/archive/3a0d4d22c5ae0b9a2216988411cfa6bf860cc372.zip",
     ],
 )
+
 http_archive(
     name = "com_github_glog_glog_no_gflags",
     strip_prefix = "glog-3a0d4d22c5ae0b9a2216988411cfa6bf860cc372",
@@ -376,7 +377,7 @@ new_local_repository(
 new_local_repository(
     name = "windows_opencv",
     build_file = "@//third_party:opencv_windows.BUILD",
-    path = "C:\\opencv\\build",
+    path = "C:\\opt\\opencv\\build",
 )
 
 http_archive(
@@ -635,7 +636,7 @@ load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 git_repository(
     name = "ovms",
     remote = "https://github.com/openvinotoolkit/model_server",
-    commit = "f958bf8a1b59c5ad45bef54657e523f99fa0891f", # ov 2024.4 (#2681)
+    commit = "aa07d47407557781036e2e4f00501bfa5bf3c79b" # Windows groovy (#2762)
 )
 
 # DEV ovms - adjust local repository path for build
@@ -717,9 +718,15 @@ new_local_repository(
 # Boost (needed for Azure Storage SDK)
 
 new_local_repository(
-    name = "boost",
+    name = "linux_boost",
     path = "/usr/local/lib/",
     build_file = "@ovms//third_party/boost:BUILD"
+)
+
+new_local_repository(
+    name = "windows_boost",
+    path = "C:\\local\\boost_1_69_0",
+    build_file = "@ovms//third_party/boost:boost_windows.BUILD"
 )
 
 # Google Cloud SDK
@@ -816,6 +823,12 @@ new_local_repository(
     path = "/opt/intel/openvino/runtime",
 )
 
+new_local_repository(
+    name = "windows_openvino",
+    build_file = "@ovms//third_party/openvino:openvino_windows.BUILD",
+    path = "C:\\opt\\intel\\openvino_2024\\runtime",
+)
+
 git_repository(
     name = "oneTBB",
     branch = "v2021.10.0",
@@ -824,18 +837,23 @@ git_repository(
     patches = ["@ovms//external:mwaitpkg.patch",]
 )
 
-load("@rules_foreign_cc//foreign_cc:cmake.bzl", "cmake")
-load("@//third_party/model_api:model_api.bzl", "model_api_repository")
-model_api_repository(name="_model-api")
-new_git_repository(
-    name = "model_api",
-    remote = "https:///github.com/openvinotoolkit/model_api/",
-    build_file = "@_model-api//:BUILD",
-    commit = "449ced0ac2841dd61f54e3346dea4fcfe9f34703" # v0.2.5 Sep 27, 2024
-)
+load("@//third_party/model_api:model_api.bzl", "workspace_model_api")
+workspace_model_api()
 
 git_repository(
     name = "nlohmann_json",
     remote = "https://github.com/nlohmann/json/",
     tag = "v3.11.3",
+)
+
+new_local_repository(
+    name = "windows_opencl",
+    build_file = "@ovms//third_party/opencl:opencl_windows.BUILD",
+    path = "C:\\opt\\opencl\\external\\OpenCL-CLHPP",
+)
+
+new_local_repository(
+    name = "windows_opencl2",
+    build_file = "@ovms//third_party/opencl:opencl_windows2.BUILD",
+    path = "C:\\opt\\opencl\\external\\OpenCL-Headers",
 )
