@@ -26,6 +26,8 @@
 namespace geti {
 
 extern const std::string GETI_EMPTY_LABEL;
+extern const std::string GETI_NOCLASS_LABEL;
+extern const std::string GETI_NOOBJECT_LABEL;
 
 static inline std::vector<Label> get_labels_from_configuration(
     ov::AnyMap configuration) {
