@@ -38,7 +38,7 @@ cmake(
     ],
     cache_entries = {{
         "CMAKE_POSITION_INDEPENDENT_CODE": "ON",
-        "OpenVINO_DIR": "C:/opt/intel/openvino_2024/runtime/cmake",
+        "OpenVINO_DIR": "{openvino_dir}",
         "OpenCV_DIR": "C:/opt/opencv/build",
     }},
     env = {{
@@ -87,7 +87,7 @@ cmake(
     ],
     cache_entries = {{
         "CMAKE_POSITION_INDEPENDENT_CODE": "ON",
-        "OpenVINO_DIR": "{openvino_dir}",
+        "OpenVINO_DIR": "/opt/intel/openvino/runtime/cmake",
     }},
     env = {{
         "HTTP_PROXY": "{http_proxy}",
