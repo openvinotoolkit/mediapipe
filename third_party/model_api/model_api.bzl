@@ -115,7 +115,7 @@ def _impl(repository_ctx):
     http_proxy = repository_ctx.os.environ.get("HTTP_PROXY", "")
     https_proxy = repository_ctx.os.environ.get("HTTPS_PROXY", "")
     openvino_dir = repository_ctx.os.environ.get("OpenVINO_DIR", "")
-    opencv_dir = repository_ctx.os.environ.get("OpenVINO_DIR", "")
+    opencv_dir = repository_ctx.os.environ.get("OpenCV_DIR", "")
     if not http_proxy:
         http_proxy = repository_ctx.os.environ.get("http_proxy", "")
     if not https_proxy:
