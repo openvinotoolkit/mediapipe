@@ -292,7 +292,7 @@ COPY --from=build /mediapipe/mediapipe/calculators/ovms/config.json /mediapipe/m
 COPY --from=build /mediapipe/Makefile /mediapipe/
 
 # Add python solutions
-COPY --from=build /mediapipe/build/ /mediapipe/build/
+#COPY --from=build /mediapipe/build/ /mediapipe/build/
 
 # Environment variables
 ENV GLOG_logtostderr=1
