@@ -825,7 +825,10 @@ git_repository(
     #commit = "027f6d05ba865d1a6913837f2f7ccf80d9d84042" # part 1
     #commit = "06cff7d195b249a710597050328663877f94c835" # part 1 working before rebase
     #commit = "ecab246276042725f52b8da4cb76a9677632f6a7" # part 1 OVMS works, but MP examples do not build due to GENAI inclusion in non-python build
-    commit = "0bb2763d556577e943b3602f91b16e99513280f5" # part 1
+    commit = "2ef6df50b45fd95424d488f1ea8d3d588912e22e", # part 1
+    patches = ["@//third_party:ovms_no_rerank_embed.patch", # TODO investigate why in MP repository bazel builds rerank/embed calcs with no mp option
+               "@//third_party:ovms_opencv_incompt.patch"], # TODO @atobisze this should be probably fixable with opencv version matching
+    patch_args = ["-p1"],
 )
 
 ### OpenVINO GenAI
@@ -1001,5 +1004,11 @@ git_repository(
     name = "nlohmann_json",
     remote = "https://github.com/nlohmann/json/",
     tag = "v3.11.3",
+)
+new_local_repository(
+    name = "mediapipe_calculators",
+    build_file = "@ovms//third_party/mediapipe_calculators:BUILD",
+    #path = "/ovms/third_party/mediapipe_calculators",
+    path = "/mediapipe", # this is temporary hack - this is not actually used to build
 )
 # OVMS end

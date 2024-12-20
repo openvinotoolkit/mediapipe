@@ -211,6 +211,10 @@ class GeneratePyProtos(build_ext.build_ext):
         # Ignore testdata dir.
         if 'testdata' in proto_file:
           continue
+        if 'genai' in proto_file:
+          continue
+        if 'detection_postprocessing_graph_options' in proto_file:
+          continue
         self._add_empty_init_file(
             os.path.abspath(
                 os.path.join(MP_ROOT_PATH, self.build_lib,

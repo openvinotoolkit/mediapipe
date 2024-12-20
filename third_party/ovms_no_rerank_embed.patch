@@ -1,0 +1,16 @@
+diff --git a/src/BUILD b/src/BUILD
+index 5fe77a7d3..42217ad25 100644
+--- a/src/BUILD
++++ b/src/BUILD
+@@ -458,8 +458,9 @@ cc_library(
+         }) + select({
+             "//conditions:default": [],
+             "//:not_disable_mediapipe" : [
+-                "//src/embeddings:embeddingscalculator",
+-                "//src/rerank:rerankcalculator",],
++                #"//src/embeddings:embeddingscalculator",
++                #"//src/rerank:rerankcalculator",],
++            ],
+         }) + select({
+             "//:enable_drogon": ["libdrogon_http_server"],
+             "//conditions:default" : ["libnet_http_server"],
