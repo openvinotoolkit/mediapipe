@@ -51,7 +51,6 @@ cmake(
     deps = [
         "@mediapipe//mediapipe/framework/port:opencv_core",
         "@mediapipe//third_party:openvino",
-        ":model_api_cmake",
     ],
 )
 
