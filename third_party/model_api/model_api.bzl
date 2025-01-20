@@ -58,7 +58,7 @@ cc_library(
         ":model_api_cmake",
     ],
     visibility = ["//visibility:public"],
-    linkopts = ["-Wl,penvino.lib"],
+    linkopts = ["-Wl,openvino.lib"],
 )
 """
     
