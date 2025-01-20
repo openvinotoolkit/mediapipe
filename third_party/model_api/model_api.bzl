@@ -62,7 +62,6 @@ cc_library(
         ":model_api_cmake",
     ],
     visibility = ["//visibility:public"],
-    linkopts = ["-Wl,openvino.lib"],
 )
 """
     
@@ -103,6 +102,10 @@ cmake(
     lib_source = ":all_srcs",
     out_static_libs = ["libmodel_api.a"],
     tags = ["requires-network"],
+    deps = [
+        "@mediapipe//mediapipe/framework/port:opencv_core",
+        "@mediapipe//third_party:openvino",
+    ],
 )
 
 cc_library(
