@@ -19,7 +19,7 @@
 #include <string>
 #include <vector>
 
-#include "ovms.h"           // NOLINT
+#include <ovms.h>            // NOLINT
 namespace mediapipe {
 
 // Function from ovms/src/string_utils.h

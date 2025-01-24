@@ -15,7 +15,7 @@
 //*****************************************************************************
 #include <unordered_map>
 
-#include "ovms.h"  // NOLINT
+#include <ovms.h>   // NOLINT
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #include "mediapipe/framework/calculator_contract.h"

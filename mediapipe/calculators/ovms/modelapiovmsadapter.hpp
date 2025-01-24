@@ -26,7 +26,7 @@
 #include <adapters/inference_adapter.h>  // model_api/model_api/cpp/adapters/include/adapters/inference_adapter.h
 #include <openvino/openvino.hpp>
 
-#include "ovms.h"  // NOLINT
+#include <ovms.h>   // NOLINT
 
 // here we need to decide if we have several calculators (1 for OVMS repository, 1-N inside mediapipe)
 // for the one inside OVMS repo it makes sense to reuse code from ovms lib

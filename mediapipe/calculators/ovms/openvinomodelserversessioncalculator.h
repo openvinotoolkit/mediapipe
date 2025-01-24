@@ -23,7 +23,7 @@
 
 #include <openvino/openvino.hpp>
 
-#include "ovms.h"           // NOLINT
+#include <ovms.h>           // NOLINT
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #include "mediapipe/framework/calculator_framework.h"
