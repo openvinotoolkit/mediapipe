@@ -32,4 +32,6 @@ message OpenVINOModelServerSessionCalculatorOptions {
     // config_path: "/models/config.json"
     // when this field is used ensure that each calculator is using the same file
     optional string server_config = 4;
+    // model server config.json path must be identical in all calculators used in the graph
+    // when the graph is deployed in the OVMS, server_config param is not needed.
 }
