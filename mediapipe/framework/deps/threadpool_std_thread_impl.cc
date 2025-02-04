@@ -14,6 +14,7 @@
 
 #include <errno.h>
 #include <string.h>
+#include <iostream>
 
 #include <thread>  // NOLINT(build/c++11)
 
@@ -21,7 +22,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 #include "mediapipe/framework/deps/threadpool.h"
-
 namespace mediapipe {
 
 class ThreadPool::WorkerThread {
@@ -68,11 +68,13 @@ void* ThreadPool::WorkerThread::ThreadBody(void* arg) {
 }
 
 ThreadPool::ThreadPool(int num_threads) {
+std::cout << __FILE__ << " " << __LINE__ << " XXX stdthreadcreate"<< std::endl;
   num_threads_ = (num_threads == 0) ? 1 : num_threads;
 }
 
 ThreadPool::ThreadPool(const std::string& name_prefix, int num_threads)
     : name_prefix_(name_prefix) {
+std::cout << __FILE__ << " " << __LINE__ << " XXX stdthreadcreate"<< std::endl;
   num_threads_ = (num_threads == 0) ? 1 : num_threads;
 }
 
@@ -80,6 +82,7 @@ ThreadPool::ThreadPool(const ThreadOptions& thread_options,
                        const std::string& name_prefix, int num_threads)
     : name_prefix_(name_prefix), thread_options_(thread_options) {
   num_threads_ = (num_threads == 0) ? 1 : num_threads;
+std::cout << __FILE__ << " " << __LINE__ << " XXX stdthreadcreate"<< std::endl;
 }
 
 ThreadPool::~ThreadPool() {

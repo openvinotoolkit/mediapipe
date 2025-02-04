@@ -17,6 +17,9 @@
 #include <string.h>
 #include <sys/syscall.h>
 #include <unistd.h>
+#include <iostream>
+#include <sstream>
+#include <thread>
 
 #include "absl/log/absl_check.h"
 #include "absl/log/absl_log.h"
@@ -116,17 +119,26 @@ void* ThreadPool::WorkerThread::ThreadBody(void* arg) {
 
 ThreadPool::ThreadPool(int num_threads) {
   num_threads_ = (num_threads == 0) ? 1 : num_threads;
+  std::stringstream ss;
+ss << __FILE__ << " " << __LINE__ << std::this_thread::get_id() << " XXX stdthreadcreate " << num_threads_ << std::endl;
+  std::cout << ss.str() <<std::endl;
 }
 
 ThreadPool::ThreadPool(const std::string& name_prefix, int num_threads)
     : name_prefix_(name_prefix) {
   num_threads_ = (num_threads == 0) ? 1 : num_threads;
+  std::stringstream ss;
+ss << __FILE__ << " " << __LINE__ << std::this_thread::get_id() << " XXX stdthreadcreate" << num_threads_ << std::endl;
+  std::cout << ss.str() <<std::endl;
 }
 
 ThreadPool::ThreadPool(const ThreadOptions& thread_options,
                        const std::string& name_prefix, int num_threads)
     : name_prefix_(name_prefix), thread_options_(thread_options) {
   num_threads_ = (num_threads == 0) ? 1 : num_threads;
+  std::stringstream ss;
+ss << __FILE__ << " " << __LINE__ << std::this_thread::get_id() << " XXX stdthreadcreate" << num_threads_ << std::endl;
+  std::cout << ss.str() <<std::endl;
 }
 
 ThreadPool::~ThreadPool() {

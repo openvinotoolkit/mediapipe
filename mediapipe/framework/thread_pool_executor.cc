@@ -76,6 +76,7 @@ absl::StatusOr<Executor*> ThreadPoolExecutor::Create(
 
 ThreadPoolExecutor::ThreadPoolExecutor(int num_threads)
     : thread_pool_("mediapipe", num_threads) {
+  LOG(INFO) << "created  thread pool exec" ;
   Start();
 }
 
@@ -102,6 +103,7 @@ void ThreadPoolExecutor::Start() {
   thread_pool_.StartWorkers();
   VLOG(2) << "Started thread pool with " << thread_pool_.num_threads()
           << " threads.";
+  LOG(INFO) << "Started thread pool" << thread_pool_.num_threads();
 }
 
 REGISTER_EXECUTOR(ThreadPoolExecutor);
