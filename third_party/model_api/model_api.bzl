@@ -38,6 +38,7 @@ cmake(
     ],
     cache_entries = {{
         "CMAKE_POSITION_INDEPENDENT_CODE": "ON",
+        "ENABLE_PY_BINDINGS": "OFF",
         "OpenVINO_DIR": "{openvino_dir}",
         "OpenCV_DIR": "{opencv_dir}",
     }},
@@ -91,6 +92,7 @@ cmake(
     ],
     cache_entries = {{
         "CMAKE_POSITION_INDEPENDENT_CODE": "ON",
+        "ENABLE_PY_BINDINGS": "OFF",
         "OpenVINO_DIR": "/opt/intel/openvino/runtime/cmake",
     }},
     env = {{
