@@ -48,11 +48,15 @@ class OVMSInferenceAdapter : public ::InferenceAdapter {
     std::vector<std::string> outputNames;
     shapes_min_max_t inShapesMinMaxes;
     ov::AnyMap modelConfig;
+    shapes_min_max_t outShapesMinMaxes;
+    std::unordered_map<std::string, ov::element::Type_t> inputDatatypes;
+    std::unordered_map<std::string, ov::element::Type_t> outputDatatypes;
 
 public:
     OVMSInferenceAdapter(const std::string& servableName, uint32_t servableVersion = 0, OVMS_Server* server = nullptr);
     virtual ~OVMSInferenceAdapter();
     InferenceOutput infer(const InferenceInput& input) override;
+    void infer(const InferenceInput& input, InferenceOutput& output) override;
     void loadModel(const std::shared_ptr<const ov::Model>& model, ov::Core& core,
         const std::string& device, const ov::AnyMap& compilationConfig, size_t max_num_requests = 1) override;
     void inferAsync(const InferenceInput& input, const CallbackData callback_args) override;
@@ -62,6 +66,9 @@ public:
     void awaitAny();
     size_t getNumAsyncExecutors() const;
     ov::PartialShape getInputShape(const std::string& inputName) const override;
+    ov::PartialShape getOutputShape(const std::string& outputName) const override;
+    ov::element::Type_t getInputDatatype(const std::string& inputName) const override;
+    ov::element::Type_t getOutputDatatype(const std::string& outputName) const override;
     std::vector<std::string> getInputNames() const override;
     std::vector<std::string> getOutputNames() const override;
     const ov::AnyMap& getModelConfig() const override;
