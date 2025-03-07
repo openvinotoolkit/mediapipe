@@ -813,7 +813,7 @@ register_coreutils_toolchains()
 git_repository(
     name = "ovms",
     remote = "https://github.com/openvinotoolkit/model_server",
-    commit = "afe62b2c4ad1af974b4de7441984aef5cd8800fc", # Use unified approach for exporting text generation models (#2982) 28/01/2025
+    commit = "4f1c48ee00a1c8f0308ee7b19e2e5b0b32919242", # update ov runtime to rc3 (#3006) 30/01/2025
     patches = [
         "@//third_party:ovms_no_rerank_embed.patch", # TODO investigate why in MP repository bazel builds rerank/embed calcs with no mp option
         # even when we have those set in .bazelrc here
