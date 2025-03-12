@@ -21,10 +21,10 @@ OVMS_MEDIA_IMAGE_TAG ?= latest
 BASE_IMAGE := "ubuntu:22.04"
 
 INPUT_VIDEO_LINK ?= "https://www.pexels.com/download/video/3044127/?fps=24.0&h=1080&w=1920"
-# GenAI from package (win) and OV update (linux) (#3074)
-OVMS_COMMIT ?="7d5ad779b9afc6916dfc2bf7127ed22fd89292de"
+# Ignore HTTP connection:close header when streaming (#3113)
+OVMS_COMMIT ?="130d25794f4a4239f834761b80bf555b8bc93691"
 JOBS ?= $(shell python3 -c 'import multiprocessing as mp; print(mp.cpu_count())')
-DLDT_PACKAGE_URL ?= https://storage.openvinotoolkit.org/repositories/openvino/packages/nightly/2025.1.0-18174-6f7519ad4dc/openvino_toolkit_ubuntu22_2025.1.0.dev20250214_x86_64.tgz
+DLDT_PACKAGE_URL ?= https://storage.openvinotoolkit.org/repositories/openvino/packages/nightly/2025.1.0-18343-5e16b688156/openvino_toolkit_ubuntu22_2025.1.0.dev20250304_x86_64.tgz
 
 # Targets to use outside running mediapipe_ovms container
 docker_build:
