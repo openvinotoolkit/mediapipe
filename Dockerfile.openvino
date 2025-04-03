@@ -241,6 +241,9 @@ COPY --from=build /opt/intel/openvino/runtime/lib/intel64/ /opt/intel/openvino/r
 RUN mkdir -p /opt/intel/openvino/runtime/3rdparty/tbb/lib/
 COPY --from=build /opt/intel/openvino/runtime/3rdparty/tbb/lib/ /opt/intel/openvino/runtime/3rdparty/tbb/lib/
 
+# Update core libs
+RUN apt-get update && apt-get install -y linux-libc-dev
+
 # 2GB with python 3.8 - currently excluded as only .so libs are copied
 COPY --from=build /usr/local/lib/*.so* /usr/local/lib/
 
