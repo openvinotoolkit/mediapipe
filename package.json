@@ -3,6 +3,6 @@
   "version": "0.0.0-alpha",
   "description": "MediaPipe GitHub repo",
   "devDependencies": {
-    "@bazel/typescript": "^5.7.1"
+    "@bazel/typescript": "^5.8.1"
   }
 }
