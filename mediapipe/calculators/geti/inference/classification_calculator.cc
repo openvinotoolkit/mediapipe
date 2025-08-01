@@ -47,6 +47,15 @@ absl::Status ClassificationCalculator::Open(CalculatorContext *cc) {
            .Get<std::shared_ptr<InferenceAdapter>>();
   auto configuration = ia->getModelConfig();
   labels = geti::get_labels_from_configuration(configuration);
+  is_hierarchical = geti::get_hierarchical(configuration);
+  label_info = geti::get_label_info(configuration);
+  if (is_hierarchical) {
+    LOG(INFO) << "Hierarchical classification enabled";
+  } else {
+    LOG(INFO) << "Hierarchical classification disabled";
+  }
+  LOG(INFO) << "Label info: " << label_info;
+
   model = ClassificationModel::create_model(ia);
 #else
   auto path_to_model =

@@ -58,6 +58,8 @@ class ClassificationCalculator : public GetiCalculatorBase {
   std::shared_ptr<InferenceAdapter> ia;
   std::unique_ptr<ClassificationModel> model;
   std::vector<geti::Label> labels;
+  bool is_hierarchical;
+  std::string label_info;
 };
 
 }  // namespace mediapipe
