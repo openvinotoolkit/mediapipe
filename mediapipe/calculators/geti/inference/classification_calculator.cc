@@ -64,12 +64,25 @@ absl::Status ClassificationCalculator::Open(CalculatorContext *cc) {
     auto label_to_idx = j["label_to_idx"];
 
     // Iterate over the key-value pairs
+    // Find the maximum index to determine the vector size
+    int max_index = -1;
     for (auto& [label, index] : label_to_idx.items()) {
-	LOG(INFO) << "Label: " << label << ", Index: " << index;
+      if (index > max_index) {
+        max_index = index;
+      }
+    }
+    std::vector<std::string> ordered_labels(max_index + 1);
+    for (auto& [label, index] : label_to_idx.items()) {
+      ordered_labels[index] = label;
+    }
+    // For debugging: print the ordered labels
+    for (size_t i = 0; i < ordered_labels.size(); ++i) {
+      LOG(INFO) << "ordered_labels[" << i << "] = " << ordered_labels[i];
     }
     } catch (const std::exception& e) {
         LOG(INFO) << "JSON parsing error: " << e.what();
     }
+
 
   model = ClassificationModel::create_model(ia);
 #else
