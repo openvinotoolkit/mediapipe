@@ -18,6 +18,7 @@
 
 #include <memory>
 #include <string>
+#include <nlohmann/json.hpp>
 
 #include "mediapipe/calculators/geti/utils/emptylabel.pb.h"
 
@@ -55,6 +56,20 @@ absl::Status ClassificationCalculator::Open(CalculatorContext *cc) {
     LOG(INFO) << "Hierarchical classification disabled";
   }
   LOG(INFO) << "Label info: " << label_info;
+
+  try {
+   nlohmann::json j = nlohmann::json::parse(label_info);
+
+    // Access the "label_to_idx" object
+    auto label_to_idx = j["label_to_idx"];
+
+    // Iterate over the key-value pairs
+    for (auto& [label, index] : label_to_idx.items()) {
+	LOG(INFO) << "Label: " << label << ", Index: " << index;
+    }
+    } catch (const std::exception& e) {
+        LOG(INFO) << "JSON parsing error: " << e.what();
+    }
 
   model = ClassificationModel::create_model(ia);
 #else

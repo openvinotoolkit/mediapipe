@@ -77,6 +77,7 @@ cc_library(
         ":geti_calculator_base",
         "@com_github_tencent_rapidjson//:rapidjson",
         "//third_party/cpp-base64:cpp-base64",
+	"@nlohmann_json//:json",
     ],
     defines = [
         "USE_MODELADAPTER",
