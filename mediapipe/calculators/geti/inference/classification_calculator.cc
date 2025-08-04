@@ -17,8 +17,8 @@
 #include "classification_calculator.h"
 
 #include <memory>
-#include <string>
 #include <nlohmann/json.hpp>
+#include <string>
 
 #include "mediapipe/calculators/geti/utils/emptylabel.pb.h"
 
@@ -55,35 +55,35 @@ absl::Status ClassificationCalculator::Open(CalculatorContext *cc) {
   } else {
     LOG(INFO) << "Hierarchical classification disabled";
   }
-  LOG(INFO) << "Label info: " << label_info;
 
   try {
-   nlohmann::json j = nlohmann::json::parse(label_info);
-
-    // Access the "label_to_idx" object
+    nlohmann::json j = nlohmann::json::parse(label_info);
     auto label_to_idx = j["label_to_idx"];
-
-    // Iterate over the key-value pairs
-    // Find the maximum index to determine the vector size
     int max_index = -1;
-    for (auto& [label, index] : label_to_idx.items()) {
+    for (auto &[label, index] : label_to_idx.items()) {
       if (index > max_index) {
         max_index = index;
       }
     }
-    std::vector<std::string> ordered_labels(max_index + 1);
-    for (auto& [label, index] : label_to_idx.items()) {
-      ordered_labels[index] = label;
-    }
-    // For debugging: print the ordered labels
-    for (size_t i = 0; i < ordered_labels.size(); ++i) {
-      LOG(INFO) << "ordered_labels[" << i << "] = " << ordered_labels[i];
-    }
-    } catch (const std::exception& e) {
-        LOG(INFO) << "JSON parsing error: " << e.what();
+    std::vector<std::string> idx_labels(max_index + 1);
+    for (auto &[label, index] : label_to_idx.items()) {
+      idx_labels[index] = label;
     }
 
+    ordered_labels.clear();
+    ordered_labels.resize(idx_labels.size());
+    for (size_t i = 0; i < idx_labels.size(); i++) {
+      for (const auto &geti_label : labels) {
+        if (geti_label.label == idx_labels[i]) {
+          ordered_labels[i] = geti_label;
+          break;
+        }
+      }
+    }
 
+  } catch (const std::exception &e) {
+    LOG(ERROR) << "label_info parsing error: " << e.what();
+  }
   model = ClassificationModel::create_model(ia);
 #else
   auto path_to_model =
@@ -117,9 +117,16 @@ absl::Status ClassificationCalculator::GetiProcess(CalculatorContext *cc) {
     result->rectangles.push_back(geti::RectanglePrediction{{}, roi});
     for (const auto &classification : inference_result->topLabels) {
       if (classification.id < labels.size()) {
-        if (labels[classification.id].label != no_class_name) {
-          result->rectangles[0].labels.push_back(geti::LabelResult{
-              classification.score, labels[classification.id]});
+        if (is_hierarchical) {
+          if (ordered_labels[classification.id].label != no_class_name) {
+            result->rectangles[0].labels.push_back(geti::LabelResult{
+                classification.score, ordered_labels[classification.id]});
+          }
+        } else {
+          if (labels[classification.id].label != no_class_name) {
+            result->rectangles[0].labels.push_back(geti::LabelResult{
+                classification.score, labels[classification.id]});
+          }
         }
       }
     }
@@ -129,11 +136,20 @@ absl::Status ClassificationCalculator::GetiProcess(CalculatorContext *cc) {
       size_t shape_shift =
           (inference_result->saliency_map.get_shape().size() > 3) ? 1 : 0;
 
-      for (size_t i = 0; i < labels.size(); i++) {
-        result->saliency_maps.push_back(
-            {geti::get_mat_from_ov_tensor(inference_result->saliency_map,
-                                          shape_shift, i),
-             roi, labels[i]});
+      if (is_hierarchical) {
+        for (size_t i = 0; i < ordered_labels.size(); i++) {
+          result->saliency_maps.push_back(
+              {geti::get_mat_from_ov_tensor(inference_result->saliency_map,
+                                            shape_shift, i),
+               roi, ordered_labels[i]});
+        }
+      } else {
+        for (size_t i = 0; i < labels.size(); i++) {
+          result->saliency_maps.push_back(
+              {geti::get_mat_from_ov_tensor(inference_result->saliency_map,
+                                            shape_shift, i),
+               roi, labels[i]});
+        }
       }
     }
   }
