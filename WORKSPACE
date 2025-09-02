@@ -827,7 +827,7 @@ register_coreutils_toolchains()
 git_repository(
     name = "ovms",
     remote = "https://github.com/openvinotoolkit/model_server",
-    commit = "6ed261999734babee0ceee8583c889af2a1a27d9", # update NPU driver to 1.23 version (#3610) - release 2025/3
+    commit = "f15c1296390fefc3e1b464b4f8ff1309f28ce4e3", # update NPU driver to 1.23 version (#3610) - release 2025/3
     patches = [
         #"@//third_party:ovms_no_rerank_embed.patch", # TODO investigate why in MP repository bazel builds rerank/embed calcs with no mp option
         # even when we have those set in .bazelrc here
