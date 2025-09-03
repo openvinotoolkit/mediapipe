@@ -103,7 +103,7 @@ joblib==1.4.2
     # via scikit-learn
 kaggle==1.6.17
     # via tf-models-official
-keras==3.9.0
+keras==3.11.0
     # via tensorflow
 kiwisolver==1.4.7
     # via matplotlib
@@ -171,7 +171,7 @@ promise==2.3
     # via tensorflow-datasets
 proto-plus==1.24.0
     # via google-api-core
-protobuf==4.25.5
+protobuf==4.25.8
     # via
     #   google-api-core
     #   googleapis-common-protos
@@ -215,7 +215,7 @@ pyyaml==6.0.2
     # via tf-models-official
 regex==2024.9.11
     # via sacrebleu
-requests==2.32.3
+requests==2.32.4
     # via
     #   google-api-core
     #   kaggle
@@ -321,7 +321,7 @@ tzdata==2024.2
     # via pandas
 uritemplate==4.1.1
     # via google-api-python-client
-urllib3==2.2.3
+urllib3==2.5.0
     # via
     #   kaggle
     #   requests
@@ -339,7 +339,7 @@ zipp==3.20.2
     # via etils
 
 # The following packages are considered to be unsafe in a requirements file:
-setuptools==70.3.0
+setuptools==78.1.1
     # via
     #   -r mediapipe/opensource_only/model_maker_requirements_bazel.txt
     #   tensorboard
