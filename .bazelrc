@@ -116,14 +116,12 @@ try-import %workspace%/.user.bazelrc
 
 # Disable native ovms mediapipe support when building in mediapipe repository
 build --define=MEDIAPIPE_DISABLE=1
-
 build --cxxopt=-DMEDIAPIPE_DISABLE=1
-
 build --define=PYTHON_DISABLE=1
-
 build --cxxopt=-DPYTHON_DISABLE=1
-
 build --cxxopt=-DOVMS_DUMP_TO_FILE=0
+build --define=USE_DROGON=1
+build --cxxopt=-DUSE_DROGON=1
 # those below are required for XNNPACK build with gcc <12 (ubuntu 22 default is 11)
 build --define=xnn_enable_avxvnniint8=false
 build --define=xnn_enable_avx512fp16=false
