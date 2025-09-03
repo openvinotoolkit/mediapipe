@@ -827,11 +827,8 @@ register_coreutils_toolchains()
 git_repository(
     name = "ovms",
     remote = "https://github.com/openvinotoolkit/model_server",
-    commit = "f15c1296390fefc3e1b464b4f8ff1309f28ce4e3", # update NPU driver to 1.23 version (#3610) - release 2025/3
-    patches = [
-        #"@//third_party:ovms_no_rerank_embed.patch", # TODO investigate why in MP repository bazel builds rerank/embed calcs with no mp option
-        # even when we have those set in .bazelrc here
-    ],
+    commit = "19f9fa5269666d8175c0c0eb1fdcfe175bde979a", # Fix build paths for mediapipe (#3619) - release 2025/3
+    patches = [],
     patch_args = ["-p1"],
 )
 
