@@ -232,7 +232,7 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
     python3-pip \
     linux-libc-dev
 
-RUN pip3 install attrs matplotlib protobuf==3.20.2 numpy==1.24.4
+RUN pip3 install attrs matplotlib protobuf==4.25.8 numpy==1.24.4
 RUN ln -s /usr/bin/python3 /usr/bin/python
 # Python samples requirements end
 
