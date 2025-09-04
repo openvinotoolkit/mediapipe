@@ -54,7 +54,12 @@ if IS_MAC:
 
 GPU_OPTIONS = GPU_OPTIONS_DISBALED if MP_DISABLE_GPU else GPU_OPTIONS_ENBALED
 
-OVMS_OPTIONS = ['--define=MEDIAPIPE_DISABLE=1 --define=PYTHON_DISABLE=1 --cxxopt=-DPYTHON_DISABLE=1 --cxxopt=-DMEDIAPIPE_DISABLE=1']
+OVMS_OPTIONS = ['--define=MEDIAPIPE_DISABLE=1',
+                '--define=PYTHON_DISABLE=1',
+                '--cxxopt=-DPYTHON_DISABLE=1',
+                '--cxxopt=-DMEDIAPIPE_DISABLE=1',
+                '--define=USE_DROGON=1',
+                '--cxxopt=-DUSE_DROGON=1']
 
 def _normalize_path(path):
   return path.replace('\\', '/') if IS_WINDOWS else path

@@ -542,6 +542,20 @@ http_archive(
 )
 
 new_local_repository(
+    name = "linux_curl",
+    path = "/usr/",
+    build_file_content = """
+cc_library(
+    name = "curl",
+    hdrs = glob(["include/x86_64/curl/*"]),
+    srcs = glob(["lib/x86_64-linux-gnu/libcurl.so"]),
+    copts = ["-lcrypto", "-lssl"],
+    visibility = ["//visibility:public"],
+)
+""",
+)
+
+new_local_repository(
     name = "linux_opencv",
     build_file = "@//third_party:opencv_linux.BUILD",
     path = "/usr/local", #commented out since for some reason inside Dockerile it is added again
@@ -813,11 +827,8 @@ register_coreutils_toolchains()
 git_repository(
     name = "ovms",
     remote = "https://github.com/openvinotoolkit/model_server",
-    commit = "a50fc2da68195dcbebf4ef85d25e840fac503a6f", # Removing seq2seq and fixing requirements (#3221) - release 2025/1
-    patches = [
-        "@//third_party:ovms_no_rerank_embed.patch", # TODO investigate why in MP repository bazel builds rerank/embed calcs with no mp option
-        # even when we have those set in .bazelrc here
-    ],
+    commit = "19f9fa5269666d8175c0c0eb1fdcfe175bde979a", # Fix build paths for mediapipe (#3619) - release 2025/3
+    patches = [],
     patch_args = ["-p1"],
 )
 
@@ -882,9 +893,12 @@ git_repository(
 load("@ovms//third_party/aws-sdk-cpp:aws-sdk-cpp.bzl", "aws_sdk_cpp")
 aws_sdk_cpp()
 
-# This is not used because we build with USE_DROGON=0 (net_http)
-#load("@//third_party/drogon:drogon.bzl", "drogon_cpp")
-#drogon_cpp()
+### Libgit2
+load("@ovms//third_party/libgit2:libgit2_engine.bzl", "libgit2_engine")
+libgit2_engine()
+
+load("@ovms//third_party/drogon:drogon.bzl", "drogon_cpp")
+drogon_cpp()
 
 # Azure Storage SDK
 new_local_repository(
@@ -910,25 +924,32 @@ new_local_repository(
 
 # Google Cloud SDK
 http_archive(
-    name = "com_github_googleapis_google_cloud_cpp",
-    sha256 = "a370bcf2913717c674a7250c4a310250448ffeb751b930be559a6f1887155f3b",
-    strip_prefix = "google-cloud-cpp-0.21.0",
-    url = "https://github.com/googleapis/google-cloud-cpp/archive/v0.21.0.tar.gz",
+    name = "google_cloud_cpp",
+    sha256 = "629cbfcc5bd581d38277ba8fa94a5b6591af1e0f6af0dab6d1d9ed796bf48b61",
+    strip_prefix = "google-cloud-cpp-2.39.0",
+    url = "https://github.com/googleapis/google-cloud-cpp/archive/v2.39.0.tar.gz",
     repo_mapping = {"@com_github_curl_curl" : "@curl"}
 )
 
-load("@com_github_googleapis_google_cloud_cpp//bazel:google_cloud_cpp_deps.bzl", "google_cloud_cpp_deps")
-google_cloud_cpp_deps()
+load("@google_cloud_cpp//bazel:workspace0.bzl", "gl_cpp_workspace0")
 
-load("@com_google_googleapis//:repository_rules.bzl", "switched_rules_by_language")
-switched_rules_by_language(
-    name = "com_google_googleapis_imports",
-    cc = True,  # C++ support is only "Partially implemented", roll our own.
-    grpc = True,
-)
+gl_cpp_workspace0()
 
-load("@com_github_googleapis_google_cloud_cpp_common//bazel:google_cloud_cpp_common_deps.bzl", "google_cloud_cpp_common_deps")
-google_cloud_cpp_common_deps()
+load("@google_cloud_cpp//bazel:workspace1.bzl", "gl_cpp_workspace1")
+
+gl_cpp_workspace1()
+
+load("@google_cloud_cpp//bazel:workspace2.bzl", "gl_cpp_workspace2")
+
+gl_cpp_workspace2()
+
+load("@google_cloud_cpp//bazel:workspace4.bzl", "gl_cpp_workspace4")
+
+gl_cpp_workspace4()
+
+load("@google_cloud_cpp//bazel:workspace5.bzl", "gl_cpp_workspace5")
+
+gl_cpp_workspace5()
 
 load("@com_github_grpc_grpc//bazel:grpc_deps.bzl", "grpc_deps")
 grpc_deps()
@@ -947,27 +968,30 @@ http_archive(
 # RapidJSON
 http_archive(
     name = "com_github_tencent_rapidjson",
-    url = "https://github.com/Tencent/rapidjson/archive/v1.1.0.zip",
-    sha256 = "8e00c38829d6785a2dfb951bb87c6974fa07dfe488aa5b25deec4b8bc0f6a3ab",
-    strip_prefix = "rapidjson-1.1.0",
+    url = "https://github.com/Tencent/rapidjson/archive/973dc9c06dcd3d035ebd039cfb9ea457721ec213.tar.gz",
+    sha256 = "d0c9e52823d493206eb721d38cb3a669ca0212360862bd15a3c2f7d35ea7c6f7",
+    strip_prefix = "rapidjson-973dc9c06dcd3d035ebd039cfb9ea457721ec213",
     build_file = "@ovms//third_party/rapidjson:BUILD"
 )
 
 # spdlog
 http_archive(
     name = "com_github_gabime_spdlog",
-    url = "https://github.com/gabime/spdlog/archive/v1.4.0.tar.gz",
-    sha256 = "afd18f62d1bc466c60bef088e6b637b0284be88c515cedc59ad4554150af6043",
-    strip_prefix = "spdlog-1.4.0",
+    urls = [ 
+        "https://github.com/gabime/spdlog/archive/refs/tags/v1.15.3.tar.gz",
+        "https://mirror.bazel.build/github.com/gabime/spdlog/archive/refs/tags/v1.15.3.tar.gz",
+    ],
+    sha256 = "15a04e69c222eb6c01094b5c7ff8a249b36bb22788d72519646fb85feb267e67",
+    strip_prefix = "spdlog-1.15.3",
     build_file = "@ovms//third_party/spdlog:BUILD"
 )
 
 # fmtlib
 http_archive(
     name = "fmtlib",
-    url = "https://github.com/fmtlib/fmt/archive/6.0.0.tar.gz",
-    sha256 = "f1907a58d5e86e6c382e51441d92ad9e23aea63827ba47fd647eacc0d3a16c78",
-    strip_prefix = "fmt-6.0.0",
+    url = "https://github.com/fmtlib/fmt/archive/refs/tags/11.2.0.tar.gz",
+    sha256 = "bc23066d87ab3168f27cef3e97d545fa63314f5c79df5ea444d41d56f962c6af",
+    strip_prefix = "fmt-11.2.0",
     build_file = "@ovms//third_party/fmtlib:BUILD"
 )
 

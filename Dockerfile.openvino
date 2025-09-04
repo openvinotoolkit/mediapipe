@@ -246,6 +246,9 @@ COPY --from=build /opt/intel/openvino/runtime/3rdparty/tbb/lib/ /opt/intel/openv
 # 2GB with python 3.8 - currently excluded as only .so libs are copied
 COPY --from=build /usr/local/lib/*.so* /usr/local/lib/
 
+# ovms dependency
+COPY --from=build /mediapipe/bazel-out/k8-opt/bin/external/libgit2_engine/libgit2/lib/libgit2.so /usr/local/lib/
+
 # Models
 RUN mkdir -p /mediapipe/mediapipe/models/
 COPY --from=build /mediapipe/mediapipe/models/ /mediapipe/mediapipe/models/
