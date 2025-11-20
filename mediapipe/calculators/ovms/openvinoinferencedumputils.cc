@@ -32,7 +32,7 @@ using InferenceInput = std::map<std::string, ov::Tensor>;
 
 #define TYPE_CASE(ENUM, TYPE)                                                       \
     case ENUM: {                                                                    \
-        const TYPE* value = reinterpret_cast<TYPE*>(tensor.data());   \
+        const TYPE* value = reinterpret_cast<const TYPE*>(tensor.data());   \
         dumpStream << " Tensor: [ ";                                                \
         for (int x = 0; x < tensor.get_size(); x++) {                               \
             dumpStream << value[x] << " ";                            \
