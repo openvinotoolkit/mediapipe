@@ -23,7 +23,7 @@
 #include <utility>
 
 #include "../inference/utils.h"
-#include "models/image_model.h"
+#include "models/base_model.h"
 #include "../utils/contourer.h"
 #include "mediapipe/calculators/geti/utils/emptylabel.pb.h"
 
