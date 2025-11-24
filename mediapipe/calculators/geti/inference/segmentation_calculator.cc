@@ -21,7 +21,7 @@
 #include <vector>
 
 #include "../inference/utils.h"
-#include "models/image_model.h"
+#include "models/base_model.h"
 #include "../utils/data_structures.h"
 #include "mediapipe/calculators/geti/utils/emptylabel.pb.h"
 

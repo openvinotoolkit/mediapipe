@@ -31,7 +31,7 @@
 #include "mediapipe/framework/port/parse_text_proto.h"
 #include "mediapipe/framework/port/status_matchers.h"
 #include "mediapipe/util/image_test_utils.h"
-#include "models/image_model.h"
+#include "models/base_model.h"
 #include "../utils/data_structures.h"
 
 namespace mediapipe {
