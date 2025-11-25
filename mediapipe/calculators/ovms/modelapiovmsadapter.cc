@@ -99,7 +99,7 @@ void OVMSInferenceAdapter::infer(const InferenceInput& input, InferenceOutput& o
         const uint32_t NOT_USED_NUM = 0;
         ASSERT_CAPI_STATUS_NULL(OVMS_InferenceRequestInputSetData(request,
             realName,
-            reinterpret_cast<void*>(input_tensor.data()),
+            reinterpret_cast<const void*>(input_tensor.data()),
             input_tensor.get_byte_size(),
             OVMS_BUFFERTYPE_CPU,
             NOT_USED_NUM));
@@ -114,7 +114,7 @@ void OVMSInferenceAdapter::infer(const InferenceInput& input, InferenceOutput& o
         const uint32_t NOT_USED_NUM = 0;
         ASSERT_CAPI_STATUS_NULL(OVMS_InferenceRequestOutputSetData(request,
             realName,
-            reinterpret_cast<void*>(output_tensor.data()),
+            reinterpret_cast<const void*>(output_tensor.data()),
             output_tensor.get_byte_size(),
             OVMS_BUFFERTYPE_CPU,
             NOT_USED_NUM));
@@ -171,7 +171,7 @@ InferenceOutput OVMSInferenceAdapter::infer(const InferenceInput& input) {
         const uint32_t NOT_USED_NUM = 0;
         ASSERT_CAPI_STATUS_NULL(OVMS_InferenceRequestInputSetData(request,
             realName,
-            reinterpret_cast<void*>(input_tensor.data()),
+            reinterpret_cast<const void*>(input_tensor.data()),
             input_tensor.get_byte_size(),
             OVMS_BUFFERTYPE_CPU,
             NOT_USED_NUM));
