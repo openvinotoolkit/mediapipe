@@ -82,3 +82,26 @@ cc_binary(
     ],
 )
 
+cc_binary(
+    name = "object_detection_yolov10n_tflite",
+    data = [
+        "//mediapipe/models:yolov10n_float32",
+        "//mediapipe/models:yolov10n_labelmap",
+    ],
+    deps = [
+        "//mediapipe/examples/desktop:simple_run_graph_main",
+        "//mediapipe/graphs/object_detection:desktop_tflite_yolov10n_calculators",
+    ],
+)
+
+cc_binary(
+    name = "object_detection_yolov10n_cpu",
+    data = [
+        "//mediapipe/models:yolov10n_float32",
+        "//mediapipe/models:yolov10n_labelmap",
+    ],
+    deps = [
+        "//mediapipe/examples/desktop:demo_run_graph_main",
+        "//mediapipe/graphs/object_detection:desktop_tflite_yolov10n_calculators",
+    ],
+)
