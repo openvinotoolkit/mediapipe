@@ -85,6 +85,21 @@ mediapipe_proto_library(
     ],
 )
 
+cc_library(
+    name = "yolov10_tensors_to_detections_calculator",
+    srcs = ["yolov10_tensors_to_detections_calculator.cc"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//mediapipe/framework:calculator_framework",
+        "//mediapipe/framework/formats:detection_cc_proto",
+        "//mediapipe/framework/formats:location_data_cc_proto",
+        "//mediapipe/framework/port:ret_check",
+        "//mediapipe/framework/port:status",
+        "@org_tensorflow//tensorflow/lite:framework",
+    ],
+    alwayslink = 1,
+)
+
 mediapipe_proto_library(
     name = "tflite_tensors_to_landmarks_calculator_proto",
     srcs = ["tflite_tensors_to_landmarks_calculator.proto"],
