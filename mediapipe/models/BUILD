@@ -21,6 +21,18 @@ licenses(["notice"])
 
 package(default_visibility = ["//visibility:public"])
 
+filegroup(
+    name = "yolov10n_float32",
+    srcs = ["yolov10n_float32.tflite"],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "yolov10n_labelmap",
+    srcs = ["yolov10n_labelmap.txt"],
+    visibility = ["//visibility:public"],
+)
+
 mediapipe_files(
     srcs = [
         "README.md",
@@ -40,4 +52,3 @@ mediapipe_files(
         "ssdlite_object_detection_labelmap.txt",
     ],
 )
-
