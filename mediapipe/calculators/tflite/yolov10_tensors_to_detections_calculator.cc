@@ -47,32 +47,37 @@ class YoloV10TensorsToDetectionsCalculator : public CalculatorBase {
   absl::Status Process(CalculatorContext* cc) override {
     const auto& tensors =
         cc->Inputs().Tag("TENSORS").Get<std::vector<TfLiteTensor>>();
-
-     // ADD THIS to debug
-    LOG(INFO) << "Number of tensors: " << tensors.size();
-    for (int t = 0; t < tensors.size(); ++t) {
-        LOG(INFO) << "Tensor " << t << " dims: " << tensors[t].dims->size;
-        for (int d = 0; d < tensors[t].dims->size; ++d) {
-        LOG(INFO) << "  dim[" << d << "] = " << tensors[t].dims->data[d];
-        }
-    }
-
-
     RET_CHECK(!tensors.empty()) << "No input tensors";
 
     // YOLOv10 has a single output tensor of shape [1, 300, 6]
     const TfLiteTensor& raw = tensors[0];
-    const float* data = raw.data.f;
-
     // raw.dims->data = {1, 300, 6}
     // stride per box = 6 floats: [x1, y1, x2, y2, score, class_id]
+    RET_CHECK_EQ(raw.type, kTfLiteFloat32) << "Expected float32 tensor";
+
     RET_CHECK_EQ(raw.dims->size, 3);
+    RET_CHECK_EQ(raw.dims->data[1], num_boxes_) << "Unexpected num boxes";
     RET_CHECK_EQ(raw.dims->data[2], 6) << "Expected 6 values per box";
+
+    // Copy the data immediately
+    const int total_floats = num_boxes_ * 6;
+    RET_CHECK_EQ(raw.bytes, total_floats * sizeof(float)) 
+        << "Tensor size mismatch: got " << raw.bytes;
+    
+    std::vector<float> data_copy(raw.data.f, raw.data.f + total_floats);
+    const float* data = data_copy.data(); 
 
     auto detections = std::make_unique<std::vector<Detection>>();
 
     for (int i = 0; i < num_boxes_; ++i) {
       const float* box = data + i * 6;
+      float score    = box[4];
+      if (score == 0.0f) break;
+      //sanity check - corrupted data guard
+      if (score < 0.0f || score > 1.0f) {
+        LOG(WARNING) << "Skipping box " << i << " with invalid score: " << score;
+        continue;
+      }
       
        LOG(INFO) << "Box " << i << ": "
               << "x1=" << box[0] << " y1=" << box[1]
@@ -83,7 +88,7 @@ class YoloV10TensorsToDetectionsCalculator : public CalculatorBase {
       float y1       = box[1];
       float x2       = box[2];
       float y2       = box[3];
-      float score    = box[4];
+      
       int   class_id = static_cast<int>(box[5]);
 
       if (score < min_thresh_) continue;
