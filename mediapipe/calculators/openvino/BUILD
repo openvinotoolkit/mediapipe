@@ -181,6 +181,22 @@ cc_library(
     alwayslink = 1,
 )
 
+cc_library(
+    name = "openvino_yolov10_tensors_to_detections_calculator",
+    srcs = ["openvino_yolov10_tensors_to_detections_calculator.cc"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//mediapipe/framework:calculator_framework",
+        "//mediapipe/framework/formats:detection_cc_proto",
+        "//mediapipe/framework/formats:location_data_cc_proto",
+        "//mediapipe/framework/port:ret_check",
+        "//mediapipe/framework/port:status",
+        "//third_party:openvino",
+    ],
+    alwayslink = 1,
+)
+
+
 # To run this with native GPU on Linux, use:
 # bazel test //mediapipe/calculators/tflite:tflite_inference_calculator_test --copt=-DTFLITE_GPU_EXTRA_GLES_DEPS --copt=-DMESA_EGL_NO_X11_HEADERS --copt=-DEGL_NO_X11 --config=grte_v5 --test_strategy=local
 cc_test(

@@ -29,6 +29,7 @@ cc_library(
         "//mediapipe/calculators/openvino:openvino_converter_calculator",
         "//mediapipe/calculators/openvino:openvino_tensors_to_classification_calculator",
         "//mediapipe/calculators/openvino:openvino_tensors_to_detections_calculator",
+        "//mediapipe/calculators/openvino:openvino_yolov10_tensors_to_detections_calculator",
         ":modelapiovmsadapter",
         ":openvinoinferencecalculator",
         ":openvinomodelserversessioncalculator",

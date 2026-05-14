@@ -4,6 +4,12 @@
                 "name":"ssdlite_object_detection",
                 "base_path":"/mediapipe/mediapipe/models/ovms/ssdlite_object_detection"
             }
+        },
+        {
+            "config":{
+                "name":"yolov10n",
+                "base_path":"/mediapipe/mediapipe/models/ovms/yolov10n_float32"
+            }
         }
     ]
 }

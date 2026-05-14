@@ -147,6 +147,20 @@ cc_library(
     ],
 )
 
+cc_library(
+    name = "desktop_ovms_yolov10n_calculators",
+    deps = [
+        "//mediapipe/calculators/image:image_transformation_calculator",
+        "//mediapipe/calculators/ovms:ovms_calculator",
+        "//mediapipe/calculators/util:annotation_overlay_calculator",
+        "//mediapipe/calculators/util:detections_to_render_data_calculator",
+        "//mediapipe/calculators/util:detection_label_id_to_text_calculator",
+        "//mediapipe/calculators/video:opencv_video_decoder_calculator",
+        "//mediapipe/calculators/video:opencv_video_encoder_calculator",
+    ],
+)
+
+
 
 load(
     "//mediapipe/framework/tool:mediapipe_graph.bzl",
