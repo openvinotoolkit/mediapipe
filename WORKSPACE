@@ -827,7 +827,7 @@ register_coreutils_toolchains()
 git_repository(
     name = "ovms",
     remote = "https://github.com/openvinotoolkit/model_server",
-    commit = "19f9fa5269666d8175c0c0eb1fdcfe175bde979a", # Fix build paths for mediapipe (#3619) - release 2025/3
+    commit = "c40b9d75dd29b21f0c3720f5326a581e8db126de", # main branch as of 26.05.2026
     patches = [],
     patch_args = ["-p1"],
 )
