@@ -19,8 +19,6 @@ namespace mediapipe{
         std::vector<bytetrack::STrack> lost_stracks_;
         std::vector<bytetrack::STrack> removed_stracks_;
 
-        int frame_id_;
-        int max_time_lost_;
         int track_buffer_;
         float det_thresh_;
         float match_thresh_;
@@ -28,6 +26,8 @@ namespace mediapipe{
         float track_low_thresh_;
         float new_track_thresh_;
         bool fuse_score_;
+        int frame_id_ = 0;
+        int max_time_lost_ = 30;
         int64_t last_timestamp_ = -1;
         float   estimated_fps_  = 30.0f;
         
