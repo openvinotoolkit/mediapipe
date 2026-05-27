@@ -26,7 +26,7 @@ mediapipe/examples/desktop/bytetrack:bytetrack_final_cpu
 ```bash
 bazel-bin/mediapipe/examples/desktop/bytetrack/bytetrack_final_cpu \
 --calculator_graph_config_file=mediapipe/graphs/bytetrack/bytetrack_cpu.pbtxt \
---input_video_path=/mediapipe/mediapipe/examples/desktop/bytetrack/palace.mp4 \
+--input_video_path=/mediapipe/mediapipe/examples/desktop/object_detection/test_video.mp4 \
 --output_video_path=/mediapipe/out_bt_cpu.mp4
 ```
 
@@ -95,7 +95,7 @@ mediapipe/examples/desktop/bytetrack:bytetrack_final_ovms
 ```bash
 bazel-bin/mediapipe/examples/desktop/bytetrack/bytetrack_final_ovms \
 --calculator_graph_config_file=mediapipe/graphs/bytetrack/bytetrack_ovms.pbtxt \
---input_video_path=/mediapipe/mediapipe/examples/desktop/bytetrack/palace.mp4 \
+--input_video_path=/mediapipe/mediapipe/examples/desktop/object_detection/test_video.mp4 \
 --output_video_path=/mediapipe/out_bt_ovms.mp4
 ```
 
