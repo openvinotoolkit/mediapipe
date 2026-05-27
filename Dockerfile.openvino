@@ -212,8 +212,8 @@ RUN bazel build //mediapipe:geti_targets
 ENV GLOG_logtostderr=1
 ENV LD_LIBRARY_PATH="/opt/intel/openvino/runtime/3rdparty/tbb/lib:/opt/intel/openvino/runtime/lib/intel64/:${LD_LIBRARY_PATH}"
 RUN python setup_ovms.py --get_models
-RUN curl -L https://huggingface.co/vish26/yolox-nano/resolve/main/yolox_nano_float32.tflite -o mediapipe/models/yolox_nano_float32.tflite
-RUN curl https://huggingface.co/vish26/yolov10n/raw/main/coco_labels.txt  -o mediapipe/models/coco_labels.txt
+RUN curl -fSL --retry 3 https://huggingface.co/vish26/yolox-nano/resolve/2b19d07419314a35d0d46336c8c8af0ba279cea1/yolox_nano_float32.tflite -o mediapipe/models/yolox_nano_float32.tflite
+RUN curl -fSL --retry 3 https://huggingface.co/vish26/yolox-nano/raw/2b19d07419314a35d0d46336c8c8af0ba279cea1/coco_labels.txt  -o mediapipe/models/coco_labels.txt
 RUN mkdir -p mediapipe/models/ovms/yoloxn_float32/1 && \
     cp mediapipe/models/yolox_nano_float32.tflite \
        mediapipe/models/ovms/yoloxn_float32/1/yolox_nano_float32.tflite
