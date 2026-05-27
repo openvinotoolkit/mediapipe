@@ -1,14 +1,14 @@
+#include "mediapipe/calculators/openvino/openvino_yolox_tensors_to_detections_calculator.pb.h"
 #include <vector>
 #include <algorithm>
 #include <numeric>
+#include <openvino/openvino.hpp>
+#include <cmath>
 #include "mediapipe/framework/calculator_framework.h"
 #include "mediapipe/framework/formats/detection.pb.h"
 #include "mediapipe/framework/formats/location_data.pb.h"
 #include "mediapipe/framework/port/ret_check.h"
 #include "mediapipe/framework/port/status.h"
-#include <cmath>
-#include "mediapipe/calculators/openvino/openvino_yolox_tensors_to_detections_calculator.pb.h"
-#include <openvino/openvino.hpp>
 
 namespace mediapipe {
 
@@ -59,8 +59,8 @@ class OpenVINOYoloXTensorsToDetectionsCalculator : public CalculatorBase {
     const auto& shape = raw.get_shape();
     RET_CHECK_EQ(shape.size(), 3u);
     RET_CHECK_EQ(shape[0], 1u);
-    RET_CHECK_EQ(shape[1], (size_t)num_attrs_);
-    RET_CHECK_EQ(shape[2], (size_t)num_boxes_);
+    RET_CHECK_EQ(shape[1], static_cast<size_t>(num_attrs_));
+    RET_CHECK_EQ(shape[2], static_cast<size_t>(num_boxes_));
 
     const float* data = raw.data<float>();
     RET_CHECK(data != nullptr);
