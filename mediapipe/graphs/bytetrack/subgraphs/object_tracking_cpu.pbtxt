@@ -1,0 +1,29 @@
+# MediaPipe object tracking subgraph.
+type: "ObjectTrackingSubgraphCpu"
+
+input_stream: "DETECTIONS:new_detections"
+output_stream: "DETECTIONS:tracked_detections"
+
+
+node {
+  calculator: "DetectionUniqueIdCalculator"
+  input_stream: "DETECTIONS:new_detections"
+  output_stream: "DETECTIONS:detections_with_id"
+}
+
+node {
+  calculator: "ByteTrackCalculator"
+  input_stream: "DETECTIONS:detections_with_id"
+  output_stream: "DETECTIONS:tracked_detections"
+  options: {
+    [mediapipe.ByteTrackCalculatorOptions.ext] {
+      track_high_threshold:0.7
+      track_low_threshold:0.1
+      new_track_threshold:0.25
+      matching_threshold: 0.8
+      max_time_lost: 30
+      fuse_score: true
+    }
+  }
+}
+

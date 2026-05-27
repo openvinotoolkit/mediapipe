@@ -1,0 +1,48 @@
+
+# Images on CPU coming into and out of the graph.
+input_stream: "input_video" # ACTUAL INPUT
+# input_side_packet: "INPUT_FILE_PATH:input_file_path" #simple_run_graph_main.cc
+output_stream: "output_video" #ACTUAL OUTPUT
+
+node {
+  calculator: "FlowLimiterCalculator"
+  input_stream: "input_video"
+  input_stream: "FINISHED:tracked_detections"
+  input_stream_info: {
+    tag_index: "FINISHED"
+    back_edge: true
+  }
+  output_stream: "throttled_input_video"
+  node_options: {
+    [type.googleapis.com/mediapipe.FlowLimiterCalculatorOptions] {
+      max_in_flight: 1
+      max_in_queue: 1
+    }
+  }
+}
+
+# Subgraph that detections objects (see object_detection_cpu.pbtxt).
+node {
+  calculator: "ObjectDetectionSubgraphOvms"
+  input_stream: "IMAGE:throttled_input_video"
+  output_stream: "DETECTIONS:output_detections"
+}
+
+# Subgraph that tracks objects using bytetrack (see object_tracking_cpu.pbtxt).
+
+node {
+  calculator: "ObjectTrackingSubgraphCpu"
+  input_stream: "DETECTIONS:output_detections"
+  output_stream: "DETECTIONS:tracked_detections"
+}
+
+# Subgraph that renders annotations and overlays them on top of input images (see renderer_cpu.pbtxt).
+node {
+  calculator: "RendererSubgraphCpu"
+  input_stream: "IMAGE:input_video"
+  input_stream: "DETECTIONS:tracked_detections"
+  output_stream: "IMAGE:output_video"
+  input_stream_handler {
+    input_stream_handler: "ImmediateInputStreamHandler"
+  }
+}

@@ -1,0 +1,15 @@
+syntax = 'proto2';
+
+package mediapipe;
+
+import "mediapipe/framework/calculator.proto";
+
+message YoloXTensorsToDetectionsCalculatorOptions {
+  extend .mediapipe.CalculatorOptions {
+    optional YoloXTensorsToDetectionsCalculatorOptions ext = 211376660;
+  }
+
+  optional float conf_thresh = 1 [default = 0.10]; 
+  optional float obj_thresh = 2 [default = 0.10]; 
+  
+}

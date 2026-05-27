@@ -21,6 +21,18 @@ licenses(["notice"])
 
 package(default_visibility = ["//visibility:public"])
 
+filegroup(
+    name = "yolox_nano_float32",
+    srcs = ["yolox_nano_float32.tflite"],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "coco_labels",
+    srcs = ["coco_labels.txt"],
+    visibility = ["//visibility:public"],
+)
+
 mediapipe_files(
     srcs = [
         "README.md",
@@ -40,4 +52,3 @@ mediapipe_files(
         "ssdlite_object_detection_labelmap.txt",
     ],
 )
-
