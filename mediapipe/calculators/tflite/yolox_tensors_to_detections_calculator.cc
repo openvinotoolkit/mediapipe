@@ -29,6 +29,7 @@ class YoloXTensorsToDetectionsCalculator : public CalculatorBase {
         cc->Options<mediapipe::YoloXTensorsToDetectionsCalculatorOptions>();
     min_thresh_ = options.has_conf_thresh() ? options.conf_thresh() : 0.1f;
     obj_thresh_ = options.has_obj_thresh()  ? options.obj_thresh()  : 0.1f;
+    input_size_ = options.has_obj_thresh()  ? options.obj_thresh()  : 416.0f;
     LOG(INFO) << "Thresholds: "<<min_thresh_<<", "<<obj_thresh_;
     cc->SetOffset(TimestampDiff(0));
     return absl::OkStatus();
@@ -130,11 +131,12 @@ class YoloXTensorsToDetectionsCalculator : public CalculatorBase {
   }
 
  private:
-  const float input_size_ = 416.0f;
+  
   const int   num_boxes_  = 3549;
   const int   num_attrs_  = 85;
   const int   num_classes_= 80;
 
+  float input_size_ = 416.0f;
   float min_thresh_;
   float obj_thresh_;
 };
