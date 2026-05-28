@@ -11,4 +11,5 @@ message DetectionColorByIdCalculatorOptions{
     }
     optional float saturation = 1 [default = 0.85];
     optional float value = 2 [default = 0.95]; 
+    optional float thickness = 3 [default = 5.0];   
 }

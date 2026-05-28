@@ -17,6 +17,7 @@ class DetectionColorByIdCalculator : public CalculatorBase {
   absl::Status Open(CalculatorContext* cc) override{
     const auto& options =
         cc->Options<mediapipe::DetectionColorByIdCalculatorOptions>();
+        thickness_  = options.has_thickness()  ? options.thickness()  : 4.0f;
         saturation_ = options.has_saturation() ? options.saturation() : 0.85f;
         value_      = options.has_value()      ? options.value()      : 0.95f;
         return absl::OkStatus();
@@ -37,7 +38,7 @@ class DetectionColorByIdCalculator : public CalculatorBase {
       {
         auto* a = render_data->add_render_annotations();
         *a->mutable_color() = color;
-        a->set_thickness(5.0f);
+        a->set_thickness(thickness_);
 
         auto* rect = a->mutable_rectangle();
         rect->set_left(bbox.xmin());
@@ -51,7 +52,7 @@ class DetectionColorByIdCalculator : public CalculatorBase {
       {
         auto* a = render_data->add_render_annotations();
         *a->mutable_color() = color;          // same color as box
-        a->set_thickness(4.0f);
+        a->set_thickness(thickness_-1.0f);
 
         auto* text = a->mutable_text();
         std::string label = "ID:" + std::to_string(id);
@@ -98,6 +99,7 @@ class DetectionColorByIdCalculator : public CalculatorBase {
   color.set_b(static_cast<int>((b + m) * 255));
   return color;
 }
+  float thickness_ = 4.0f;
   float saturation_ = 0.85f;
   float value_ = 0.95f;
 };
