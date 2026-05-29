@@ -3,6 +3,49 @@
 This project demonstrates real-time multi-object tracking using YOLOX-Nano and ByteTrack using MediaPipe pipelines.
 
 The demos explore different inference backends and graph architectures.
+## Model Installation
+
+For this demo, we use **YOLOX-Nano**.
+
+* Download the TensorFlow Lite (`.tflite`) model weights [here](https://drive.google.com/uc?export=download&id=1873ZnJVl0BmuDFnBd_mSiu3MPTzNmg1z).
+* Download the COCO labels file [here](https://drive.google.com/uc?export=download&id=1NARVuBMcRiTD3I8mfYPxwAtR8chwGdCP).
+
+> **Note**
+>
+> The original `.pth` weights are obtained from the official YOLOX repository:
+>
+> https://github.com/Megvii-BaseDetection/YOLOX
+>
+> The model conversion process is as follows:
+>
+> 1. Convert the PyTorch (`.pth`) weights to ONNX format using the export instructions provided in the YOLOX repository.
+> 2. Convert the ONNX model to TensorFlow Lite (`.tflite`) format using `onnx2tf`.
+>
+> The provided `.tflite` model was generated using this conversion pipeline.
+> The labels which are used in this demo are standard COCO labels.
+
+### Model Placement
+
+After downloading the model weights and labels file:
+
+1. Move `yolox_nano_float32.tflite` to `mediapipe/models/ovms/yoloxn_float32/1/`.
+2. Move `coco_labels.txt` to `mediapipe/models/`.
+
+Create the following directory structure if it does not already exist:
+
+```text
+mediapipe/
+└── models/
+    ├── coco_labels.txt
+    ├── yolox_nano_float32.tflite
+    └── ovms/
+        └── yoloxn_float32/
+            └── 1/
+                └── yolox_nano_float32.tflite
+```
+
+Once the files are placed correctly, you can proceed with building and running the demos.
+
 
 ## Available Demos
 
