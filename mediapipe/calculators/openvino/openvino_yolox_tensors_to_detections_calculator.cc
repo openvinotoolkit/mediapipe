@@ -14,8 +14,9 @@ namespace mediapipe {
 
 // Converts YOLOX output OV tensors to MediaPipe Detections.
 //
-// YOLOX output tensor shape: [1, 85, 3549]
-// Layout: [batch, num_attrs, num_boxes] — NOTE: transposed vs YOLOv10
+// YOLOX output tensor shape: [1, 3549, 85]
+// Layout: [batch, num_boxes, num_attrs]
+// decode_in_inference=True: sigmoid already applied, coords already decoded
 // Attributes: [cx, cy, w, h, obj_score, class_0, ..., class_79]
 // Coordinates are in PIXEL space (input image 416x416), NOT normalized
 //
@@ -39,13 +40,12 @@ class OpenVINOYoloXTensorsToDetectionsCalculator : public CalculatorBase {
   absl::Status Open(CalculatorContext* cc) override {
     const auto& options =
         cc->Options<mediapipe::OpenVINOYoloXTensorsToDetectionsCalculatorOptions>();
-    min_thresh_ = options.has_conf_thresh() ? options.conf_thresh():0.1;
-    obj_thresh_ = options.has_obj_thresh() ? options.obj_thresh():0.1;
-    input_size_ = options.has_input_size() ? options.input_size():416.0f;
+    min_thresh_ = options.has_conf_thresh() ? options.conf_thresh() : 0.1f;
+    obj_thresh_ = options.has_obj_thresh() ? options.obj_thresh() : 0.1f;
+    input_size_ = options.has_input_size() ? options.input_size() : 416.0f;
     cc->SetOffset(TimestampDiff(0));
     return absl::OkStatus();
   }
-
 
   absl::Status Process(CalculatorContext* cc) override {
     if (cc->Inputs().Tag("TENSORS").IsEmpty())
@@ -60,26 +60,25 @@ class OpenVINOYoloXTensorsToDetectionsCalculator : public CalculatorBase {
     const auto& shape = raw.get_shape();
     RET_CHECK_EQ(shape.size(), 3u);
     RET_CHECK_EQ(shape[0], 1u);
-    RET_CHECK_EQ(shape[1], static_cast<size_t>(num_attrs_));
-    RET_CHECK_EQ(shape[2], static_cast<size_t>(num_boxes_));
+    // Actual layout from TFLite: [1, 85, 3549] — attr-first
+    RET_CHECK_EQ(shape[1], static_cast<size_t>(num_attrs_));   // 85
+    RET_CHECK_EQ(shape[2], static_cast<size_t>(num_boxes_));   // 3549
 
     const float* data = raw.data<float>();
     RET_CHECK(data != nullptr);
-    std::vector<float> buf(data, data + num_attrs_ * num_boxes_);
 
+    // Accessor for [attr, box] layout
     auto at = [&](int attr, int box) -> float {
-      return buf[attr * num_boxes_ + box];
+      return data[attr * num_boxes_ + box];
     };
 
-    // Sigmoid helper
-    auto sigmoid = [](float x) -> float {
-      return 1.0f / (1.0f + std::exp(-x));
-    };
-
-    // YOLOX anchor-free grid strides: 8, 16, 32
-    // For 416x416: 52x52 + 26x26 + 13x13 = 2704 + 676 + 169 = 3549
+    // Grid strides for 416x416:
+    // stride 8  → 52x52 = 2704 boxes
+    // stride 16 → 26x26 =  676 boxes
+    // stride 32 → 13x13 =  169 boxes
+    // total = 3549
     struct GridInfo { int stride; int cols; int rows; };
-    std::vector<GridInfo> grids = {
+    const std::vector<GridInfo> grids = {
       {8,  52, 52},
       {16, 26, 26},
       {32, 13, 13},
@@ -92,27 +91,29 @@ class OpenVINOYoloXTensorsToDetectionsCalculator : public CalculatorBase {
       for (int gy = 0; gy < g.rows; ++gy) {
         for (int gx = 0; gx < g.cols; ++gx, ++box_idx) {
 
-          // Objectness and class scores need sigmoid
-          float obj = sigmoid(at(4, box_idx));
+          // Sigmoid already baked in by TFLite Logistic ops
+          float obj = at(4, box_idx);
           if (obj < obj_thresh_) continue;
 
-          int   best_cls   = 0;
+          int   best_cls       = 0;
           float best_cls_score = 0.0f;
           for (int c = 0; c < num_classes_; ++c) {
-            float s = sigmoid(at(5 + c, box_idx));
+            float s = at(5 + c, box_idx);
             if (s > best_cls_score) { best_cls_score = s; best_cls = c; }
           }
 
           float score = obj * best_cls_score;
           if (score < min_thresh_) continue;
-
-          // YOLOX decode: xy are offsets from grid, wh are log-scale
+          LOG(INFO)<<"CLASS: "<<best_cls<<", CLASS_SCORE: "<<best_cls_score<<", OBJECTNESS SCORE: "<<obj<< ", FINAL SCORE: "<<score;
+          // Coords are raw logits — grid decode needed
+          // cx, cy are offsets from grid cell origin
+          // w, h are log-scale relative to stride
           float cx = (at(0, box_idx) + gx) * g.stride;
           float cy = (at(1, box_idx) + gy) * g.stride;
           float w  = std::exp(at(2, box_idx)) * g.stride;
           float h  = std::exp(at(3, box_idx)) * g.stride;
 
-          // Normalize to [0,1]
+          // Normalize to [0, 1]
           float x1 = std::max(0.0f, (cx - w * 0.5f) / input_size_);
           float y1 = std::max(0.0f, (cy - h * 0.5f) / input_size_);
           float x2 = std::min(1.0f, (cx + w * 0.5f) / input_size_);
@@ -139,15 +140,10 @@ class OpenVINOYoloXTensorsToDetectionsCalculator : public CalculatorBase {
         .Add(output_detections.release(), cc->InputTimestamp());
     return absl::OkStatus();
   }
-
-  absl::Status Close(CalculatorContext* cc) override {
-    return absl::OkStatus();
-  }
-
  private:
-  const int   num_boxes_  = 3549;
-  const int   num_attrs_  = 85;
-  const int   num_classes_= 80;
+  const int   num_boxes_   = 3549;
+  const int   num_attrs_   = 85;
+  const int   num_classes_ = 80;
   float input_size_;
   float obj_thresh_;
   float min_thresh_;

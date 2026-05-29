@@ -29,7 +29,7 @@ class YoloXTensorsToDetectionsCalculator : public CalculatorBase {
         cc->Options<mediapipe::YoloXTensorsToDetectionsCalculatorOptions>();
     min_thresh_ = options.has_conf_thresh() ? options.conf_thresh() : 0.1f;
     obj_thresh_ = options.has_obj_thresh()  ? options.obj_thresh()  : 0.1f;
-    input_size_ = options.has_obj_thresh()  ? options.obj_thresh()  : 416.0f;
+    input_size_ = options.has_input_size()  ? options.input_size()  : 416.0f;
     LOG(INFO) << "Thresholds: "<<min_thresh_<<", "<<obj_thresh_;
     cc->SetOffset(TimestampDiff(0));
     return absl::OkStatus();
@@ -60,12 +60,8 @@ class YoloXTensorsToDetectionsCalculator : public CalculatorBase {
       return buffer[attr * num_boxes_ + box];
     };
 
-    auto sigmoid = [](float x) -> float {
-      return 1.0f / (1.0f + std::exp(-x));
-    };
-
     struct GridInfo { int stride; int cols; int rows; };
-    std::vector<GridInfo> grids = {
+    const std::vector<GridInfo> grids = {
         {8,  52, 52},
         {16, 26, 26},
         {32, 13, 13},
@@ -78,27 +74,29 @@ class YoloXTensorsToDetectionsCalculator : public CalculatorBase {
       for (int gy = 0; gy < g.rows; ++gy) {
         for (int gx = 0; gx < g.cols; ++gx, ++box_idx) {
 
-          // Objectness and class scores need sigmoid
-          float obj = sigmoid(at(4, box_idx));
+          // Sigmoid already baked in by TFLite Logistic ops
+          float obj = at(4, box_idx);
           if (obj < obj_thresh_) continue;
 
-          int   best_cls   = 0;
+          int   best_cls       = 0;
           float best_cls_score = 0.0f;
           for (int c = 0; c < num_classes_; ++c) {
-            float s = sigmoid(at(5 + c, box_idx));
+            float s = at(5 + c, box_idx);
             if (s > best_cls_score) { best_cls_score = s; best_cls = c; }
           }
 
           float score = obj * best_cls_score;
           if (score < min_thresh_) continue;
-
-          // YOLOX decode: xy are offsets from grid, wh are log-scale
+          LOG(INFO)<<"CLASS: "<<best_cls<<", CLASS_SCORE: "<<best_cls_score<<", OBJECTNESS SCORE: "<<obj<< ", FINAL SCORE: "<<score;
+          // Coords are raw logits — grid decode needed
+          // cx, cy are offsets from grid cell origin
+          // w, h are log-scale relative to stride
           float cx = (at(0, box_idx) + gx) * g.stride;
           float cy = (at(1, box_idx) + gy) * g.stride;
           float w  = std::exp(at(2, box_idx)) * g.stride;
           float h  = std::exp(at(3, box_idx)) * g.stride;
 
-          // Normalize to [0,1]
+          // Normalize to [0, 1]
           float x1 = std::max(0.0f, (cx - w * 0.5f) / input_size_);
           float y1 = std::max(0.0f, (cy - h * 0.5f) / input_size_);
           float x2 = std::min(1.0f, (cx + w * 0.5f) / input_size_);
@@ -136,7 +134,7 @@ class YoloXTensorsToDetectionsCalculator : public CalculatorBase {
   const int   num_attrs_  = 85;
   const int   num_classes_= 80;
 
-  float input_size_ = 416.0f;
+  float input_size_;
   float min_thresh_;
   float obj_thresh_;
 };
