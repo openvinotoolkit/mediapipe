@@ -94,7 +94,8 @@ for app in ${apps}; do
         echo "Skipping target ${target}"
         continue
     elif [[ "${target_name}" == "bytetrack" ]]; then
-        target="${app}:${target_name}_final_ovms ${app}:${target_name}_final_cpu"
+        echo "Skipping target ${target_name} ."
+        continue
     else
       target="${app}:${target_name}_cpu"
     fi
