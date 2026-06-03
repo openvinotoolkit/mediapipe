@@ -27,16 +27,13 @@ cc_library(
         "//mediapipe/calculators/video:opencv_video_decoder_calculator",
         "//mediapipe/calculators/core:flow_limiter_calculator",
         "//mediapipe/calculators/image:image_transformation_calculator",
-        "//mediapipe/calculators/tflite:yolox_tensors_to_detections_calculator",
         "//mediapipe/calculators/tflite:tflite_converter_calculator",
         "//mediapipe/calculators/tflite:tflite_inference_calculator",
         "//mediapipe/calculators/util:non_max_suppression_calculator", # NMS for YOLOX-N
         "//mediapipe/calculators/util:annotation_overlay_calculator",
         "//mediapipe/calculators/util:detection_label_id_to_text_calculator",
-        "//mediapipe/calculators/util:detections_to_render_data_calculator",
         "//mediapipe/calculators/video:opencv_video_encoder_calculator",
         "//mediapipe/graphs/bytetrack/calculators:bytetrack_calculators",
-        "//mediapipe/calculators/util:rect_to_render_data_calculator",
     ],
 )
 
@@ -51,7 +48,5 @@ cc_library(
         "//mediapipe/graphs/bytetrack/calculators:bytetrack_calculators",
         "//mediapipe/calculators/util:non_max_suppression_calculator", # NMS for YOLOX-N
         "//mediapipe/calculators/util:annotation_overlay_calculator",
-        "//mediapipe/calculators/util:detections_to_render_data_calculator",
-        "//mediapipe/calculators/util:rect_to_render_data_calculator",
     ],
 )

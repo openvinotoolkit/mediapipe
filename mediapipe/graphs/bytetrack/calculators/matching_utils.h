@@ -1,10 +1,12 @@
 #ifndef MEDIAPIPE_GRAPHS_BYTETRACK_CALCULATORS_MATCHING_UTILS_H_
 #define MEDIAPIPE_GRAPHS_BYTETRACK_CALCULATORS_MATCHING_UTILS_H_
 
-#include <vector>
-#include <Eigen/Dense>
-#include <numeric>
 #include <algorithm>
+#include <numeric>
+#include <vector>
+
+#include <Eigen/Dense>
+
 #include "mediapipe/graphs/bytetrack/calculators/strack.h"
 
 namespace mediapipe {

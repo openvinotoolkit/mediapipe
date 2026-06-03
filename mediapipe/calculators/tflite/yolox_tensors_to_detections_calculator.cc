@@ -1,13 +1,14 @@
-#include <vector>
+#include "mediapipe/calculators/tflite/yolox_tensors_to_detections_calculator.pb.h"
+
 #include <algorithm>
 #include <cmath>
+#include <vector>
 
 #include "mediapipe/framework/calculator_framework.h"
 #include "mediapipe/framework/formats/detection.pb.h"
 #include "mediapipe/framework/formats/location_data.pb.h"
 #include "mediapipe/framework/port/ret_check.h"
 #include "mediapipe/framework/port/status.h"
-#include "mediapipe/calculators/tflite/yolox_tensors_to_detections_calculator.pb.h"
 #include "tensorflow/lite/interpreter.h"
 
 namespace mediapipe {

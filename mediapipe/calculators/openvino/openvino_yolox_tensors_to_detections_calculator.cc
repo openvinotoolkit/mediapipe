@@ -1,9 +1,12 @@
 #include "mediapipe/calculators/openvino/openvino_yolox_tensors_to_detections_calculator.pb.h"
-#include <vector>
+
 #include <algorithm>
-#include <numeric>
-#include <openvino/openvino.hpp>
 #include <cmath>
+#include <numeric>
+#include <vector>
+
+#include <openvino/openvino.hpp>
+
 #include "mediapipe/framework/calculator_framework.h"
 #include "mediapipe/framework/formats/detection.pb.h"
 #include "mediapipe/framework/formats/location_data.pb.h"

@@ -1,4 +1,5 @@
 #include "mediapipe/framework/calculator_framework.h"
+
 #include "mediapipe/util/render_data.pb.h"
 
 namespace mediapipe {

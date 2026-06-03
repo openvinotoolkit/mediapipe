@@ -1,9 +1,11 @@
 #include "mediapipe/calculators/util/detection_color_by_id_calculator.pb.h"
+
+#include <cmath>
+
 #include "mediapipe/framework/calculator_framework.h"
 #include "mediapipe/framework/formats/detection.pb.h"
 #include "mediapipe/util/render_data.pb.h"
 #include "mediapipe/util/color.pb.h"
-#include <cmath>
 
 namespace mediapipe {
 

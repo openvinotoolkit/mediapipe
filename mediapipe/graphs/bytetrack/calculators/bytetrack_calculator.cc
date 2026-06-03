@@ -1,13 +1,16 @@
 #include "bytetrack_calculator.h"
+#include "mediapipe/graphs/bytetrack/calculators/bytetrack_calculator.pb.h"
+
+#include <algorithm>
+#include <unordered_map>
+
+#include <Eigen/Dense>
+
 #include "mediapipe/framework/calculator_framework.h"
 #include "mediapipe/framework/formats/detection.pb.h"
 #include "mediapipe/graphs/bytetrack/calculators/strack.h"
 #include "mediapipe/graphs/bytetrack/calculators/kalman_filter.h"
 #include "mediapipe/graphs/bytetrack/calculators/matching_utils.h"
-#include <algorithm>
-#include <unordered_map>
-#include "mediapipe/graphs/bytetrack/calculators/bytetrack_calculator.pb.h"
-#include <Eigen/Dense>
 
 
 // node {

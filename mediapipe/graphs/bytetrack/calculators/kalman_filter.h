@@ -1,8 +1,9 @@
 #ifndef MEDIAPIPE_GRAPHS_BYTETRACK_CALCULATORS_KALMAN_FILTER_H_
 #define MEDIAPIPE_GRAPHS_BYTETRACK_CALCULATORS_KALMAN_FILTER_H_
+#include <vector>
 
 #include <Eigen/Dense>
-#include <vector>
+
 #include "mediapipe/framework/formats/detection.pb.h"
 
 namespace mediapipe {

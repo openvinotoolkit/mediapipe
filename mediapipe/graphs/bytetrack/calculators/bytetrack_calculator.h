@@ -1,11 +1,12 @@
 #ifndef MEDIAPIPE_GRAPHS_BYTETRACK_CALCULATORS_BYTETRACK_CALCULATOR_H_
 #define MEDIAPIPE_GRAPHS_BYTETRACK_CALCULATORS_BYTETRACK_CALCULATOR_H_
 
+#include "mediapipe/graphs/bytetrack/calculators/bytetrack_calculator.pb.h"
+
 #include "mediapipe/framework/calculator_framework.h"
 #include "mediapipe/framework/formats/detection.pb.h"
 #include "mediapipe/graphs/bytetrack/calculators/strack.h"
 #include "mediapipe/graphs/bytetrack/calculators/kalman_filter.h"
-#include "mediapipe/graphs/bytetrack/calculators/bytetrack_calculator.pb.h"
 
 namespace mediapipe{
     class ByteTrackCalculator : public CalculatorBase{
