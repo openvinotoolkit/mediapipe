@@ -24,6 +24,7 @@ cc_library(
         "//mediapipe/calculators/util:detection_unique_id_calculator",
         "//mediapipe/calculators/util:detection_color_by_id_calculator",
         "//mediapipe/calculators/tflite:yolox_tensors_to_detections_calculator",
+        "//mediapipe/calculators/openvino:openvino_yolox_tensors_to_detections_calculator",
         ":kalman_filter",
         ":kalman_matrices",
         ":strack",
