@@ -24,13 +24,13 @@ cc_library(
         "//mediapipe/calculators/util:detection_unique_id_calculator",
         "//mediapipe/calculators/util:detection_color_by_id_calculator",
         "//mediapipe/calculators/tflite:yolox_tensors_to_detections_calculator",
-        "//mediapipe/calculators/openvino:openvino_yolox_tensors_to_detections_calculator",
         ":kalman_filter",
         ":kalman_matrices",
         ":strack",
         ":bytetrack_calculator",
         ":render_data_passthrough",
-    ]
+    ],
+    alwayslink = 1
 )
 
 mediapipe_proto_library(
@@ -40,13 +40,15 @@ mediapipe_proto_library(
     deps=[
         "//mediapipe/framework:calculator_options_proto",
         "//mediapipe/framework:calculator_proto",
-    ]
+    ],
+    alwayslink = 1
 )
 
 cc_library(
     name = "kalman_matrices",
     hdrs = ["kalman_matrices.h"],
     deps = ["@eigen_archive//:eigen3"],
+    alwayslink = 1
 )
 
 
@@ -56,6 +58,7 @@ cc_library(
     deps = [
         "//mediapipe/util/tracking:box_tracker",
     ],
+    alwayslink = 1
 )
 
 cc_library(
@@ -67,12 +70,14 @@ cc_library(
         "//mediapipe/framework/formats:detection_cc_proto",
         "@eigen_archive//:eigen3",
     ],
+    alwayslink = 1
 )
 
 cc_library(
     name = "basetrack",
     srcs = ["basetrack.cc"],
-    hdrs = ["basetrack.h"]
+    hdrs = ["basetrack.h"],
+    alwayslink = 1
 )
 
 cc_library(
@@ -85,6 +90,7 @@ cc_library(
         "//mediapipe/framework/formats:detection_cc_proto",
         "@eigen_archive//:eigen3",
     ],
+    alwayslink = 1
 )
 
 cc_library(
