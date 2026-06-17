@@ -65,7 +65,6 @@ node{
     node_options: {
     [type.googleapis.com/mediapipe.OpenVINOYoloXTensorsToDetectionsCalculatorOptions] {
       conf_thresh: 0.35
-      obj_thresh: 0.50
     }
   }
 }

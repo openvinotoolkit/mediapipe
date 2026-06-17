@@ -10,6 +10,5 @@ message YoloXTensorsToDetectionsCalculatorOptions {
   }
 
   optional float conf_thresh = 1 [default = 0.10]; 
-  optional float obj_thresh = 2 [default = 0.10]; 
   optional float input_size = 3 [default = 416.0];  
 }

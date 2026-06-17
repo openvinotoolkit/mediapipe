@@ -44,7 +44,6 @@ class OpenVINOYoloXTensorsToDetectionsCalculator : public CalculatorBase {
     const auto& options =
         cc->Options<mediapipe::OpenVINOYoloXTensorsToDetectionsCalculatorOptions>();
     min_thresh_ = options.has_conf_thresh() ? options.conf_thresh() : 0.1f;
-    obj_thresh_ = options.has_obj_thresh() ? options.obj_thresh() : 0.1f;
     input_size_ = options.has_input_size() ? options.input_size() : 416.0f;
     cc->SetOffset(TimestampDiff(0));
     return absl::OkStatus();
@@ -96,7 +95,6 @@ class OpenVINOYoloXTensorsToDetectionsCalculator : public CalculatorBase {
 
           // Sigmoid already baked in by TFLite Logistic ops
           float obj = at(4, box_idx);
-          if (obj < obj_thresh_) continue;
 
           int   best_cls       = 0;
           float best_cls_score = 0.0f;
@@ -148,7 +146,6 @@ class OpenVINOYoloXTensorsToDetectionsCalculator : public CalculatorBase {
   const int   num_attrs_   = 85;
   const int   num_classes_ = 80;
   float input_size_;
-  float obj_thresh_;
   float min_thresh_;
 };
 

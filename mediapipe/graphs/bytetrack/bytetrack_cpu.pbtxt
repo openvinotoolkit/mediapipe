@@ -69,7 +69,6 @@ node{
     node_options: {
     [type.googleapis.com/mediapipe.YoloXTensorsToDetectionsCalculatorOptions] {
       conf_thresh: 0.35
-      obj_thresh: 0.50
     }
   }
 }

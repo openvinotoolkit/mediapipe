@@ -68,8 +68,8 @@ class DetectionColorByIdCalculator : public CalculatorBase {
 
         text->set_display_text(label);
         text->set_normalized(true);
-        text->set_left(bbox.xmin());
-        text->set_baseline(bbox.ymin() - 0.01f); // sit just above the box
+        text->set_left(bbox.xmin() + 0.005f);
+        text->set_baseline(bbox.ymin() + 0.04f);
         text->set_font_height(0.035f);
       }
     }
