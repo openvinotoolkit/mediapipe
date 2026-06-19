@@ -101,14 +101,8 @@ node {
 }
 
 node {
-  calculator: "DetectionUniqueIdCalculator"
-  input_stream: "DETECTIONS:output_detections"
-  output_stream: "DETECTIONS:detections_with_id"
-}
-
-node {
   calculator: "ByteTrackCalculator"
-  input_stream: "DETECTIONS:detections_with_id"
+  input_stream: "DETECTIONS:output_detections"
   output_stream: "DETECTIONS:tracked_detections"
   options: {
     [mediapipe.ByteTrackCalculatorOptions.ext] {
