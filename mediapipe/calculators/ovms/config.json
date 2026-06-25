@@ -7,8 +7,8 @@
         },
         {
             "config":{
-                "name":"yoloxn_float32",
-                "base_path":"/mediapipe/mediapipe/models/ovms/yoloxn_float32"
+                "name":"yoloxt_float32",
+                "base_path":"/mediapipe/mediapipe/models/ovms/yoloxt_float32"
             }
         }
     ]

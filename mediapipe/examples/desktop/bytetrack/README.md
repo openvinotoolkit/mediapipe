@@ -1,24 +1,23 @@
 # ByteTrack Demo
 
-This project demonstrates real-time multi-object tracking using YOLOX-Nano and ByteTrack using MediaPipe pipelines.
+This project demonstrates real-time multi-object tracking using YOLOX-Tiny and ByteTrack using MediaPipe pipelines.
 
 The demos explore different inference backends and graph architectures.
 ## Model Installation
 
-For this demo, we use **YOLOX-Nano**.
+For this demo, we use **YOLOX-Tiny**.
 
-* Download the TensorFlow Lite (`.tflite`) model weights [here](https://drive.google.com/uc?export=download&id=1873ZnJVl0BmuDFnBd_mSiu3MPTzNmg1z).
-* Download the COCO labels file [here](https://drive.google.com/uc?export=download&id=1NARVuBMcRiTD3I8mfYPxwAtR8chwGdCP).
+* Download the COCO labels file [here](https://github.com/openvinotoolkit/open_model_zoo/blob/master/data/dataset_classes/coco_80cl.txt).
 
 > **Note**
 >
-> The original `.pth` weights are obtained from the official YOLOX repository:
+> The ONNX weights of the YOLOX Tiny are downloaded from the following link:
 >
-> https://github.com/Megvii-BaseDetection/YOLOX
+> https://github.com/Megvii-BaseDetection/YOLOX/tree/main/demo/ONNXRuntime
 >
 > The model conversion process is as follows:
 >
-> 1. Convert the PyTorch (`.pth`) weights to ONNX format using the export instructions provided in the YOLOX repository.
+> 1. Install onnx2tf library by "pip install onnx2tf"
 > 2. Convert the ONNX model to TensorFlow Lite (`.tflite`) format using `onnx2tf`.
 >
 > The provided `.tflite` model was generated using this conversion pipeline.
@@ -28,8 +27,8 @@ For this demo, we use **YOLOX-Nano**.
 
 After downloading the model weights and labels file:
 
-1. Move `yolox_nano_float32.tflite` to `mediapipe/models/ovms/yoloxn_float32/1/`.
-2. Move `coco_labels.txt` to `mediapipe/models/`.
+1. Move `yolox_tiny_float32.tflite` to `mediapipe/models/ovms/yoloxt_float32/1/`.
+2. Rename `coco_80cl.txt` to `coco_labels.txt`, and move it to `mediapipe/models/`.
 
 Create the following directory structure if it does not already exist:
 
@@ -37,11 +36,11 @@ Create the following directory structure if it does not already exist:
 mediapipe/
 └── models/
     ├── coco_labels.txt
-    ├── yolox_nano_float32.tflite
+    ├── yolox_tiny_float32.tflite
     └── ovms/
-        └── yoloxn_float32/
+        └── yoloxt_float32/
             └── 1/
-                └── yolox_nano_float32.tflite
+                └── yolox_tiny_float32.tflite
 ```
 
 Once the files are placed correctly, you can proceed with building and running the demos.
@@ -97,7 +96,7 @@ flowchart TD
 
     B ==> C["TfLiteConverterCalculator<br/>Image → TfLiteTensor"]
 
-    C ==> D["TfLiteInferenceCalculator<br/>YOLOX Nano TFLite"]
+    C ==> D["TfLiteInferenceCalculator<br/>YOLOX Tiny TFLite"]
 
     D ==> E["YoloXTensorsToDetectionsCalculator<br/>YOLOX Decode"]
 
@@ -168,7 +167,7 @@ flowchart TD
 
     S -.-> D
 
-    C ==> D["OpenVINOInferenceCalculator<br/>YOLOXn Inference"]
+    C ==> D["OpenVINOInferenceCalculator<br/>YOLOXt Inference"]
 
     D ==> E["OpenVINOYoloXTensorsToDetectionsCalculator<br/>YOLOX Decode"]
 
