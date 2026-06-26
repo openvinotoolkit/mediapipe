@@ -6,7 +6,7 @@ package(default_visibility = ["//mediapipe/examples:__subpackages__"])
 cc_binary(
     name = "bytetrack_final_cpu",
     data = [
-        "//mediapipe/models:yolox_nano_float32",
+        "//mediapipe/models:yolox_tiny_float32",
         "//mediapipe/models:coco_labels",
     ],
     deps = [

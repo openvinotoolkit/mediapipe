@@ -22,8 +22,8 @@ licenses(["notice"])
 package(default_visibility = ["//visibility:public"])
 
 filegroup(
-    name = "yolox_nano_float32",
-    srcs = ["yolox_nano_float32.tflite"],
+    name = "yolox_tiny_float32",
+    srcs = ["yolox_tiny_float32.tflite"],
     visibility = ["//visibility:public"],
 )
 
