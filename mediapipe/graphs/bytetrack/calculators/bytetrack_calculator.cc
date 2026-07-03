@@ -31,25 +31,6 @@
 
 namespace mediapipe{
     REGISTER_CALCULATOR(ByteTrackCalculator);
-    
-    // DEBUG function
-    void printDists(std::vector<std::vector<float>> dists){
-        LOG(INFO)<<"Inside dists debug function";
-        for(auto i:dists){
-            for(float j: i){
-                LOG(INFO)<<j<<" ";
-            }
-            LOG(INFO)<<std::endl;
-        }
-    }
-    // DEBUG function
-    void printTrackStates(std::vector<bytetrack::STrack> stracks){
-        LOG(INFO)<<"stracks info";
-        for(auto i:stracks){
-            LOG(INFO)<<"State: "<<static_cast<int>(i.state())<<", Score: "<<i.score();
-        }
-    }
-
 
     absl::Status ByteTrackCalculator::GetContract(CalculatorContract* cc){
         cc->Inputs().Get("DETECTIONS",0).Set<std::vector<Detection>>();
@@ -78,8 +59,6 @@ namespace mediapipe{
             float instant_fps = 1.0f / dt_sec;
             // Smooth it with a running average to avoid jitter
             estimated_fps_ = 0.9f * estimated_fps_ + 0.1f * instant_fps;
-            LOG(INFO) << "Instant FPS  : "<<instant_fps;
-            LOG(INFO) << "Estimated FPS: "<<estimated_fps_;
             max_time_lost_ = static_cast<int>(estimated_fps_ / 30.0f * track_buffer_);
             LOG(INFO) << "MAX TIME LOST: "<<max_time_lost_;
         }
@@ -118,7 +97,6 @@ namespace mediapipe{
                 detections.emplace_back(d);
             }
         }
-        LOG(INFO)<<"Detections STrack list size: "<<detections.size();
 
         //add newly detected tracks
         std::vector<bytetrack::STrack*> unconfirmed;
@@ -130,7 +108,6 @@ namespace mediapipe{
                 tracked_stracks.push_back(&track);
             }
         }
-        LOG(INFO) <<"TRACKED STRACK(tracked_stracks) SIZE: "<<tracked_stracks.size();
 
         /////////////////////// First association //////////////////////////////////////
         std::vector<bytetrack::STrack*> lost_ptrs;
@@ -173,7 +150,6 @@ namespace mediapipe{
                 detections_second.emplace_back(d);
             }
         }
-        LOG(INFO)<<"Detections second STrack list size: "<<detections_second.size();
 
         std::vector<bytetrack::STrack*> r_tracked_stracks;
         for(int i:u_track){
@@ -194,17 +170,6 @@ namespace mediapipe{
                  <<", U_track2 size: "<<u_track2.size()
                  <<", U_detection_second size: "<<u_detection_second.size();
 
-        // for(auto [itracked,idet] : matches2){
-        //     auto* track = r_tracked_stracks[itracked];
-        //     auto det = detections_second[idet];
-        //     if(track->state() == bytetrack::BaseTrack::TrackState::TRACKED){
-        //         track->Update(det,frame_id_);
-        //         activated_stracks.push_back(*track);
-        //     }else{
-        //         track->ReActivate(det,frame_id_,false);
-        //         refind_stracks.push_back(*track);
-        //     }
-        // }
         
         for (int k = 0; k < matches2.rows(); ++k) {
             int itracked = matches2(k, 0);
@@ -263,7 +228,6 @@ namespace mediapipe{
             activated_stracks.push_back(track);
         }
         LOG(INFO) << "  After unconfirmed+new: activated=" << activated_stracks.size();
-        // printTrackStates(activated_stracks);
         /////////////////////// UPDATE STATE /////////////////////////////
         for(auto& track:lost_stracks_){
             LOG(INFO)<<"Time diff update state "<<frame_id_ - track.frame_id()<<"," ;
@@ -353,7 +317,6 @@ namespace mediapipe{
         auto output = std::make_unique<std::vector<Detection>>();
         for(const auto& t : tracked_stracks_){
             if(!t.is_activated()) continue;
-            LOG(INFO) << "Track ID: " << t.track_id() << " is_activated: " << t.is_activated();
             Detection d;
             d.set_detection_id(t.track_id());
             d.add_label(t.label());
