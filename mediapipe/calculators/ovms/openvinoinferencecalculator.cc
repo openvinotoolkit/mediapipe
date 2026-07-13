@@ -27,49 +27,32 @@
 #include "ovms.h"  // NOLINT
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#if !defined(OVMS_RUNTIME_DISABLE_TF_TENSORS)
 #include "tensorflow/core/framework/tensor.h"
+#endif
 #include "mediapipe/framework/calculator_framework.h"
 #include "mediapipe/framework/port/canonical_errors.h"
 #include "mediapipe/framework/formats/tensor.h"
 #include "mediapipe/calculators/ovms/openvinoinferencecalculator.pb.h"
 #include "mediapipe/calculators/ovms/openvinoinferencecalculatoroptions.h"
 #include "mediapipe/calculators/ovms/openvinoinferenceutils.h"
+#if !defined(OVMS_RUNTIME_DISABLE_TF_TENSORS)
 #include "tensorflow/lite/c/common.h"
+#endif
 #if (OVMS_DUMP_TO_FILE == 1)
 #include "openvinoinferencedumputils.h"
 #endif
 #pragma GCC diagnostic pop
+#if !defined(OVMS_RUNTIME_DISABLE_TF_TENSORS)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wall"
 #include "tensorflow/lite/interpreter.h"
 #pragma GCC diagnostic pop
+#endif
 // here we need to decide if we have several calculators (1 for OVMS repository, 1-N inside mediapipe)
 // for the one inside OVMS repo it makes sense to reuse code from ovms lib
 namespace mediapipe {
 using std::endl;
-
-using TFSDataType = tensorflow::DataType;
-
-TFSDataType getPrecisionAsDataType(ov::element::Type_t precision) {
-    static std::unordered_map<ov::element::Type_t, TFSDataType> precisionMap{
-        {ov::element::Type_t::f32, TFSDataType::DT_FLOAT},
-        {ov::element::Type_t::f64, TFSDataType::DT_DOUBLE},
-        {ov::element::Type_t::f16, TFSDataType::DT_HALF},
-        {ov::element::Type_t::i64, TFSDataType::DT_INT64},
-        {ov::element::Type_t::i32, TFSDataType::DT_INT32},
-        {ov::element::Type_t::i16, TFSDataType::DT_INT16},
-        {ov::element::Type_t::i8, TFSDataType::DT_INT8},
-        {ov::element::Type_t::u64, TFSDataType::DT_UINT64},
-        {ov::element::Type_t::u16, TFSDataType::DT_UINT16},
-        {ov::element::Type_t::u8, TFSDataType::DT_UINT8},
-        {ov::element::Type_t::boolean, TFSDataType::DT_BOOL}
-    };
-    auto it = precisionMap.find(precision);
-    if (it == precisionMap.end()) {
-        return TFSDataType::DT_INVALID;
-    }
-    return it->second;
-}
 
 static Tensor::ElementType OVType2MPType(ov::element::Type_t precision) {
     static std::unordered_map<ov::element::Type_t, Tensor::ElementType> precisionMap{
@@ -195,6 +178,30 @@ static Tensor convertOVTensor2MPTensor(const ov::Tensor& inputTensor) {
     return outputTensor;
 }
 
+#if !defined(OVMS_RUNTIME_DISABLE_TF_TENSORS)
+using TFSDataType = tensorflow::DataType;
+
+TFSDataType getPrecisionAsDataType(ov::element::Type_t precision) {
+    static std::unordered_map<ov::element::Type_t, TFSDataType> precisionMap{
+        {ov::element::Type_t::f32, TFSDataType::DT_FLOAT},
+        {ov::element::Type_t::f64, TFSDataType::DT_DOUBLE},
+        {ov::element::Type_t::f16, TFSDataType::DT_HALF},
+        {ov::element::Type_t::i64, TFSDataType::DT_INT64},
+        {ov::element::Type_t::i32, TFSDataType::DT_INT32},
+        {ov::element::Type_t::i16, TFSDataType::DT_INT16},
+        {ov::element::Type_t::i8, TFSDataType::DT_INT8},
+        {ov::element::Type_t::u64, TFSDataType::DT_UINT64},
+        {ov::element::Type_t::u16, TFSDataType::DT_UINT16},
+        {ov::element::Type_t::u8, TFSDataType::DT_UINT8},
+        {ov::element::Type_t::boolean, TFSDataType::DT_BOOL}
+    };
+    auto it = precisionMap.find(precision);
+    if (it == precisionMap.end()) {
+        return TFSDataType::DT_INVALID;
+    }
+    return it->second;
+}
+
 ov::element::Type_t TFSPrecisionToIE2Precision(TFSDataType precision) {
     static std::unordered_map<TFSDataType, ov::element::Type_t> precisionMap{
         {TFSDataType::DT_DOUBLE, ov::element::Type_t::f64},
@@ -278,14 +285,17 @@ static ov::Tensor convertTFLiteTensor2OVTensor(const TfLiteTensor& t) {
     ov::Tensor result(datatype, shape, data);
     return result;
 }
+#endif
 
 class OpenVINOInferenceCalculator : public CalculatorBase {
     std::shared_ptr<::InferenceAdapter> session{nullptr};
     std::unordered_map<std::string, std::string> outputNameToTag;
     std::vector<std::string> input_order_list;
     std::vector<std::string> output_order_list;
+#if !defined(OVMS_RUNTIME_DISABLE_TF_TENSORS)
     std::unique_ptr<tflite::Interpreter> interpreter_ = absl::make_unique<tflite::Interpreter>();
     bool initialized = false;
+#endif
 
 public:
     static absl::Status GetContract(CalculatorContract* cc) {
@@ -296,6 +306,12 @@ public:
         RET_CHECK(ValidateCalculatorSettings(cc));
 
         for (const std::string& tag : cc->Inputs().GetTags()) {
+#if defined(OVMS_RUNTIME_DISABLE_TF_TENSORS)
+            if (startsWith(tag, TFTENSORS_TAG) || startsWith(tag, TFTENSOR_TAG) || startsWith(tag, TFLITE_TENSORS_TAG) || startsWith(tag, TFLITE_TENSOR_TAG)) {
+                LOG(INFO) << "TensorFlow/TFLite packet tags are not supported in OVMS runtime-shared mode: " << tag;
+                RET_CHECK(false);
+            }
+#endif
             // could be replaced with absl::StartsWith when migrated to MP
             if (startsWith(tag, OVTENSORS_TAG)) {
                 LOG(INFO) << "setting input tag:" << tag << " to OVTensors";
@@ -309,6 +325,7 @@ public:
             } else if (startsWith(tag, MPTENSOR_TAG)) {
                 LOG(INFO) << "setting input tag:" << tag << " to MPTensor";
                 cc->Inputs().Tag(tag).Set<Tensor>();
+#if !defined(OVMS_RUNTIME_DISABLE_TF_TENSORS)
             } else if (startsWith(tag, TFTENSORS_TAG)) {
                 LOG(INFO) << "setting input tag:" << tag << " to TFTensors";
                 cc->Inputs().Tag(tag).Set<std::vector<tensorflow::Tensor>>();
@@ -321,12 +338,19 @@ public:
             } else if (startsWith(tag, TFLITE_TENSOR_TAG)) {
                 LOG(INFO) << "setting input tag:" << tag << " to TFLITE_Tensor";
                 cc->Inputs().Tag(tag).Set<TfLiteTensor>();
+#endif
             } else {
                 LOG(INFO) << "setting input tag:" << tag << " to OVTensor";
                 cc->Inputs().Tag(tag).Set<ov::Tensor>();
             }
         }
         for (const std::string& tag : cc->Outputs().GetTags()) {
+#if defined(OVMS_RUNTIME_DISABLE_TF_TENSORS)
+            if (startsWith(tag, TFTENSORS_TAG) || startsWith(tag, TFTENSOR_TAG) || startsWith(tag, TFLITE_TENSORS_TAG) || startsWith(tag, TFLITE_TENSOR_TAG)) {
+                LOG(INFO) << "TensorFlow/TFLite packet tags are not supported in OVMS runtime-shared mode: " << tag;
+                RET_CHECK(false);
+            }
+#endif
             if (startsWith(tag, OVTENSORS_TAG)) {
                 LOG(INFO) << "setting input tag:" << tag << " to std::vector<ov::Tensor>";
                 cc->Outputs().Tag(tag).Set<std::vector<ov::Tensor>>();
@@ -339,6 +363,7 @@ public:
             } else if (startsWith(tag, MPTENSOR_TAG)) {
                 LOG(INFO) << "setting input tag:" << tag << " to MPTensor";
                 cc->Outputs().Tag(tag).Set<Tensor>();
+#if !defined(OVMS_RUNTIME_DISABLE_TF_TENSORS)
             } else if (startsWith(tag, TFTENSORS_TAG)) {
                 LOG(INFO) << "setting input tag:" << tag << " to TFTensor";
                 cc->Outputs().Tag(tag).Set<std::vector<tensorflow::Tensor>>();
@@ -351,6 +376,7 @@ public:
             } else if (startsWith(tag, TFLITE_TENSOR_TAG)) {
                 LOG(INFO) << "setting input tag:" << tag << " to TFLITE_Tensor";
                 cc->Outputs().Tag(tag).Set<TfLiteTensor>();
+#endif
             } else {
                 LOG(INFO) << "setting output tag:" << tag << " to OVTensor";
                 cc->Outputs().Tag(tag).Set<ov::Tensor>();
@@ -443,22 +469,28 @@ public:
             try {
             if (startsWith(tag, OVTENSORS_TAG)) {
                 DESERIALIZE_TENSORS(ov::Tensor,);
+#if !defined(OVMS_RUNTIME_DISABLE_TF_TENSORS)
             } else if (startsWith(tag, TFLITE_TENSORS_TAG)) {
                 DESERIALIZE_TENSORS(TfLiteTensor, convertTFLiteTensor2OVTensor);
+#endif
             } else if (startsWith(tag, MPTENSORS_TAG)) {
                 DESERIALIZE_TENSORS(Tensor, convertMPTensor2OVTensor);
             } else if (startsWith(tag, OVTENSOR_TAG)) {
                 auto& packet = cc->Inputs().Tag(tag).Get<ov::Tensor>();
                 input[realInputName] = packet;
+#if !defined(OVMS_RUNTIME_DISABLE_TF_TENSORS)
             } else if (startsWith(tag, TFLITE_TENSOR_TAG)) {
                 auto& packet = cc->Inputs().Tag(tag).Get<TfLiteTensor>();
                 input[realInputName] = convertTFLiteTensor2OVTensor(packet);
+#endif
             } else if (startsWith(tag, MPTENSOR_TAG)) {
                 auto& packet = cc->Inputs().Tag(tag).Get<Tensor>();
                 input[realInputName] = convertMPTensor2OVTensor(packet);
+#if !defined(OVMS_RUNTIME_DISABLE_TF_TENSORS)
             } else if (startsWith(tag, TFTENSOR_TAG)) {
                 auto& packet = cc->Inputs().Tag(tag).Get<tensorflow::Tensor>();
                 input[realInputName] = convertTFTensor2OVTensor(packet);
+#endif
             } else {
                 auto& packet = cc->Inputs().Tag(tag).Get<ov::Tensor>();
                 input[realInputName] = packet;
@@ -545,6 +577,7 @@ public:
                 SERIALIZE_TENSORS(Tensor, convertOVTensor2MPTensor)
                 // no need to break since we only have one tag
                 // create concatenator calc
+#if !defined(OVMS_RUNTIME_DISABLE_TF_TENSORS)
             } else if (startsWith(tag, TFLITE_TENSORS_TAG)) {
                 LOG(INFO) << "OVMS calculator will process vector<TfLiteTensor>";
                 auto outputStreamTensors = std::vector<TfLiteTensor>();
@@ -581,16 +614,19 @@ public:
                 }
                 cc->Outputs().Tag(tag).AddPacket(MakePacket<std::vector<TfLiteTensor>>(std::move(outputStreamTensors)).At( cc->InputTimestamp()));
                 break;
+#endif
             } else if (startsWith(tag, OVTENSOR_TAG)) {
                 LOG(INFO) << "OVMS calculator will process ov::Tensor";
                 cc->Outputs().Tag(tag).Add(
                     new ov::Tensor(tensorIt->second),
                     cc->InputTimestamp());
+#if !defined(OVMS_RUNTIME_DISABLE_TF_TENSORS)
             } else if (startsWith(tag, TFTENSOR_TAG)) {
                 LOG(INFO) << "OVMS calculator will process tensorflow::Tensor";
                 cc->Outputs().Tag(tag).Add(
                     new tensorflow::Tensor(convertOVTensor2TFTensor(tensorIt->second)),
                     cc->InputTimestamp());
+#endif
             } else if (startsWith(tag, MPTENSOR_TAG)) {
                 LOG(INFO) << "OVMS calculator will process mediapipe::Tensor";
                 cc->Outputs().Tag(tag).Add(
