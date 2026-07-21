@@ -51,7 +51,7 @@ cmake(
     tags = ["requires-network"],
     deps = [
         "@mediapipe//mediapipe/framework/port:opencv_core",
-        "@mediapipe//third_party:openvino",
+        "@windows_openvino//:openvino_new_headers",
     ],
 )
 
@@ -59,7 +59,7 @@ cc_library(
     name = "model_api",
     deps = [
         "@mediapipe//mediapipe/framework/port:opencv_core",
-        "@mediapipe//third_party:openvino",
+        "@windows_openvino//:openvino_new_headers",
         ":model_api_cmake",
     ],
     visibility = ["//visibility:public"],

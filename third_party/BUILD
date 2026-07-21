@@ -51,10 +51,10 @@ cc_library(
             "@com_github_glog_glog//:glog",
         ],
         "//mediapipe:windows": [
-            "@com_github_glog_glog_windows//:glog",
+            "@com_github_glog_glog//:glog",
         ],
         "//conditions:default": [
-            "@com_github_glog_glog//:glog",
+            "@com_github_glog_glog_no_gflags//:glog",
         ],
     }),
 )

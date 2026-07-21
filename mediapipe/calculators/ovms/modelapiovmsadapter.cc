@@ -36,7 +36,6 @@
 // for the one inside OVMS repo it makes sense to reuse code from ovms lib
 namespace mediapipe::ovms {
     
-using std::endl;
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-function"
 using InferenceOutput = std::map<std::string, ov::Tensor>;
