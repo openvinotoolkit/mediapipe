@@ -22,7 +22,7 @@
 #include "mediapipe/framework/calculator_framework.h"
 #include "mediapipe/framework/port/canonical_errors.h"
 #pragma GCC diagnostic pop
-#if !defined(OVMS_RUNTIME_DISABLE_TF_TENSORS)
+#if !defined(OVMS_RUNTIME_DISABLE_TFLITE_TENSORS)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wall"
 #include "tensorflow/lite/interpreter.h"
@@ -35,7 +35,7 @@ class OpenVINOInferenceCalculator : public CalculatorBase {
     std::unordered_map<std::string, std::string> outputNameToTag;
     std::vector<std::string> input_order_list;
     std::vector<std::string> output_order_list;
-#if !defined(OVMS_RUNTIME_DISABLE_TF_TENSORS)
+#if !defined(OVMS_RUNTIME_DISABLE_TFLITE_TENSORS)
     std::unique_ptr<tflite::Interpreter> interpreter_ = absl::make_unique<tflite::Interpreter>();
     bool initialized = false;
 #endif

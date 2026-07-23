@@ -193,28 +193,26 @@ absl::Status OpenVINOModelServerSessionCalculator::Open(CalculatorContext* cc) {
         }
         ASSERT_CAPI_STATUS_NULL(OVMS_ServerLive(cserver, &isServerLive));
         // if config is in calc then we start the server
-        {
-            bool isServerReady = false;
+        bool isServerReady = false;
 
-            if (triedToStartOVMS) {
-                RET_CHECK(isServerLive);
-            } else if (!isServerLive) {
-                LOG(INFO) << "Will start new server";
-                triedToStartOVMS = true;
-                SettingsGuard guard;
-                OVMS_ServerSettingsNew(&guard.serverSettings);
-                OVMS_ModelsSettingsNew(&guard.modelsSettings);
-                OVMS_ServerSettingsSetGrpcPort(guard.serverSettings, 9178);
-                OVMS_ModelsSettingsSetConfigPath(guard.modelsSettings, options.server_config().c_str());
-                LOG(INFO) << "state config file:" << options.server_config();
-                OVMS_ServerSettingsSetLogLevel(guard.serverSettings, OvmsLogLevel);
+        if (triedToStartOVMS) {
+            RET_CHECK(isServerLive);
+        } else if (!isServerLive) {
+            LOG(INFO) << "Will start new server";
+            triedToStartOVMS = true;
+            SettingsGuard guard;
+            OVMS_ServerSettingsNew(&guard.serverSettings);
+            OVMS_ModelsSettingsNew(&guard.modelsSettings);
+            OVMS_ServerSettingsSetGrpcPort(guard.serverSettings, 9178);
+            OVMS_ModelsSettingsSetConfigPath(guard.modelsSettings, options.server_config().c_str());
+            LOG(INFO) << "state config file:" << options.server_config();
+            OVMS_ServerSettingsSetLogLevel(guard.serverSettings, OvmsLogLevel);
 
-                ASSERT_CAPI_STATUS_NULL(OVMS_ServerStartFromConfigurationFile(cserver, guard.serverSettings, guard.modelsSettings));
+            ASSERT_CAPI_STATUS_NULL(OVMS_ServerStartFromConfigurationFile(cserver, guard.serverSettings, guard.modelsSettings));
 
-                ASSERT_CAPI_STATUS_NULL(OVMS_ServerReady(cserver, &isServerReady));
-                RET_CHECK(isServerReady);
-                LOG(INFO) << "Server started";
-            }
+            ASSERT_CAPI_STATUS_NULL(OVMS_ServerReady(cserver, &isServerReady));
+            RET_CHECK(isServerReady);
+            LOG(INFO) << "Server started";
         }
     } else {
         if (cserver == nullptr) {
