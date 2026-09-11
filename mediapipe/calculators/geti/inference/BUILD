@@ -1,17 +1,6 @@
 load("//mediapipe/framework/port:build_config.bzl", "mediapipe_cc_proto_library", "mediapipe_proto_library")
-load("@rules_cc//cc:defs.bzl", "cc_proto_library")
 
 package(default_visibility = ["//visibility:public"])
-
-proto_library(
-    name = "grpc_predict_v2_proto",
-    srcs = ["grpc_predict_v2.proto"],
-)
-
-cc_proto_library(
-    name = "grpc_predict_v2_cc_proto",
-    deps = [":grpc_predict_v2_proto"],
-)
 
 proto_library(
     name = "openvino_inference_adapter_calculator_proto",
@@ -63,7 +52,7 @@ cc_library(
     ],
     deps = [
         ":openvino_inference_adapter_calculator_cc_proto",
-        ":grpc_predict_v2_cc_proto",
+        "@ovms//src/kfserving_api:kfserving_api_cpp",
         "//mediapipe/framework:calculator_framework",
         "//mediapipe/framework/formats:image_frame_opencv",
         "//mediapipe/framework/port:opencv_core",

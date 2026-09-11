@@ -215,8 +215,6 @@ filegroup(
   srcs = [
     "//mediapipe/calculators/geti/serialization:calculators",
     "//mediapipe/calculators/geti/inference:geti_calculator_base",
-    "//mediapipe/calculators/geti/inference:grpc_predict_v2_cc_proto",
-    "//mediapipe/calculators/geti/inference:grpc_predict_v2_proto",
     "//mediapipe/calculators/geti/inference:inference_calculators",
     "//mediapipe/calculators/geti/inference:inference_utils",
     "//mediapipe/calculators/geti/inference:openvino_inference_adapter_calculator_cc_proto",

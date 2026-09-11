@@ -39,6 +39,26 @@ cc_library(
 )
 
 cc_library(
+    name = "ovms_calculator_runtime",
+    srcs = [
+    ],
+    deps = [
+        "//mediapipe/calculators/openvino:openvino_tensors_to_classification_calculator_cc_proto",
+        "//mediapipe/calculators/openvino:openvino_tensors_to_detections_calculator_cc_proto",
+        "//mediapipe/calculators/openvino:openvino_converter_calculator_cc_proto",
+        "//mediapipe/calculators/openvino:openvino_converter_calculator",
+        "//mediapipe/calculators/openvino:openvino_tensors_to_classification_calculator",
+        "//mediapipe/calculators/openvino:openvino_tensors_to_detections_calculator",
+        ":modelapiovmsadapter",
+        ":openvinoinferencecalculator_no_tflite",
+        ":openvinomodelserversessioncalculator",
+    ],
+    copts = ["-Iexternal/ovms/src","-Isrc"],
+    linkopts = ["-Lmediapipe/"],
+    alwayslink = 1,
+)
+
+cc_library(
     name = "modelapiovmsadapter",
     srcs = [
         "modelapiovmsadapter.cc"
@@ -122,6 +142,28 @@ cc_library(
         "@ovms//src:ovms_header",
     ],
     copts = ["-Iexternal/ovms/src","-Isrc"],
+    alwayslink = 1,
+)
+
+cc_library(
+    name = "openvinoinferencecalculator_no_tflite",
+    srcs = [
+        "openvinoinferencecalculator.cc",
+    ],
+    hdrs = [
+        "openvinoinferencecalculator.h",
+    ],
+    deps = [
+        "openvinoinferencecalculatoroptions",
+        ":modelapiovmsadapter",
+        ":openvinoinferencecalculator_cc_proto",
+        "//mediapipe/framework:calculator_framework",
+        "//mediapipe/framework/formats:tensor",
+        "//third_party:openvino",
+        "@ovms//src:ovms_header",
+    ],
+    copts = ["-Iexternal/ovms/src","-Isrc"],
+    local_defines = ["OVMS_RUNTIME_DISABLE_TFLITE_TENSORS=1"],
     alwayslink = 1,
 )
 
