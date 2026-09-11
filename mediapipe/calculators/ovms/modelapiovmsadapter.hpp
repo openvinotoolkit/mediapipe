@@ -17,8 +17,12 @@
 #include <iostream>
 #include <map>
 #include <memory>
+#include <mutex>
+#include <cstdio>
 #include <sstream>
+#include <stdexcept>
 #include <string>
+#include <thread>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -27,6 +31,10 @@
 #include <openvino/openvino.hpp>
 
 #include "ovms.h"  // NOLINT
+
+#ifdef _WIN32
+#include <Windows.h>
+#endif
 
 // here we need to decide if we have several calculators (1 for OVMS repository, 1-N inside mediapipe)
 // for the one inside OVMS repo it makes sense to reuse code from ovms lib
@@ -54,6 +62,45 @@ class OVMSInferenceAdapter : public ::InferenceAdapter {
     std::unordered_map<std::string, ov::element::Type_t> outputDatatypes;
     ov::AnyMap modelConfig;
 
+    // Creates (once per process) and returns a shared OVMS server handle for adapters
+    // that are constructed without an explicit server pointer.
+    // This path is used by calculators running in-process when they rely on the default
+    // OVMS singleton instead of receiving a handle from runtime/shared-library plumbing.
+    // Keeping one shared handle avoids repeated OVMS_ServerNew calls and keeps all such
+    // adapters bound to the same server instance.
+    static OVMS_Server* getSharedServerHandle() {
+        static std::once_flag once;
+        static OVMS_Server* sharedServer{nullptr};
+        std::fprintf(stderr, "OVMSAdapter shared handle call_once entry thread=%zu\n", std::hash<std::thread::id>{}(std::this_thread::get_id()));
+        std::call_once(once, []() {
+            std::fprintf(stderr, "OVMSAdapter shared handle init start\n");
+            auto* serverNewFn = &OVMS_ServerNew;
+            std::fprintf(stderr, "OVMSAdapter shared handle OVMS_ServerNew fn=%p\n", reinterpret_cast<void*>(serverNewFn));
+#ifdef _WIN32
+            HMODULE mod = nullptr;
+            if (GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+                    reinterpret_cast<LPCSTR>(serverNewFn), &mod) != 0) {
+                char modulePath[MAX_PATH] = {0};
+                DWORD pathLen = GetModuleFileNameA(mod, modulePath, MAX_PATH);
+                if (pathLen > 0) {
+                    std::fprintf(stderr, "OVMSAdapter shared handle OVMS_ServerNew module=%s\n", modulePath);
+                }
+            }
+#endif
+            OVMS_Status* status = serverNewFn(&sharedServer);
+            std::fprintf(stderr, "OVMSAdapter shared handle init OVMS_ServerNew returned status=%p server=%p\n", static_cast<void*>(status), static_cast<void*>(sharedServer));
+            if (status != nullptr) {
+                const char* msg = nullptr;
+                OVMS_StatusDetails(status, &msg);
+                std::string details = (msg != nullptr) ? msg : "unknown error";
+                OVMS_StatusDelete(status);
+                throw std::runtime_error("OVMS_ServerNew failed in OVMSInferenceAdapter: " + details);
+            }
+        });
+        std::fprintf(stderr, "OVMSAdapter shared handle call_once exit server=%p\n", static_cast<void*>(sharedServer));
+        return sharedServer;
+    }
+
 public:
     // TODO Windows: Fix definition in header - does not compile in cpp.
     OVMSInferenceAdapter(const std::string& servableName, uint32_t servableVersion = 0, OVMS_Server* server = nullptr) :
@@ -62,7 +109,7 @@ public:
         if (nullptr != server) {
             this->cserver = server;
         } else {
-            OVMS_ServerNew(&this->cserver);
+            this->cserver = getSharedServerHandle();
         }
     }
     virtual ~OVMSInferenceAdapter();
