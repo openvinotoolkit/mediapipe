@@ -200,6 +200,30 @@ cc_test(
 )
 
 cc_library(
+    name = "detection_color_by_id_calculator",
+    srcs = ["detection_color_by_id_calculator.cc"],
+    deps=[
+        ":detection_color_by_id_calculator_cc_proto",
+        "//mediapipe/util:render_data_cc_proto",
+        "//mediapipe/framework:calculator_framework",
+        "//mediapipe/framework/formats:detection_cc_proto",
+        "//mediapipe/framework/formats:location_data_cc_proto",
+        "//mediapipe/framework/port:ret_check",
+        "//mediapipe/util:color_cc_proto",
+    ],
+    alwayslink = 1,
+)
+
+mediapipe_proto_library(
+    name = "detection_color_by_id_calculator_proto",
+    srcs = ["detection_color_by_id_calculator.proto"],
+    deps = [
+        "//mediapipe/framework:calculator_options_proto",
+        "//mediapipe/framework:calculator_proto",
+    ],
+)
+
+cc_library(
     name = "packet_latency_calculator",
     srcs = ["packet_latency_calculator.cc"],
     deps = [
