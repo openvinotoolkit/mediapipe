@@ -49,17 +49,14 @@ if [ -z "$1" ]
                        libjpeg-turbo-devel libpng-devel tbb-devel \
                        libtiff-devel
     fi
+    opencv_version="4.14.0"
     rm -rf /tmp/build_opencv
-    mkdir /tmp/build_opencv
+    mkdir -p /tmp/build_opencv/opencv /tmp/build_opencv/opencv_contrib
     cd /tmp/build_opencv
-    git clone https://github.com/opencv/opencv_contrib.git
-    git clone https://github.com/opencv/opencv.git
-    mkdir opencv/release
-    cd opencv_contrib
-    git checkout 4.7.0
-    cd ../opencv
-    git checkout 4.7.0
-    cd release
+    curl -fLsS "https://github.com/opencv/opencv/archive/refs/tags/${opencv_version}.tar.gz" | tar -xz --strip-components=1 -C /tmp/build_opencv/opencv
+    curl -fLsS "https://github.com/opencv/opencv_contrib/archive/refs/tags/${opencv_version}.tar.gz" | tar -xz --strip-components=1 -C /tmp/build_opencv/opencv_contrib
+    mkdir /tmp/build_opencv/opencv/release
+    cd /tmp/build_opencv/opencv/release
     cmake .. -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_INSTALL_PREFIX=/usr/local \
           -DBUILD_LIST=core,improc,imgcodecs,calib3d,features2d,highgui,imgproc,video,videoio,optflow \
           -DBUILD_TESTS=OFF -DBUILD_PERF_TESTS=OFF -DBUILD_opencv_ts=OFF \

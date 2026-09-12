@@ -152,5 +152,7 @@ def workspace_model_api():
         remote = "https:///github.com/openvinotoolkit/model_api/",
         build_file = "@_model-api//:BUILD",
         commit = "59685a8839176109ad677320228e2ee3ff94c788",  # 26.11.2025 top of 'classic_cpp_support' branch
+        patch_args = ["-p1"],
+        patches = [Label("//third_party/model_api:model_api_json_archive.patch")],
     )
 
