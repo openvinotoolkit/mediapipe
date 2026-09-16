@@ -93,6 +93,9 @@ for app in ${apps}; do
         target="${app}:extract_yt8m_features"
         echo "Skipping target ${target}"
         continue
+    elif [[ "${target_name}" == "bytetrack" ]]; then
+        echo "Skipping target ${target_name} ."
+        continue
     else
       target="${app}:${target_name}_cpu"
     fi

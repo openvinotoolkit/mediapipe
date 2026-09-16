@@ -27,6 +27,7 @@ cc_library(
         "//mediapipe/calculators/openvino:openvino_tensors_to_detections_calculator_cc_proto",
         "//mediapipe/calculators/openvino:openvino_converter_calculator_cc_proto",
         "//mediapipe/calculators/openvino:openvino_converter_calculator",
+        "//mediapipe/calculators/openvino:openvino_yolox_tensors_to_detections_calculator",
         "//mediapipe/calculators/openvino:openvino_tensors_to_classification_calculator",
         "//mediapipe/calculators/openvino:openvino_tensors_to_detections_calculator",
         ":modelapiovmsadapter",
