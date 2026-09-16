@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-load("@bazel_tools//tools/build_defs/repo:git.bzl", "new_git_repository")
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 def _is_windows(ctx):
     return ctx.os.name.lower().find("windows") != -1
 
@@ -147,11 +147,12 @@ model_api_repository = repository_rule(
 
 def workspace_model_api():
     model_api_repository(name="_model-api")
-    new_git_repository(
+    http_archive(
         name = "model_api",
-        remote = "https:///github.com/openvinotoolkit/model_api/",
+        url = "https://github.com/openvinotoolkit/model_api/archive/59685a8839176109ad677320228e2ee3ff94c788.tar.gz",
+        sha256 = "4cb79d3bb8e1bf76503b8e8c9f05a18d10d3d786f49c9b4997ff4c2a89c170bd",
+        strip_prefix = "model_api-59685a8839176109ad677320228e2ee3ff94c788",
         build_file = "@_model-api//:BUILD",
-        commit = "59685a8839176109ad677320228e2ee3ff94c788",  # 26.11.2025 top of 'classic_cpp_support' branch
         patch_args = ["-p1"],
         patches = [Label("//third_party/model_api:model_api_json_archive.patch")],
     )
