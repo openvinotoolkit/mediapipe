@@ -58,6 +58,7 @@ cc_library(
         "//mediapipe/framework/port:status",
         "@com_google_absl//absl/log:absl_log",
         "@com_google_absl//absl/strings",
+        "@com_github_nlohmann_json//:json",
         "@openvino//:openvino",
     ],
     alwayslink = 1,
@@ -100,6 +101,27 @@ cc_test(
         "//mediapipe/framework/port:parse_text_proto",
         "//mediapipe/framework/port:status_matchers",
         "//mediapipe/framework/tool:sink",
+        "@openvino//:openvino",
+    ],
+)
+
+cc_test(
+    name = "openvino_session_calculator_test",
+    srcs = ["openvino_session_calculator_test.cc"],
+    data = [
+        "testdata/add.bin",
+        "testdata/add.xml",
+        "testdata/identity.bin",
+        "testdata/identity.xml",
+    ],
+    deps = [
+        ":openvino_calculators",
+        "//mediapipe/framework:calculator_framework",
+        "//mediapipe/framework/port:gtest_main",
+        "//mediapipe/framework/port:parse_text_proto",
+        "//mediapipe/framework/port:status_matchers",
+        "//mediapipe/framework/tool:sink",
+        "@com_google_absl//absl/strings:str_format",
         "@openvino//:openvino",
     ],
 )

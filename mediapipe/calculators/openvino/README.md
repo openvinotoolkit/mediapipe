@@ -64,6 +64,13 @@ Node parameters (`OpenVINOSessionCalculatorOptions`):
 | `device` | string | `"CPU"` | `CPU`, `GPU`, `GPU.1`, `NPU`, `AUTO:GPU,CPU`, `MULTI:CPU,GPU`, `HETERO:GPU,CPU`, `BATCH:GPU`. |
 | `plugin_config` | repeated `{key, value}` | empty | Passed verbatim to `compile_model` as `ov::AnyMap`. |
 | `num_infer_requests` | uint32 | `0` | Size of the request queue. `0` = `ov::optimal_number_of_infer_requests` reported by the plugin. |
+| `shape` | string | empty | `auto`, a tuple such as `(1,3,224,224)`, or a JSON input map such as `{"input1":"(1,10)","input2":"auto"}`. Takes precedence over `batch_size`. |
+| `batch_size` | string | empty | A positive integer or `auto`. The first dimension is used when the model has no batch layout metadata. |
+| `layout` | string | empty | A layout such as `NCHW`, a conversion such as `NHWC:NCHW`, or a JSON map of input/output names to layouts. |
+| `mean` | string | empty | A scalar, tuple, or array subtracted from a single model input. |
+| `scale` | string | empty | A scalar, tuple, or array used to divide a single model input. |
+| `color_format` | string | empty | Incoming color format or conversion such as `RGB:BGR`. Supports `RGB`, `BGR`, `GRAY`, `NV12`, `NV12_2`, `I420`, and `I420_3`. |
+| `precision` | string | empty | Incoming precision or conversion such as `uint8:fp32`. Supports OVMS precision names including `fp32`, `uint8`, and `bf16`. |
 
 Contract: no input streams, no output streams, one output side packet
 `SESSION` of type `std::shared_ptr<OpenVINOSession>`.
@@ -79,10 +86,30 @@ node {
       plugin_config { key: "PERFORMANCE_HINT" value: "THROUGHPUT" }
       plugin_config { key: "NUM_STREAMS" value: "4" }
       num_infer_requests: 8
+      shape: "(1,224,224,3)"
+      layout: "NHWC:NCHW"
+      mean: "[123.675,116.28,103.53]"
+      scale: "[58.395,57.12,57.375]"
+      color_format: "RGB:BGR"
+      precision: "uint8:fp32"
     }
   }
 }
 ```
+
+A colon-separated value describes the incoming tensor first and the model-side
+representation second. Model preparation happens before compilation using
+OpenVINO's `PrePostProcessor`. Unnamed `shape` and `layout` values require a
+single-input model; JSON shape/layout maps support multi-input models, and
+layout maps can also name outputs. Mean, scale, color, and precision currently
+apply to single-input models, matching the corresponding OVMS preprocessing
+path.
+
+`shape: "auto"` and `batch_size: "auto"` compile a ranked dynamic model, so a
+single graph session can accept compatible runtime dimensions supported by the
+selected OpenVINO plugin. Unlike OpenVINO Model Server, this calculator does
+not reload the model for each new request shape because the session is created
+before MediaPipe input packets arrive.
 
 A single process-wide `ov::Core` is used, so the plugin-level model cache
 (`CACHE_DIR`) and device initialisation are shared.
@@ -124,8 +151,10 @@ node {
 
 ### Preparing the input
 
-The calculator does no preprocessing; the tensor you send must already match
-the model's element type and shape. Typical producer code:
+Without session preprocessing options, the tensor must match the model's
+element type and shape. With preprocessing configured, it must instead match
+the incoming precision, shape, layout, and color format declared in the
+session options. Typical producer code:
 
 ```c++
 ov::Tensor tensor(ov::element::f32, ov::Shape{1, 3, 224, 224});

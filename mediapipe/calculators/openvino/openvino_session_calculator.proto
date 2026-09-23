@@ -54,4 +54,27 @@ message OpenVINOSessionCalculatorOptions {
   // Number of inference requests kept in the shared queue. When unset or 0,
   // the value reported by ov::optimal_number_of_infer_requests is used.
   optional uint32 num_infer_requests = 4;
+
+  // Model input shape: "auto", "(1,3,224,224)", or a JSON object mapping
+  // input names to shapes. Takes precedence over batch_size.
+  optional string shape = 5;
+
+  // Model batch size as a positive integer or "auto".
+  optional string batch_size = 6;
+
+  // Tensor/model layout, e.g. "NHWC:NCHW", or a JSON object mapping input or
+  // output names to layouts.
+  optional string layout = 7;
+
+  // Scalar or per-channel values subtracted from input data.
+  optional string mean = 8;
+
+  // Scalar or per-channel values used to divide input data.
+  optional string scale = 9;
+
+  // Tensor/model color format, e.g. "RGB:BGR".
+  optional string color_format = 10;
+
+  // Tensor/model element type, e.g. "uint8:fp32".
+  optional string precision = 11;
 }
