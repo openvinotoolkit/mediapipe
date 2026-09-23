@@ -526,10 +526,20 @@ http_archive(
     urls = ["https://github.com/opencv/opencv/archive/3.4.11.tar.gz"],
 )
 
+# OpenVINO Runtime binary distribution, used by
+# //mediapipe/calculators/openvino:*
+http_archive(
+    name = "openvino",
+    build_file = "@//third_party:openvino.BUILD",
+    sha256 = "0bd86d578beb1e8805655f593315c69bf909008e212f801ed76e3a350927736f",
+    strip_prefix = "openvino_toolkit_ubuntu24_2026.4.0.22959.99c81491cc3_x86_64",
+    url = "https://storage.openvinotoolkit.org/repositories/openvino/packages/2026.4/linux/openvino_toolkit_ubuntu24_2026.4.0.22959.99c81491cc3_x86_64.tgz",
+)
+
 new_local_repository(
     name = "linux_opencv",
     build_file = "@//third_party:opencv_linux.BUILD",
-    path = "/usr",
+    path = "/usr/local",
 )
 
 new_local_repository(

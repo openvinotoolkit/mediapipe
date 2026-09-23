@@ -1,0 +1,57 @@
+// Copyright 2024 Intel Corporation
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto2";
+
+package mediapipe;
+
+import "mediapipe/framework/calculator.proto";
+
+// Example:
+//
+// node {
+//   calculator: "OpenVINOSessionCalculator"
+//   output_side_packet: "SESSION:session"
+//   node_options: {
+//     [type.googleapis.com/mediapipe.OpenVINOSessionCalculatorOptions] {
+//       model_path: "/models/resnet50/resnet50.xml"
+//       device: "CPU"
+//       plugin_config { key: "PERFORMANCE_HINT" value: "THROUGHPUT" }
+//     }
+//   }
+// }
+message OpenVINOSessionCalculatorOptions {
+  extend mediapipe.CalculatorOptions {
+    optional OpenVINOSessionCalculatorOptions ext = 113344556;
+  }
+
+  message PluginConfigEntry {
+    optional string key = 1;
+    optional string value = 2;
+  }
+
+  // Path to the model. Either an OpenVINO IR .xml file or any other format
+  // supported by ov::Core::compile_model (.onnx, saved_model.pb, .tflite...).
+  optional string model_path = 1;
+
+  // Target device, e.g. "CPU", "GPU", "NPU", "AUTO:GPU,CPU", "MULTI:CPU,GPU".
+  optional string device = 2 [default = "CPU"];
+
+  // Device configuration passed verbatim to ov::Core::compile_model.
+  repeated PluginConfigEntry plugin_config = 3;
+
+  // Number of inference requests kept in the shared queue. When unset or 0,
+  // the value reported by ov::optimal_number_of_infer_requests is used.
+  optional uint32 num_infer_requests = 4;
+}
