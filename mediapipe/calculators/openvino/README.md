@@ -327,6 +327,23 @@ Depend on `//mediapipe/calculators/openvino:openvino_calculators` from your
 binary (both calculator libraries are `alwayslink = 1`, which is what gets
 `REGISTER_CALCULATOR` to run).
 
+## Testing
+
+`openvino_calculators_concurrency_test.cc` builds 4 `CalculatorGraph`
+instances around the same `add.xml`/`add.bin` model (in `testdata/`, an
+OpenVINO IR that sums two `f32[1,10]` inputs), runs them concurrently on
+separate threads with distinct inputs, and checks each output against the
+expected sum. Since the 4 graphs share identical session options, they also
+share one compiled model and one 4-request queue (see "Sharing one model
+between concurrent graphs" above), so the test doubles as a concurrency check
+for `OVInferRequestsQueue`/`InferRequestLease`.
+
+```
+bazel test -c opt --define MEDIAPIPE_DISABLE_GPU=1 \
+  //mediapipe/calculators/openvino:openvino_calculators_concurrency_test \
+  --test_output=all
+```
+
 ## See also
 
 * `mediapipe/examples/desktop/openvino_classification` — C++ example.

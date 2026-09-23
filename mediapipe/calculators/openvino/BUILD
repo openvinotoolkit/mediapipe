@@ -13,6 +13,7 @@
 # limitations under the License.
 
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("//mediapipe/framework/port:build_config.bzl", "mediapipe_proto_library")
 
 licenses(["notice"])
@@ -82,5 +83,23 @@ cc_library(
     deps = [
         ":openvino_inference_calculator",
         ":openvino_session_calculator",
+    ],
+)
+
+cc_test(
+    name = "openvino_calculators_concurrency_test",
+    srcs = ["openvino_calculators_concurrency_test.cc"],
+    data = [
+        "testdata/add.bin",
+        "testdata/add.xml",
+    ],
+    deps = [
+        ":openvino_calculators",
+        "//mediapipe/framework:calculator_framework",
+        "//mediapipe/framework/port:gtest_main",
+        "//mediapipe/framework/port:parse_text_proto",
+        "//mediapipe/framework/port:status_matchers",
+        "//mediapipe/framework/tool:sink",
+        "@openvino//:openvino",
     ],
 )
