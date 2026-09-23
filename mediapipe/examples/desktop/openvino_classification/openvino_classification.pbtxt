@@ -1,0 +1,28 @@
+# MediaPipe graph that runs image classification with OpenVINO.
+#
+# The session node compiles the model once and publishes a pool of inference
+# requests as the "session" side packet. Any number of graphs (or nodes) using
+# the same model_path/device/plugin_config share that pool.
+
+input_stream: "input_tensors"
+output_stream: "output_tensors"
+
+node {
+  calculator: "OpenVINOSessionCalculator"
+  output_side_packet: "SESSION:session"
+  node_options: {
+    [type.googleapis.com/mediapipe.OpenVINOSessionCalculatorOptions] {
+      model_path: "/home/dtrawins/models/resnet50/resnet50.xml"
+      device: "CPU"
+      plugin_config { key: "PERFORMANCE_HINT" value: "THROUGHPUT" }
+      num_infer_requests: 4
+    }
+  }
+}
+
+node {
+  calculator: "OpenVINOInferenceCalculator"
+  input_side_packet: "SESSION:session"
+  input_stream: "TENSORS:input_tensors"
+  output_stream: "TENSORS:output_tensors"
+}

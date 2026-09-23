@@ -40,8 +40,8 @@ if [ -z "$1" ]
     echo "Installing OpenCV from source"
     if [[ -x "$(command -v apt)" ]]; then
       sudo apt update && sudo apt install build-essential git
-      sudo apt install cmake ffmpeg libavformat-dev libdc1394-22-dev libgtk2.0-dev \
-                       libjpeg-dev libpng-dev libswscale-dev libtbb2 libtbb-dev \
+      sudo apt install -y cmake ffmpeg libavformat-dev libdc1394-dev libgtk2.0-dev \
+                       libjpeg-dev libpng-dev libswscale-dev libtbbmalloc2 libtbb-dev \
                        libtiff-dev
     elif [[ -x "$(command -v dnf)" ]]; then
       sudo dnf update && sudo dnf install cmake gcc gcc-c git
@@ -56,9 +56,9 @@ if [ -z "$1" ]
     git clone https://github.com/opencv/opencv.git
     mkdir opencv/release
     cd opencv_contrib
-    git checkout 3.4
+    git checkout 4.13.0
     cd ../opencv
-    git checkout 3.4
+    git checkout 4.13.0
     cd release
     cmake .. -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_INSTALL_PREFIX=/usr/local \
           -DBUILD_TESTS=OFF -DBUILD_PERF_TESTS=OFF -DBUILD_opencv_ts=OFF \
