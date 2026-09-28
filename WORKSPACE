@@ -827,14 +827,10 @@ register_coreutils_toolchains()
 git_repository(
     name = "ovms",
     remote = "https://github.com/openvinotoolkit/model_server",
-    commit = "19f9fa5269666d8175c0c0eb1fdcfe175bde979a", # Fix build paths for mediapipe (#3619) - release 2025/3
+    commit = "d7afaac32c44eea6e491933edf271314fdcc39a0", # GENAI build branch 6.10.2025 - main
     patches = [],
     patch_args = ["-p1"],
 )
-
-### OpenVINO GenAI
-#load("@ovms//third_party/llm_engine:llm_engine.bzl", "llm_engine")
-#llm_engine()
 
 load("@//third_party/model_api:model_api.bzl", "workspace_model_api")
 workspace_model_api()
