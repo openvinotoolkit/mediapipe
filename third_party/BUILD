@@ -271,6 +271,26 @@ alias(
     }),
 )
 
+alias(
+    name = "openvino",
+    actual = select({
+        "//mediapipe:windows": "@windows_openvino//:openvino",
+        "//conditions:default": "@openvino//:openvino",
+    }),
+)
+
+# DLLs that Windows binaries need next to them at runtime.
+filegroup(
+    name = "windows_runtime_dlls",
+    srcs = select({
+        "//mediapipe:windows": [
+            "@windows_opencv//:runtime_dlls",
+            "@windows_openvino//:runtime_dlls",
+        ],
+        "//conditions:default": [],
+    }),
+)
+
 # When "--define EXCLUDE_OPENCV_SO_LIB=1" is set in the build command,
 # the OpenCV so libraries will be excluded from the AAR package to
 # save the package size.

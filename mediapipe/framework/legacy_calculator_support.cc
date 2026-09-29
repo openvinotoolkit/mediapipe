@@ -16,11 +16,20 @@
 
 namespace mediapipe {
 
+// Must match the ABSL_CONST_INIT (constinit) on the declarations; MSVC enforces it.
+#ifndef __APPLE__
+#define MP_LEGACY_CONST_INIT ABSL_CONST_INIT
+#else
+#define MP_LEGACY_CONST_INIT
+#endif  // !__APPLE__
+
 template <>
-thread_local CalculatorContext*
+MP_LEGACY_CONST_INIT thread_local CalculatorContext*
     LegacyCalculatorSupport::Scoped<CalculatorContext>::current_ = nullptr;
 template <>
-thread_local CalculatorContract*
+MP_LEGACY_CONST_INIT thread_local CalculatorContract*
     LegacyCalculatorSupport::Scoped<CalculatorContract>::current_ = nullptr;
+
+#undef MP_LEGACY_CONST_INIT
 
 }  // namespace mediapipe

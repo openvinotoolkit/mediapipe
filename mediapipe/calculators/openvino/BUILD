@@ -44,7 +44,7 @@ cc_library(
         "openvino_infer_request_queue.h",
         "openvino_session.h",
     ],
-    deps = ["@openvino//:openvino"],
+    deps = ["//third_party:openvino"],
 )
 
 cc_library(
@@ -56,10 +56,10 @@ cc_library(
         "//mediapipe/framework:calculator_framework",
         "//mediapipe/framework/port:ret_check",
         "//mediapipe/framework/port:status",
+        "//third_party:openvino",
         "@com_google_absl//absl/log:absl_log",
         "@com_google_absl//absl/strings",
         "@com_github_nlohmann_json//:json",
-        "@openvino//:openvino",
     ],
     alwayslink = 1,
 )
@@ -73,8 +73,8 @@ cc_library(
         "//mediapipe/framework:calculator_framework",
         "//mediapipe/framework/port:ret_check",
         "//mediapipe/framework/port:status",
+        "//third_party:openvino",
         "@com_google_absl//absl/strings",
-        "@openvino//:openvino",
     ],
     alwayslink = 1,
 )
@@ -101,7 +101,7 @@ cc_test(
         "//mediapipe/framework/port:parse_text_proto",
         "//mediapipe/framework/port:status_matchers",
         "//mediapipe/framework/tool:sink",
-        "@openvino//:openvino",
+        "//third_party:openvino",
     ],
 )
 
@@ -121,7 +121,7 @@ cc_test(
         "//mediapipe/framework/port:parse_text_proto",
         "//mediapipe/framework/port:status_matchers",
         "//mediapipe/framework/tool:sink",
+        "//third_party:openvino",
         "@com_google_absl//absl/strings:str_format",
-        "@openvino//:openvino",
     ],
 )

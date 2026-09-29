@@ -14,6 +14,16 @@ single_version_override(
 bazel_dep(name = "apple_support", version = "2.6.1", repo_name = "build_bazel_apple_support")
 bazel_dep(name = "rules_apple", version = "3.16.1", repo_name = "build_bazel_rules_apple")
 bazel_dep(name = "rules_swift", version = "2.3.0", repo_name = "build_bazel_rules_swift")
+
+# Like on Linux, skip the Swift toolchain instead of failing when swiftc.exe is
+# not installed, otherwise every Windows build fails in toolchain resolution.
+single_version_override(
+    module_name = "rules_swift",
+    patch_strip = 1,
+    patches = ["//third_party:rules_swift_windows_no_swiftc.diff"],
+    version = "2.3.0",
+)
+
 bazel_dep(name = "rules_cc", version = "0.2.9")
 single_version_override(
     module_name = "rules_cc",
@@ -21,8 +31,13 @@ single_version_override(
 )
 
 bazel_dep(name = "rules_java", version = "7.10.0")
+
+# Fixes a label to a non-existent package that breaks builds on hosts without a
+# local JDK (e.g. Windows); Java itself comes from remotejdk_21.
 single_version_override(
     module_name = "rules_java",
+    patch_strip = 1,
+    patches = ["//third_party:rules_java_no_local_jdk.diff"],
     version = "7.10.0",
 )
 
@@ -62,6 +77,9 @@ bazel_dep(name = "re2", version = "2025-11-05", repo_name = "com_googlesource_co
 bazel_dep(name = "protobuf", repo_name = "com_google_protobuf")
 archive_override(
     module_name = "protobuf",
+    # Makes json_internal::UntypedMessage compile with MSVC in C++20.
+    patch_strip = 1,
+    patches = ["//third_party:protobuf_msvc_cxx20_untyped_message.diff"],
     strip_prefix = "protobuf-6.31.1",
     urls = ["https://github.com/protocolbuffers/protobuf/archive/refs/tags/v6.31.1.zip"],
 )
