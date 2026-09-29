@@ -38,6 +38,11 @@ build:windows --copt=/w
 # For using M_* math constants on Windows with MSVC.
 build:windows --copt=/D_USE_MATH_DEFINES
 build:windows --host_copt=/D_USE_MATH_DEFINES
+# Protobuf 6.x refuses MSVC + Bazel builds unless explicitly allowed.
+build:windows --define=protobuf_allow_msvc=true
+# MediaPipe's status macros rely on __VA_OPT__ and standard variadic macro expansion.
+build:windows --per_file_copt=^mediapipe/.*@/Zc:preprocessor
+build:windows --host_per_file_copt=^mediapipe/.*@/Zc:preprocessor
 
 # macOS
 build:macos --cxxopt=-std=c++20

@@ -48,6 +48,37 @@ frame 0 output[0] shape=[1,1000] type=f32
   top5: 419=6.91352 906=6.62288 916=6.28421 549=6.15924 902=5.99802
 ```
 
+## Build and run on Windows
+
+Prerequisite: Visual Studio 2022 with the "Desktop development with C++"
+workload (including "C++ CMake tools for Windows") and Git for Windows.
+
+From `cmd.exe` in the repository root, install MSYS2, Python, Bazel and OpenCV
+into `C:\opt` and set up the build environment for the current session
+(rerun it in every new `cmd.exe`; already installed parts are skipped):
+
+```
+call prepare_build_dependencies.bat
+```
+
+OpenVINO Runtime is downloaded by Bazel. A short `--output_user_root` avoids
+Windows path length limits:
+
+```
+bazel --output_user_root=C:/b build -c opt --define MEDIAPIPE_DISABLE_GPU=1 ^
+  //mediapipe/examples/desktop/openvino_classification:openvino_classification
+
+bazel-bin\mediapipe\examples\desktop\openvino_classification\openvino_classification.exe ^
+  --calculator_graph_config_file=mediapipe/examples/desktop/openvino_classification/openvino_classification.pbtxt ^
+  --input_video_path=C:\models\test_video.mp4 ^
+  --max_frames=5
+```
+
+The OpenVINO, TBB and OpenCV DLLs (including the OpenVINO device plugins and
+the OpenCV FFmpeg plugin) are copied next to the `.exe`, so no `setupvars.bat`
+or `PATH` changes are needed to run it. Use a Windows path for `model_path` in
+the `.pbtxt`, e.g. `model_path: "C:/models/resnet50/resnet50.xml"`.
+
 ## Flags
 
 | Flag | Default | Meaning |

@@ -13,6 +13,7 @@
 # limitations under the License.
 
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+load("//third_party:copy_runtime_dlls.bzl", "copy_runtime_dlls")
 
 licenses(["notice"])
 
@@ -27,9 +28,11 @@ exports_files(["openvino_classification.pbtxt"])
 # bazel-bin/mediapipe/examples/desktop/openvino_classification/openvino_classification \
 #   --calculator_graph_config_file=mediapipe/examples/desktop/openvino_classification/openvino_classification.pbtxt \
 #   --input_video_path=/path/to/video.mp4
+# On Windows, use bazel-bin\...\openvino_classification.exe with the same flags.
 cc_binary(
     name = "openvino_classification",
     srcs = ["openvino_classification_main.cc"],
+    data = [":runtime_dlls"],
     deps = [
         "//mediapipe/calculators/openvino:openvino_calculators",
         "//mediapipe/framework:calculator_framework",
@@ -40,11 +43,17 @@ cc_binary(
         "//mediapipe/framework/port:parse_text_proto",
         "//mediapipe/framework/port:ret_check",
         "//mediapipe/framework/port:status",
+        "//third_party:openvino",
         "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/flags:parse",
         "@com_google_absl//absl/log:absl_log",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings",
-        "@openvino//:openvino",
     ],
+)
+
+# Empty outside Windows.
+copy_runtime_dlls(
+    name = "runtime_dlls",
+    srcs = ["//third_party:windows_runtime_dlls"],
 )

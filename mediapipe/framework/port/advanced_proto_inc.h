@@ -22,7 +22,10 @@
 #include "google/protobuf/descriptor.pb.h"
 #include "google/protobuf/descriptor_database.h"
 #include "google/protobuf/dynamic_message.h"
+// Protobuf's Bazel build provides no zlib for MSVC, so gzip_stream.h is unusable there.
+#ifndef _MSC_VER
 #include "google/protobuf/io/gzip_stream.h"
+#endif  // _MSC_VER
 #include "google/protobuf/io/zero_copy_stream_impl.h"
 #include "google/protobuf/message.h"
 #include "mediapipe/framework/port.h"

@@ -536,6 +536,15 @@ http_archive(
     url = "https://storage.openvinotoolkit.org/repositories/openvino/packages/2026.4/linux/openvino_toolkit_ubuntu24_2026.4.0.22959.99c81491cc3_x86_64.tgz",
 )
 
+# Windows counterpart of @openvino, selected by //third_party:openvino.
+http_archive(
+    name = "windows_openvino",
+    build_file = "@//third_party:openvino_windows.BUILD",
+    sha256 = "888f16e0dfcc46a02af15f2ed19c3fb65f748fd46f8e19216183a0e2e2a29e9f",
+    strip_prefix = "openvino_toolkit_windows_2026.4.0.22959.99c81491cc3_x86_64",
+    url = "https://storage.openvinotoolkit.org/repositories/openvino/packages/2026.4/windows/openvino_toolkit_windows_2026.4.0.22959.99c81491cc3_x86_64.zip",
+)
+
 new_local_repository(
     name = "linux_opencv",
     build_file = "@//third_party:opencv_linux.BUILD",
@@ -566,7 +575,8 @@ new_local_repository(
 new_local_repository(
     name = "windows_opencv",
     build_file = "@//third_party:opencv_windows.BUILD",
-    path = "C:\\opencv\\build",
+    # Installed by prepare_build_dependencies.bat.
+    path = "C:\\opt\\opencv",
 )
 
 # protobuf requires @system_python in WORKSPACE
