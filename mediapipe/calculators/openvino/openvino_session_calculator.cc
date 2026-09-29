@@ -36,6 +36,13 @@
 #include "openvino/core/preprocess/pre_post_process.hpp"
 #include "openvino/openvino.hpp"
 
+#if defined(MEDIAPIPE_ENABLE_GSTREAMER)
+#include "gst/gst.h"
+#include "gst/va/gstvadisplay.h"
+#include "gst/va/gstvadisplay_drm.h"
+#include "openvino/runtime/intel_gpu/ocl/va.hpp"
+#endif
+
 namespace mediapipe {
 namespace {
 
@@ -305,9 +312,19 @@ std::shared_ptr<ov::Model> PrepareModel(
     auto& input = preprocessor.input();
     if (!options.color_format().empty()) {
       const auto formats = ParsePair(options.color_format(), "color_format");
-      input.tensor().set_color_format(ParseColorFormat(formats[0]));
+      const ov::preprocess::ColorFormat input_format =
+          ParseColorFormat(formats[0]);
+      if (input_format == ov::preprocess::ColorFormat::NV12_TWO_PLANES) {
+        input.tensor().set_color_format(input_format, {"Y", "UV"});
+        input.tensor().set_spatial_dynamic_shape();
+      } else {
+        input.tensor().set_color_format(input_format);
+      }
       if (formats.size() == 2) {
         input.preprocess().convert_color(ParseColorFormat(formats[1]));
+      }
+      if (input_format == ov::preprocess::ColorFormat::NV12_TWO_PLANES) {
+        input.preprocess().resize(ov::preprocess::ResizeAlgorithm::RESIZE_LINEAR);
       }
     }
     if (!options.precision().empty()) {
@@ -387,8 +404,42 @@ class OpenVINOSessionCalculator : public CalculatorBase {
     OpenVINOSessionPtr session;
     try {
       std::shared_ptr<ov::Model> model = PrepareModel(options);
-      ov::CompiledModel compiled = GlobalCore().compile_model(
-          model, options.device(), ToAnyMap(options));
+      ov::CompiledModel compiled;
+      std::shared_ptr<void> native_context_owner;
+      void* native_va_display = nullptr;
+      if (!options.va_device_path().empty()) {
+#if defined(MEDIAPIPE_ENABLE_GSTREAMER)
+        if (!gst_is_initialized()) gst_init(nullptr, nullptr);
+        GstVaDisplay* display = gst_va_display_drm_new_from_path(
+            options.va_device_path().c_str());
+        if (display == nullptr || !gst_va_display_initialize(display)) {
+          if (display != nullptr) gst_object_unref(display);
+          throw std::runtime_error(absl::StrCat(
+              "failed to initialize VA display from ",
+              options.va_device_path()));
+        }
+        VADisplay va_display =
+            static_cast<VADisplay>(gst_va_display_get_va_dpy(display));
+        if (va_display == nullptr) {
+          gst_object_unref(display);
+          throw std::runtime_error("GStreamer VA display has no VADisplay");
+        }
+        native_va_display = display;
+        native_context_owner = std::shared_ptr<void>(display, [](void* value) {
+          gst_object_unref(value);
+        });
+        ov::intel_gpu::ocl::VAContext va_context(
+            GlobalCore(), va_display);
+        compiled = GlobalCore().compile_model(model, va_context,
+                                               ToAnyMap(options));
+#else
+        throw std::runtime_error(
+            "va_device_path requires a GStreamer-enabled build");
+#endif
+      } else {
+        compiled = GlobalCore().compile_model(model, options.device(),
+                                               ToAnyMap(options));
+      }
       int nireq = static_cast<int>(options.num_infer_requests());
       if (nireq <= 0) {
         nireq = static_cast<int>(
@@ -397,9 +448,14 @@ class OpenVINOSessionCalculator : public CalculatorBase {
       if (nireq <= 0) {
         nireq = 1;
       }
-      session = std::make_shared<OpenVINOSession>(std::move(compiled), nireq);
+        session = std::make_shared<OpenVINOSession>(
+          std::move(compiled), nireq, std::move(native_context_owner),
+          native_va_display);
       ABSL_LOG(INFO) << "OpenVINOSessionCalculator compiled "
-                     << options.model_path() << " on " << options.device()
+                 << options.model_path() << " on "
+                 << (options.va_device_path().empty()
+                     ? options.device()
+                     : absl::StrCat("GPU(VA:", options.va_device_path(), ")"))
                      << " with " << nireq << " inference requests";
     } catch (const std::exception& e) {
       return absl::InternalError(

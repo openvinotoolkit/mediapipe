@@ -16,9 +16,13 @@ exports_files(["LICENSE"])
 # libraries (libfoo.so.X) are never linked by Bazel, they are only made
 # available at runtime, which is exactly what a dlopen()-ed plugin needs.
 #
-# The GPU plugin is intentionally excluded because it has a hard NEEDED
-# dependency on libOpenCL.so.1 which is not part of this archive. Add it back
-# (and install the OpenCL ICD loader) if you need the GPU device.
+# The GPU plugin has a hard NEEDED dependency on libOpenCL.so.1. Opt in with
+# --define MEDIAPIPE_ENABLE_OPENVINO_GPU=1 after installing an OpenCL ICD loader.
+config_setting(
+    name = "openvino_gpu_enabled",
+    define_values = {"MEDIAPIPE_ENABLE_OPENVINO_GPU": "1"},
+)
+
 cc_library(
     name = "openvino",
     srcs = glob(
@@ -33,7 +37,10 @@ cc_library(
         exclude = [
             "runtime/lib/intel64/libopenvino_intel_gpu_plugin.so",
         ],
-    ),
+    ) + select({
+        ":openvino_gpu_enabled": [":openvino_gpu_plugin"],
+        "//conditions:default": [],
+    }),
     hdrs = glob([
         "runtime/include/**/*.h",
         "runtime/include/**/*.hpp",
@@ -42,7 +49,10 @@ cc_library(
     linkopts = [
         "-ldl",
         "-lpthread",
-    ],
+    ] + select({
+        ":openvino_gpu_enabled": ["-lOpenCL"],
+        "//conditions:default": [],
+    }),
     visibility = ["//visibility:public"],
 )
 

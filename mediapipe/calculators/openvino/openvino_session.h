@@ -30,8 +30,12 @@ namespace openvino_calculators {
 // every graph that declares the same model_path/device/plugin_config, so that
 // concurrently running graphs reuse one compiled model and one request queue.
 struct OpenVINOSession {
-  OpenVINOSession(ov::CompiledModel compiled, int nireq)
-      : compiled_model(std::move(compiled)),
+  OpenVINOSession(ov::CompiledModel compiled, int nireq,
+                  std::shared_ptr<void> native_context_owner = nullptr,
+                  void* native_va_display = nullptr)
+      : native_context_owner(std::move(native_context_owner)),
+        native_va_display(native_va_display),
+        compiled_model(std::move(compiled)),
         infer_requests(compiled_model, nireq) {
     for (const auto& input : compiled_model.inputs()) {
       input_names.push_back(input.get_names().empty() ? std::string()
@@ -43,6 +47,8 @@ struct OpenVINOSession {
     }
   }
 
+  std::shared_ptr<void> native_context_owner;
+  void* native_va_display = nullptr;
   ov::CompiledModel compiled_model;
   OVInferRequestsQueue infer_requests;
   std::vector<std::string> input_names;

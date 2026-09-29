@@ -21,22 +21,22 @@ package(default_visibility = ["//visibility:public"])
 exports_files(["openvino_classification.pbtxt"])
 
 # BUILD:
-# bazel build -c opt --define MEDIAPIPE_DISABLE_GPU=1 \
+# bazel build -c opt --define MEDIAPIPE_ENABLE_GSTREAMER=1 \
+#   --define MEDIAPIPE_ENABLE_OPENVINO_GPU=1 \
 #   //mediapipe/examples/desktop/openvino_classification:openvino_classification
 # RUN:
 # bazel-bin/mediapipe/examples/desktop/openvino_classification/openvino_classification \
 #   --calculator_graph_config_file=mediapipe/examples/desktop/openvino_classification/openvino_classification.pbtxt \
-#   --input_video_path=/path/to/video.mp4
+#   --model_path=/path/to/resnet50.xml --input_video_path=/path/to/video.mp4
 cc_binary(
     name = "openvino_classification",
     srcs = ["openvino_classification_main.cc"],
     deps = [
         "//mediapipe/calculators/openvino:openvino_calculators",
+        "//mediapipe/calculators/openvino:gstreamer_remote_tensor_calculator_cc_proto",
+        "//mediapipe/calculators/openvino:openvino_session_calculator_cc_proto",
         "//mediapipe/framework:calculator_framework",
         "//mediapipe/framework/port:file_helpers",
-        "//mediapipe/framework/port:opencv_core",
-        "//mediapipe/framework/port:opencv_imgproc",
-        "//mediapipe/framework/port:opencv_video",
         "//mediapipe/framework/port:parse_text_proto",
         "//mediapipe/framework/port:ret_check",
         "//mediapipe/framework/port:status",
