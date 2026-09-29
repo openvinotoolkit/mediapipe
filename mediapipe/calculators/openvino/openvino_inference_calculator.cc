@@ -22,6 +22,7 @@
 #include "mediapipe/calculators/openvino/openvino_infer_request_queue.h"
 #include "mediapipe/calculators/openvino/openvino_inference_calculator.pb.h"
 #include "mediapipe/calculators/openvino/openvino_session.h"
+#include "mediapipe/calculators/openvino/remote_tensor_packet.h"
 #include "mediapipe/framework/calculator_framework.h"
 #include "mediapipe/framework/port/ret_check.h"
 #include "mediapipe/framework/port/status.h"
@@ -37,6 +38,7 @@ using ::mediapipe::openvino_calculators::OpenVINOSessionPtr;
 constexpr char kSessionTag[] = "SESSION";
 constexpr char kTensorsTag[] = "TENSORS";
 constexpr char kRemoteTensorsTag[] = "REMOTE_TENSORS";
+constexpr char kRemoteFrameTag[] = "REMOTE_FRAME";
 
 }  // namespace
 
@@ -46,7 +48,8 @@ constexpr char kRemoteTensorsTag[] = "REMOTE_TENSORS";
 // Inputs:
 //   TENSORS        - std::vector<ov::Tensor>       (host tensors)
 //   REMOTE_TENSORS - std::vector<ov::RemoteTensor> (device tensors)
-//   Exactly one of the two input tags must be connected.
+//   REMOTE_FRAME   - RemoteTensorPacket (device tensors plus native owner)
+//   Exactly one input tag must be connected.
 //
 // Side inputs:
 //   SESSION - std::shared_ptr<OpenVINOSession>
@@ -63,14 +66,18 @@ constexpr char kRemoteTensorsTag[] = "REMOTE_TENSORS";
 class OpenVINOInferenceCalculator : public CalculatorBase {
  public:
   static absl::Status GetContract(CalculatorContract* cc) {
-    RET_CHECK(cc->Inputs().HasTag(kTensorsTag) ^
-              cc->Inputs().HasTag(kRemoteTensorsTag))
-        << "OpenVINOInferenceCalculator needs exactly one of TENSORS or "
-           "REMOTE_TENSORS input streams";
+    RET_CHECK(static_cast<int>(cc->Inputs().HasTag(kTensorsTag)) +
+            static_cast<int>(cc->Inputs().HasTag(kRemoteTensorsTag)) +
+            static_cast<int>(cc->Inputs().HasTag(kRemoteFrameTag)) ==
+          1)
+      << "OpenVINOInferenceCalculator needs exactly one of TENSORS, "
+         "REMOTE_TENSORS, or REMOTE_FRAME input streams";
     if (cc->Inputs().HasTag(kTensorsTag)) {
       cc->Inputs().Tag(kTensorsTag).Set<std::vector<ov::Tensor>>();
-    } else {
+    } else if (cc->Inputs().HasTag(kRemoteTensorsTag)) {
       cc->Inputs().Tag(kRemoteTensorsTag).Set<std::vector<ov::RemoteTensor>>();
+    } else {
+      cc->Inputs().Tag(kRemoteFrameTag).Set<RemoteTensorPacket>();
     }
     cc->Outputs().Tag(kTensorsTag).Set<std::vector<ov::Tensor>>();
     cc->InputSidePackets().Tag(kSessionTag).Set<OpenVINOSessionPtr>();
@@ -93,19 +100,34 @@ class OpenVINOInferenceCalculator : public CalculatorBase {
     // Collect the input tensors. ov::RemoteTensor derives from ov::Tensor and
     // can be bound to an infer request through the same API.
     std::vector<ov::Tensor> inputs;
+    const RemoteTensorPacket* remote_frame = nullptr;
     if (cc->Inputs().HasTag(kTensorsTag)) {
       if (cc->Inputs().Tag(kTensorsTag).IsEmpty()) return absl::OkStatus();
       inputs = cc->Inputs().Tag(kTensorsTag).Get<std::vector<ov::Tensor>>();
-    } else {
+    } else if (cc->Inputs().HasTag(kRemoteTensorsTag)) {
       if (cc->Inputs().Tag(kRemoteTensorsTag).IsEmpty())
         return absl::OkStatus();
       const auto& remote =
           cc->Inputs().Tag(kRemoteTensorsTag).Get<std::vector<ov::RemoteTensor>>();
       inputs.assign(remote.begin(), remote.end());
+    } else {
+      if (cc->Inputs().Tag(kRemoteFrameTag).IsEmpty())
+        return absl::OkStatus();
+      remote_frame =
+          &cc->Inputs().Tag(kRemoteFrameTag).Get<RemoteTensorPacket>();
+      inputs.assign(remote_frame->tensors.begin(), remote_frame->tensors.end());
     }
 
-    RET_CHECK_EQ(inputs.size(), session_->input_names.size())
-        << "Number of input tensors does not match the model";
+    if (remote_frame == nullptr || !remote_frame->nv12_two_planes) {
+      RET_CHECK_EQ(inputs.size(), session_->input_names.size())
+          << "Number of input tensors does not match the model";
+    } else {
+      RET_CHECK_EQ(inputs.size(), 2)
+          << "NV12 remote frame must contain Y and UV tensors";
+      RET_CHECK_EQ(session_->input_names.size(), 2)
+          << "The OpenVINO session must be prepared with "
+             "color_format: NV12_2 (which creates Y/UV input ports)";
+    }
 
     auto outputs = std::make_unique<std::vector<ov::Tensor>>();
     try {
@@ -114,11 +136,17 @@ class OpenVINOInferenceCalculator : public CalculatorBase {
       InferRequestLease lease(session_->infer_requests);
       ov::InferRequest& request = lease.infer_request();
 
-      for (size_t i = 0; i < inputs.size(); ++i) {
-        if (!input_order_.empty()) {
-          request.set_tensor(input_order_[i], inputs[i]);
-        } else {
-          request.set_input_tensor(i, inputs[i]);
+      if (remote_frame != nullptr && remote_frame->nv12_two_planes) {
+        for (size_t i = 0; i < inputs.size(); ++i) {
+          request.set_tensor(session_->input_names[i], inputs[i]);
+        }
+      } else {
+        for (size_t i = 0; i < inputs.size(); ++i) {
+          if (!input_order_.empty()) {
+            request.set_tensor(input_order_[i], inputs[i]);
+          } else {
+            request.set_input_tensor(i, inputs[i]);
+          }
         }
       }
 

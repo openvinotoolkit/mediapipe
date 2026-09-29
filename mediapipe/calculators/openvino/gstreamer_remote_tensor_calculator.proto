@@ -1,0 +1,56 @@
+// Copyright 2026 The MediaPipe Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto2";
+
+package mediapipe;
+
+import "mediapipe/framework/calculator.proto";
+
+// A Linux GStreamer source calculator that emits NV12 VA surfaces as OpenVINO
+// remote tensors. It requires a SESSION side packet from an OpenVINO session
+// compiled with va_device_path. Output uses the REMOTE_FRAME stream tag and
+// retains the GStreamer sample until downstream inference completes.
+message GStreamerRemoteTensorCalculatorOptions {
+  extend mediapipe.CalculatorOptions {
+    optional GStreamerRemoteTensorCalculatorOptions ext = 113344558;
+  }
+
+  // Source URI or local video path consumed by the default uridecodebin
+  // pipeline.
+  optional string source = 1;
+
+  // Optional full pipeline override. It must provide an appsink named
+  // remote_tensors_sink and negotiate video/x-raw(memory:VAMemory),format=NV12.
+  optional string pipeline = 2;
+
+  // Optional output frame dimensions; negotiated sizes are checked when set.
+  optional int32 width = 3;
+  optional int32 height = 4;
+  optional double fps = 5;
+
+  // Caps description for the incoming raw stream, for example:
+  // "video/x-raw,format=NV12,width=1280,height=720,framerate=30/1"
+  optional string caps = 6;
+
+  // Optional native device selection hint for custom pipeline descriptions.
+  optional string device = 7;
+
+  // Must be true for the currently implemented VA-surface path. Host-copy
+  // fallback is not implemented.
+  optional bool prefer_zero_copy = 8 [default = true];
+
+  // Stop the source after this many emitted frames. Zero means no limit.
+  optional int32 max_frames = 9 [default = 0];
+}

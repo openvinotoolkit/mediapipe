@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <algorithm>
 #include <cstdint>
+#include <cstdlib>
 #include <memory>
 #include <string>
 #include <utility>
@@ -123,6 +125,48 @@ TEST(OpenVINOSessionCalculatorTest, AppliesInputPreprocessing) {
   for (size_t i = 0; i < expected.size(); ++i) {
     EXPECT_FLOAT_EQ(output[i], expected[i]) << "index " << i;
   }
+}
+
+TEST(OpenVINOSessionCalculatorTest, PreprocessesSeparateNv12Planes) {
+  constexpr char kOptions[] = R"pb(
+    model_path: "mediapipe/calculators/openvino/testdata/identity.xml"
+    device: "CPU"
+    shape: "(1,3,2,2)"
+    layout: "NHWC:NCHW"
+    color_format: "NV12_2:RGB"
+    precision: "uint8:fp32"
+    num_infer_requests: 1
+  )pb";
+  ov::Tensor y_plane(ov::element::u8, ov::Shape{1, 2, 2, 1});
+  ov::Tensor uv_plane(ov::element::u8, ov::Shape{1, 1, 1, 2});
+  std::fill_n(y_plane.data<uint8_t>(), y_plane.get_size(), 128);
+  std::fill_n(uv_plane.data<uint8_t>(), uv_plane.get_size(), 128);
+
+  std::vector<ov::Tensor> outputs =
+      RunGraph(kOptions, {std::move(y_plane), std::move(uv_plane)});
+
+  ASSERT_EQ(outputs.size(), 1);
+  EXPECT_EQ(outputs[0].get_shape(), (ov::Shape{1, 3, 2, 2}));
+}
+
+TEST(OpenVINOSessionCalculatorTest, CompilesInVaContextAndRunsOnGpu) {
+  const char* va_device_path = std::getenv("MEDIAPIPE_TEST_VA_DEVICE");
+  if (va_device_path == nullptr || va_device_path[0] == '\0') {
+    GTEST_SKIP() << "Set MEDIAPIPE_TEST_VA_DEVICE to a VA render node";
+  }
+  const std::string session_options = absl::StrFormat(
+      R"pb(
+        model_path: "mediapipe/calculators/openvino/testdata/identity.xml"
+        device: "GPU"
+        va_device_path: "%s"
+        num_infer_requests: 1
+      )pb",
+      va_device_path);
+  std::vector<ov::Tensor> outputs =
+      RunGraph(session_options, {MakeFilledTensor({1, 3, 1, 2}, 1.0f)});
+
+  ASSERT_EQ(outputs.size(), 1);
+  EXPECT_EQ(outputs[0].get_shape(), (ov::Shape{1, 3, 1, 2}));
 }
 
 TEST(OpenVINOSessionCalculatorTest, AcceptsAutoShape) {

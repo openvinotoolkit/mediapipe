@@ -38,6 +38,15 @@ mediapipe_proto_library(
     ],
 )
 
+mediapipe_proto_library(
+    name = "gstreamer_remote_tensor_calculator_proto",
+    srcs = ["gstreamer_remote_tensor_calculator.proto"],
+    deps = [
+        "//mediapipe/framework:calculator_options_proto",
+        "//mediapipe/framework:calculator_proto",
+    ],
+)
+
 cc_library(
     name = "openvino_session",
     hdrs = [
@@ -60,13 +69,21 @@ cc_library(
         "@com_google_absl//absl/strings",
         "@com_github_nlohmann_json//:json",
         "@openvino//:openvino",
-    ],
+    ] + select({
+        ":gstreamer_enabled": ["@linux_gstreamer//:gstreamer"],
+        "//conditions:default": [],
+    }),
+    defines = select({
+        ":gstreamer_enabled": ["MEDIAPIPE_ENABLE_GSTREAMER"],
+        "//conditions:default": [],
+    }),
     alwayslink = 1,
 )
 
 cc_library(
     name = "openvino_inference_calculator",
     srcs = ["openvino_inference_calculator.cc"],
+    hdrs = ["remote_tensor_packet.h"],
     deps = [
         ":openvino_inference_calculator_cc_proto",
         ":openvino_session",
@@ -80,10 +97,42 @@ cc_library(
 )
 
 cc_library(
+    name = "gstreamer_remote_tensor_calculator",
+    srcs = ["gstreamer_remote_tensor_calculator.cc"],
+    hdrs = ["remote_tensor_packet.h"],
+    deps = [
+        ":gstreamer_remote_tensor_calculator_cc_proto",
+        ":openvino_session",
+        "//mediapipe/framework:calculator_framework",
+        "//mediapipe/framework/port:ret_check",
+        "//mediapipe/framework/port:status",
+        "@com_google_absl//absl/status",
+        "@com_google_absl//absl/strings",
+        "@openvino//:openvino",
+    ] + select({
+        ":gstreamer_enabled": ["@linux_gstreamer//:gstreamer"],
+        "//conditions:default": [],
+    }),
+    # GStreamer support must be enabled only by a Bazel target that supplies
+    # the headers, libraries, and runtime plugins. Do not detect host headers.
+    defines = select({
+        ":gstreamer_enabled": ["MEDIAPIPE_ENABLE_GSTREAMER"],
+        "//conditions:default": [],
+    }),
+    alwayslink = 1,
+)
+
+config_setting(
+    name = "gstreamer_enabled",
+    define_values = {"MEDIAPIPE_ENABLE_GSTREAMER": "1"},
+)
+
+cc_library(
     name = "openvino_calculators",
     deps = [
         ":openvino_inference_calculator",
         ":openvino_session_calculator",
+        ":gstreamer_remote_tensor_calculator",
     ],
 )
 

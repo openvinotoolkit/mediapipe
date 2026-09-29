@@ -214,7 +214,9 @@ of some plugin-side output buffer reuse, which is why it is not the default.
 inference node keeps the data on the device across the whole pipeline — no
 host copy on the way in, and inference reads the surface directly.
 
-1. Connect the `REMOTE_TENSORS` tag instead of `TENSORS`:
+1. For individual remote tensors, connect `REMOTE_TENSORS` instead of
+  `TENSORS`. The GStreamer VA source emits the owner-carrying `REMOTE_FRAME`
+  packet described below.
 
 ```pbtxt
 node {
@@ -236,7 +238,7 @@ node_options: {
 }
 ```
 
-3. Produce the tensors from the *same* context the model was compiled with —
+2. Produce the tensors from the *same* context the model was compiled with —
    a remote tensor from a different context is rejected by the plugin:
 
 ```c++
@@ -264,11 +266,55 @@ Outputs are currently always emitted as host `ov::Tensor`. To keep results on
 the device as well, bind a remote output tensor with `set_output_tensor()`
 using the pre-allocation pattern shown above.
 
-Building for GPU: `third_party/openvino.BUILD` excludes
-`libopenvino_intel_gpu_plugin.so` from linking because it needs
-`libOpenCL.so.1`, which is not part of the archive. Install an OpenCL ICD
-loader (`ocl-icd-libopencl1` + the Intel compute runtime) and move the plugin
-from the `openvino_gpu_plugin` filegroup into the `openvino` target's `srcs`.
+### Linux GStreamer VA input
+
+The Linux source calculator shares a VA display with the OpenVINO session and
+emits a `REMOTE_FRAME` packet that retains the decoded GStreamer sample. Its
+current path requires NV12 VA memory and a model prepared with two NV12 input
+planes:
+
+```pbtxt
+node {
+  calculator: "OpenVINOSessionCalculator"
+  output_side_packet: "SESSION:session"
+  node_options: {
+    [type.googleapis.com/mediapipe.OpenVINOSessionCalculatorOptions] {
+      model_path: "/models/resnet50.xml"
+      device: "GPU"
+      va_device_path: "/dev/dri/renderD128"
+      color_format: "NV12_2:BGR"
+    }
+  }
+}
+node {
+  calculator: "GStreamerRemoteTensorCalculator"
+  input_side_packet: "SESSION:session"
+  output_stream: "REMOTE_FRAME:video_frame"
+  node_options: {
+    [type.googleapis.com/mediapipe.GStreamerRemoteTensorCalculatorOptions] {
+      source: "file:///path/to/video.mp4"
+      width: 1920
+      height: 1080
+    }
+  }
+}
+node {
+  calculator: "OpenVINOInferenceCalculator"
+  input_side_packet: "SESSION:session"
+  input_stream: "REMOTE_FRAME:video_frame"
+  output_stream: "TENSORS:classification"
+}
+```
+
+Build with `--define MEDIAPIPE_ENABLE_GSTREAMER=1` and
+`--define MEDIAPIPE_ENABLE_OPENVINO_GPU=1`. Install the OpenCL ICD loader,
+Intel compute runtime, and VA-API driver first. Set `GST_PLUGIN_PATH` and
+`GST_PLUGIN_SCANNER` as printed by `setup_gstreamer.sh` when running the graph.
+
+For an opt-in host smoke test, set `MEDIAPIPE_TEST_VA_DEVICE` to the render-node
+path and run `openvino_session_calculator_test` with both defines. Start Bazel
+from a shell that has access to the `render` group; if group membership was just
+enabled with `newgrp render`, restart the Bazel server from that shell.
 
 ## Queue size
 

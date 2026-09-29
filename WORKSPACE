@@ -382,6 +382,19 @@ load("@rules_foreign_cc//foreign_cc:repositories.bzl", "rules_foreign_cc_depende
 
 rules_foreign_cc_dependencies()
 
+# GStreamer built and installed by setup_gstreamer.sh.
+new_local_repository(
+    name = "linux_gstreamer",
+    build_file = "@//third_party:gstreamer_linux.BUILD",
+    path = "/home/dtrawins/mediapipe/gstreamer",
+)
+
+new_local_repository(
+    name = "linux_glib",
+    build_file = "@//third_party:glib_linux.BUILD",
+    path = "/usr",
+)
+
 load("@bazel_features//:deps.bzl", "bazel_features_deps")
 
 bazel_features_deps()

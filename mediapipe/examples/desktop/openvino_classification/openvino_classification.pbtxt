@@ -4,7 +4,6 @@
 # requests as the "session" side packet. Any number of graphs (or nodes) using
 # the same model_path/device/plugin_config share that pool.
 
-input_stream: "input_tensors"
 output_stream: "output_tensors"
 
 node {
@@ -12,10 +11,26 @@ node {
   output_side_packet: "SESSION:session"
   node_options: {
     [type.googleapis.com/mediapipe.OpenVINOSessionCalculatorOptions] {
-      model_path: "/home/dtrawins/models/resnet50/resnet50.xml"
-      device: "CPU"
-      plugin_config { key: "PERFORMANCE_HINT" value: "THROUGHPUT" }
-      num_infer_requests: 4
+      model_path: "/models/resnet50/resnet50.xml"
+      device: "GPU"
+      va_device_path: "/dev/dri/renderD128"
+      # Accept decoder-native dimensions, then resize in GPU preprocessing.
+      layout: "NHWC:NCHW"
+      color_format: "NV12_2:BGR"
+      precision: "uint8:fp32"
+      num_infer_requests: 1
+    }
+  }
+}
+
+node {
+  calculator: "GStreamerRemoteTensorCalculator"
+  input_side_packet: "SESSION:session"
+  output_stream: "REMOTE_FRAME:video_frame"
+  node_options: {
+    [type.googleapis.com/mediapipe.GStreamerRemoteTensorCalculatorOptions] {
+      source: "/path/to/video.mp4"
+      max_frames: 0
     }
   }
 }
@@ -23,6 +38,6 @@ node {
 node {
   calculator: "OpenVINOInferenceCalculator"
   input_side_packet: "SESSION:session"
-  input_stream: "TENSORS:input_tensors"
+  input_stream: "REMOTE_FRAME:video_frame"
   output_stream: "TENSORS:output_tensors"
 }
