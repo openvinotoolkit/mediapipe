@@ -67,6 +67,7 @@ endlocal & (
     set "BAZEL_VC=%BAZEL_VS%\VC"
     set "BAZEL_SH=%opt_install_dir%\msys64\usr\bin\bash.exe"
     set "PYTHON_BIN_PATH=%python_path%\python.exe"
+    set "OPENCV_PREFIX=%opencv_install%"
     set "PATH=%opt_install_dir%;%python_path%;%python_path%\Scripts;%opt_install_dir%\msys64\usr\bin;%PATH%"
 )
 exit /b 0
@@ -183,17 +184,16 @@ echo [INFO] Bazel installed: %opt_install_dir%\bazel.exe
 exit /b 0
 
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-:: Installed to C:\opt\opencv_<ver>; C:\opt\opencv is a junction used by WORKSPACE.
+:: Installed to C:\opt\opencv_<ver>; exported as OPENCV_PREFIX for Bazel.
 :install_opencv
 set "opencv_src=%opt_install_dir%\opencv_git_%OPENCV_VERSION%"
 set "opencv_contrib_src=%opt_install_dir%\opencv_contrib_git_%OPENCV_VERSION%"
 set "opencv_install=%opt_install_dir%\opencv_%OPENCV_VERSION%"
-set "opencv_link=%opt_install_dir%\opencv"
 echo [INFO] Installing OpenCV %OPENCV_VERSION% ...
 if %expunge% EQU 1 if exist "%opencv_install%" rmdir /S /Q "%opencv_install%" || exit /b 1
 if exist "%opencv_install%\include\opencv2\core.hpp" (
     echo [INFO] OpenCV already installed in: %opencv_install%
-    goto :link_opencv
+    exit /b 0
 )
 if exist "%opencv_src%" rmdir /S /Q "%opencv_src%" || exit /b 1
 if exist "%opencv_contrib_src%" rmdir /S /Q "%opencv_contrib_src%" || exit /b 1
@@ -210,8 +210,5 @@ set "opencv_flags=%opencv_flags% -D CV_ENABLE_INTRINSICS=ON -D WITH_EIGEN=OFF"
 "%cmake_exe%" -S "%opencv_src%" -B "%opencv_src%\build" -A x64 -D CMAKE_INSTALL_PREFIX="%opencv_install%" -D OPENCV_EXTRA_MODULES_PATH="%opencv_contrib_src%\modules" %opencv_flags% || exit /b 1
 "%cmake_exe%" --build "%opencv_src%\build" --config Release --target INSTALL --parallel %NUMBER_OF_PROCESSORS% || exit /b 1
 
-:link_opencv
-if exist "%opencv_link%" rmdir "%opencv_link%" || exit /b 1
-mklink /J "%opencv_link%" "%opencv_install%" >nul || exit /b 1
-echo [INFO] OpenCV %OPENCV_VERSION% installed in: %opencv_install% (linked as %opencv_link%)
+echo [INFO] OpenCV %OPENCV_VERSION% installed in: %opencv_install%
 exit /b 0
