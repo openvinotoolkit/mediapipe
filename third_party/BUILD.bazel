@@ -1,0 +1,30 @@
+package(default_visibility = ["//visibility:public"])
+
+exports_files(glob(["*.BUILD", "*.diff"]))
+
+alias(
+    name = "openvino",
+    actual = select({
+        "@mediapipe//mediapipe:windows": "@windows_openvino//:openvino",
+        "//conditions:default": "@openvino//:openvino",
+    }),
+)
+
+filegroup(
+    name = "windows_openvino_runtime_dlls",
+    srcs = select({
+        "@mediapipe//mediapipe:windows": ["@windows_openvino//:runtime_dlls"],
+        "//conditions:default": [],
+    }),
+)
+
+filegroup(
+    name = "windows_runtime_dlls",
+    srcs = select({
+        "@mediapipe//mediapipe:windows": [
+            "@windows_opencv//:runtime_dlls",
+            "@windows_openvino//:runtime_dlls",
+        ],
+        "//conditions:default": [],
+    }),
+)

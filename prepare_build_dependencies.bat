@@ -33,7 +33,7 @@ echo [INFO] expunge=%expunge%
 
 set "script_dir=%~dp0"
 set "opt_install_dir=C:\opt"
-if not defined OPENCV_VERSION set "OPENCV_VERSION=4.13.0"
+if not defined OPENCV_VERSION set "OPENCV_VERSION=4.14.0"
 if not defined PYTHON_VERSION set "PYTHON_VERSION=3.12.10"
 set "msys_date=2024-07-27"
 set "msys_file=msys2-base-x86_64-20240727.sfx.exe"
@@ -132,7 +132,7 @@ if not exist "%gnupg_dir%\populated.done" (
     "%bash_path%" -c "export PATH=/usr/bin; gpgconf --homedir /etc/pacman.d/gnupg --kill dirmngr; pacman-key --populate msys2" || exit /b 1
     type nul > "%gnupg_dir%\populated.done"
 )
-"%bash_path%" -lc "pacman -S --noconfirm --needed patch unzip zip" || exit /b 1
+"%bash_path%" -lc "pacman -S --noconfirm --needed patch unzip zip make" || exit /b 1
 :: gpg-agent/dirmngr would otherwise keep files in msys64 locked.
 "%bash_path%" -c "/usr/bin/gpgconf --homedir /etc/pacman.d/gnupg --kill all" >nul 2>&1
 echo [INFO] MSYS2 installed in: %msys_path%

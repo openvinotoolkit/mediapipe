@@ -13,6 +13,7 @@
 # limitations under the License.
 
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+load("@rules_python//python:defs.bzl", "py_test")
 load("//third_party:copy_runtime_dlls.bzl", "copy_runtime_dlls")
 
 licenses(["notice"])
@@ -35,14 +36,14 @@ cc_binary(
     data = [":runtime_dlls"],
     deps = [
         "//mediapipe/calculators/openvino:openvino_calculators",
-        "//mediapipe/framework:calculator_framework",
-        "//mediapipe/framework/port:file_helpers",
-        "//mediapipe/framework/port:opencv_core",
-        "//mediapipe/framework/port:opencv_imgproc",
-        "//mediapipe/framework/port:opencv_video",
-        "//mediapipe/framework/port:parse_text_proto",
-        "//mediapipe/framework/port:ret_check",
-        "//mediapipe/framework/port:status",
+        "@mediapipe//mediapipe/framework:calculator_framework",
+        "@mediapipe//mediapipe/framework/port:file_helpers",
+        "@mediapipe//mediapipe/framework/port:opencv_core",
+        "@mediapipe//mediapipe/framework/port:opencv_imgproc",
+        "@mediapipe//mediapipe/framework/port:opencv_video",
+        "@mediapipe//mediapipe/framework/port:parse_text_proto",
+        "@mediapipe//mediapipe/framework/port:ret_check",
+        "@mediapipe//mediapipe/framework/port:status",
         "//third_party:openvino",
         "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/flags:parse",
@@ -56,4 +57,23 @@ cc_binary(
 copy_runtime_dlls(
     name = "runtime_dlls",
     srcs = ["//third_party:windows_runtime_dlls"],
+)
+
+py_test(
+    name = "openvino_classification_test",
+    srcs = ["openvino_classification_test.py"],
+    args = [
+        "--binary=$(rlocationpath :openvino_classification)",
+        "--model=$(rlocationpath //mediapipe/calculators/openvino:testdata/identity.xml)",
+    ],
+    data = [
+        ":openvino_classification",
+        "//mediapipe/calculators/openvino:testdata/identity.bin",
+        "//mediapipe/calculators/openvino:testdata/identity.xml",
+    ],
+    deps = [
+        "@openvino_pip//numpy",
+        "@openvino_pip//opencv_contrib_python",
+        "@rules_python//python/runfiles",
+    ],
 )

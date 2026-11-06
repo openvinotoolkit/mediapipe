@@ -28,7 +28,7 @@ def _copy_runtime_dlls_impl(ctx):
 copy_runtime_dlls = rule(
     implementation = _copy_runtime_dlls_impl,
     attrs = {
-        "srcs": attr.label_list(allow_files = [".dll"]),
+        "srcs": attr.label_list(allow_files = True),
     },
     doc = "Places the given DLLs flat in the package output directory, i.e. next to its cc_binary.",
 )

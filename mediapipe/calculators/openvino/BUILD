@@ -14,18 +14,24 @@
 
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
-load("//mediapipe/framework/port:build_config.bzl", "mediapipe_proto_library")
+load("@mediapipe//mediapipe/framework/port:build_config.bzl", "mediapipe_proto_library")
+load("//third_party:copy_runtime_dlls.bzl", "copy_runtime_dlls")
 
 licenses(["notice"])
 
 package(default_visibility = ["//visibility:public"])
 
+exports_files([
+    "testdata/identity.bin",
+    "testdata/identity.xml",
+])
+
 mediapipe_proto_library(
     name = "openvino_session_calculator_proto",
     srcs = ["openvino_session_calculator.proto"],
     deps = [
-        "//mediapipe/framework:calculator_options_proto",
-        "//mediapipe/framework:calculator_proto",
+        "@mediapipe//mediapipe/framework:calculator_options_proto",
+        "@mediapipe//mediapipe/framework:calculator_proto",
     ],
 )
 
@@ -33,8 +39,8 @@ mediapipe_proto_library(
     name = "openvino_inference_calculator_proto",
     srcs = ["openvino_inference_calculator.proto"],
     deps = [
-        "//mediapipe/framework:calculator_options_proto",
-        "//mediapipe/framework:calculator_proto",
+        "@mediapipe//mediapipe/framework:calculator_options_proto",
+        "@mediapipe//mediapipe/framework:calculator_proto",
     ],
 )
 
@@ -53,9 +59,9 @@ cc_library(
     deps = [
         ":openvino_session",
         ":openvino_session_calculator_cc_proto",
-        "//mediapipe/framework:calculator_framework",
-        "//mediapipe/framework/port:ret_check",
-        "//mediapipe/framework/port:status",
+        "@mediapipe//mediapipe/framework:calculator_framework",
+        "@mediapipe//mediapipe/framework/port:ret_check",
+        "@mediapipe//mediapipe/framework/port:status",
         "//third_party:openvino",
         "@com_google_absl//absl/log:absl_log",
         "@com_google_absl//absl/strings",
@@ -70,9 +76,9 @@ cc_library(
     deps = [
         ":openvino_inference_calculator_cc_proto",
         ":openvino_session",
-        "//mediapipe/framework:calculator_framework",
-        "//mediapipe/framework/port:ret_check",
-        "//mediapipe/framework/port:status",
+        "@mediapipe//mediapipe/framework:calculator_framework",
+        "@mediapipe//mediapipe/framework/port:ret_check",
+        "@mediapipe//mediapipe/framework/port:status",
         "//third_party:openvino",
         "@com_google_absl//absl/strings",
     ],
@@ -87,20 +93,38 @@ cc_library(
     ],
 )
 
+copy_runtime_dlls(
+    name = "runtime_dlls",
+    srcs = ["//third_party:windows_openvino_runtime_dlls"],
+)
+
+cc_library(
+    name = "test_util",
+    testonly = True,
+    hdrs = ["openvino_test_util.h"],
+    deps = [
+        ":openvino_session_calculator_cc_proto",
+        "@bazel_tools//tools/cpp/runfiles",
+        "@mediapipe//mediapipe/framework:calculator_cc_proto",
+    ],
+)
+
 cc_test(
     name = "openvino_calculators_concurrency_test",
     srcs = ["openvino_calculators_concurrency_test.cc"],
     data = [
+        ":runtime_dlls",
         "testdata/add.bin",
         "testdata/add.xml",
     ],
     deps = [
         ":openvino_calculators",
-        "//mediapipe/framework:calculator_framework",
-        "//mediapipe/framework/port:gtest_main",
-        "//mediapipe/framework/port:parse_text_proto",
-        "//mediapipe/framework/port:status_matchers",
-        "//mediapipe/framework/tool:sink",
+        ":test_util",
+        "@mediapipe//mediapipe/framework:calculator_framework",
+        "@mediapipe//mediapipe/framework/port:gtest_main",
+        "@mediapipe//mediapipe/framework/port:parse_text_proto",
+        "@mediapipe//mediapipe/framework/port:status_matchers",
+        "@mediapipe//mediapipe/framework/tool:sink",
         "//third_party:openvino",
     ],
 )
@@ -109,6 +133,7 @@ cc_test(
     name = "openvino_session_calculator_test",
     srcs = ["openvino_session_calculator_test.cc"],
     data = [
+        ":runtime_dlls",
         "testdata/add.bin",
         "testdata/add.xml",
         "testdata/identity.bin",
@@ -116,11 +141,12 @@ cc_test(
     ],
     deps = [
         ":openvino_calculators",
-        "//mediapipe/framework:calculator_framework",
-        "//mediapipe/framework/port:gtest_main",
-        "//mediapipe/framework/port:parse_text_proto",
-        "//mediapipe/framework/port:status_matchers",
-        "//mediapipe/framework/tool:sink",
+        ":test_util",
+        "@mediapipe//mediapipe/framework:calculator_framework",
+        "@mediapipe//mediapipe/framework/port:gtest_main",
+        "@mediapipe//mediapipe/framework/port:parse_text_proto",
+        "@mediapipe//mediapipe/framework/port:status_matchers",
+        "@mediapipe//mediapipe/framework/tool:sink",
         "//third_party:openvino",
         "@com_google_absl//absl/strings:str_format",
     ],

@@ -1,175 +1,134 @@
----
-layout: forward
-target: https://developers.google.com/mediapipe
-title: Home
-nav_order: 1
----
+# MediaPipe OpenVINO Extension
 
-----
+Custom OpenVINO calculators and classification examples for MediaPipe, without
+vendoring the upstream MediaPipe source tree.
 
-**Attention:** *We have moved to
-[https://developers.google.com/mediapipe](https://developers.google.com/mediapipe)
-as the primary developer documentation site for MediaPipe as of April 3, 2023.*
+## Contents
 
-![MediaPipe](https://developers.google.com/static/mediapipe/images/home/hero_01_1920.png)
+- `mediapipe/calculators/openvino`: session creation, preprocessing, inference,
+  shared inference-request pools, calculator tests and small OpenVINO IR models.
+- `mediapipe/examples/desktop/openvino_classification`: C++ video classification
+  application, example graph and an end-to-end test using a generated video.
+- `mediapipe/python/openvino`: standalone Python bindings and classification demo.
+- `third_party`: OpenVINO/OpenCV Bazel adapters and compatibility patches.
+- `Makefile`, `Dockerfile` and `ci/testOnCommit.groovy`: local builds and CI.
 
-**Attention**: MediaPipe Solutions Preview is an early release. [Learn
-more](https://developers.google.com/mediapipe/solutions/about#notice).
+`WORKSPACE` downloads Google AI Edge MediaPipe at commit
+`8ac5a39c659578c2595a54ef5277608173c217fe`, verified by SHA-256. Its framework,
+build definitions, third-party patches and TensorFlow lockfiles come from that
+archive. The retained dependency declarations bootstrap upstream's transitive
+repositories; Bazel does not evaluate an external repository's WORKSPACE for you.
+`MODULE.bazel` supplies the matching rule modules, protobuf/Abseil versions and
+Python 3.11 tooling. Keep both WORKSPACE and Bzlmod enabled with Bazel 7.7.0.
 
-**On-device machine learning for everyone**
+OpenVINO Runtime 2026.4.0 is fetched by Bazel for Linux x86-64 or Windows x64.
+The Linux distribution requires Ubuntu 24.04-compatible runtime libraries.
+CPU inference is the default; the Linux GPU plugin is intentionally not linked.
 
-Delight your customers with innovative machine learning features. MediaPipe
-contains everything that you need to customize and deploy to mobile (Android,
-iOS), web, desktop, edge devices, and IoT, effortlessly.
+## Linux
 
-*   [See demos](https://goo.gle/mediapipe-studio)
-*   [Learn more](https://developers.google.com/mediapipe/solutions)
+Install Bazel 7.7.0 (or Bazelisk), GNU Make, a C++20 compiler, Python 3 with
+development headers, Git, CMake and OpenCV's development dependencies. On Ubuntu:
 
-## Get started
+```sh
+sudo apt-get install build-essential cmake git python3-dev pkg-config ffmpeg \
+  libavcodec-dev libavformat-dev libavutil-dev libswscale-dev libgtk-3-dev \
+  libjpeg-dev libpng-dev libtiff-dev libtbb-dev libeigen3-dev
+bash setup_opencv.sh
+make
+```
 
-You can get started with MediaPipe Solutions by by checking out any of the
-developer guides for
-[vision](https://developers.google.com/mediapipe/solutions/vision/object_detector),
-[text](https://developers.google.com/mediapipe/solutions/text/text_classifier),
-and
-[audio](https://developers.google.com/mediapipe/solutions/audio/audio_classifier)
-tasks. If you need help setting up a development environment for use with
-MediaPipe Tasks, check out the setup guides for
-[Android](https://developers.google.com/mediapipe/solutions/setup_android), [web
-apps](https://developers.google.com/mediapipe/solutions/setup_web), and
-[Python](https://developers.google.com/mediapipe/solutions/setup_python).
+The setup script builds OpenCV 4.13.0 with the video modules used by the example.
+Use an existing OpenCV 4 installation instead with
+`OPENCV_PREFIX=/path/to/opencv bash setup_opencv.sh config_only`.
+The default Linux prefix is `/usr/local`; `/usr` works for distro OpenCV packages.
+Set `OPENCV_PREFIX` in the environment or pass
+`BAZEL_FLAGS=--repo_env=OPENCV_PREFIX=/path/to/opencv` to Make.
 
-## Solutions
+## Windows
 
-MediaPipe Solutions provides a suite of libraries and tools for you to quickly
-apply artificial intelligence (AI) and machine learning (ML) techniques in your
-applications. You can plug these solutions into your applications immediately,
-customize them to your needs, and use them across multiple development
-platforms. MediaPipe Solutions is part of the MediaPipe [open source
-project](https://github.com/google/mediapipe), so you can further customize the
-solutions code to meet your application needs.
+Use Windows x64 with Visual Studio 2022's Desktop Development with C++ workload,
+CMake and Git for Windows. Run from `cmd.exe`:
 
-These libraries and resources provide the core functionality for each MediaPipe
-Solution:
+```bat
+call prepare_build_dependencies.bat
+C:\opt\msys64\usr\bin\make.exe build tests example-tests
+```
 
-*   **MediaPipe Tasks**: Cross-platform APIs and libraries for deploying
-    solutions. [Learn
-    more](https://developers.google.com/mediapipe/solutions/tasks).
-*   **MediaPipe models**: Pre-trained, ready-to-run models for use with each
-    solution.
+The setup script installs Bazel, MSYS2, GNU Make and Python under `C:\opt`, and
+builds OpenCV 4.13.0 with `opencv_world` and FFmpeg support. It exports the build
+environment to the calling command prompt. Bazel downloads OpenVINO itself.
+`OPENCV_PREFIX` can override the default `C:/opt/opencv` location.
+The Makefile defaults to `--output_user_root=C:/b` on Windows to limit path length.
+Native Bazel commands work too:
 
-These tools let you customize and evaluate solutions:
+```bat
+bazel --output_user_root=C:/b build //mediapipe/examples/desktop/openvino_classification:openvino_classification
+bazel --output_user_root=C:/b test //mediapipe/calculators/openvino:openvino_session_calculator_test //mediapipe/calculators/openvino:openvino_calculators_concurrency_test
+```
 
-*   **MediaPipe Model Maker**: Customize models for solutions with your data.
-    [Learn more](https://developers.google.com/mediapipe/solutions/model_maker).
-*   **MediaPipe Studio**: Visualize, evaluate, and benchmark solutions in your
-    browser. [Learn
-    more](https://developers.google.com/mediapipe/solutions/studio).
+The Windows patches retain the MSVC protobuf, Java and Swift toolchain fixes.
+MediaPipe framework fixes are applied to the downloaded archive. C++20 and the
+conforming MSVC preprocessor are enabled for both local and external sources.
+OpenVINO/OpenCV runtime DLLs are staged next to the binaries; test assets use
+Bazel runfiles lookup, including Windows manifests.
 
-### Legacy solutions
+## Build Targets
 
-We have ended support for [these MediaPipe Legacy Solutions](https://developers.google.com/mediapipe/solutions/guide#legacy)
-as of March 1, 2023. All other MediaPipe Legacy Solutions will be upgraded to
-a new MediaPipe Solution. See the [Solutions guide](https://developers.google.com/mediapipe/solutions/guide#legacy)
-for details. The [code repository](https://github.com/google/mediapipe/tree/master/mediapipe)
-and prebuilt binaries for all MediaPipe Legacy Solutions will continue to be
-provided on an as-is basis.
+| Command | Result |
+| --- | --- |
+| `make build` | Calculator libraries and C++ classification application |
+| `make tests` | Calculator preprocessing, reshaping and concurrency tests |
+| `make example-tests` | C++ video/inference smoke test with a local IR model |
+| `make test` | All included C++ tests |
+| `make python` | Python extension and classification demo |
+| `make clean` | Clean Bazel build outputs |
 
-For more on the legacy solutions, see the [documentation](https://github.com/google/mediapipe/tree/master/docs/solutions).
+`make` builds the C++ components and runs all C++ tests. Override `BAZEL`,
+`BAZEL_STARTUP_FLAGS`, `BAZEL_FLAGS` and `JOBS` as needed. The Python bindings
+remain a separate target; do not import them alongside a separately installed
+MediaPipe extension, which would duplicate pybind type registrations.
 
-## Framework
+## Run Classification
 
-To start using MediaPipe Framework, [install MediaPipe
-Framework](https://developers.google.com/mediapipe/framework/getting_started/install)
-and start building example applications in C++, Android, and iOS.
+Place an OpenVINO classification IR at `models/resnet50/resnet50.xml` with its
+matching `.bin`, or edit `model_path` in the example graph. Match input size,
+layout and normalization to the model:
 
-[MediaPipe Framework](https://developers.google.com/mediapipe/framework) is the
-low-level component used to build efficient on-device machine learning
-pipelines, similar to the premade MediaPipe Solutions.
+```sh
+bazel run //mediapipe/examples/desktop/openvino_classification:openvino_classification -- \
+  --calculator_graph_config_file="$PWD/mediapipe/examples/desktop/openvino_classification/openvino_classification.pbtxt" \
+  --input_video_path=/path/to/video.mp4 --input_width=224 --input_height=224
+```
 
-Before using MediaPipe Framework, familiarize yourself with the following key
-[Framework
-concepts](https://developers.google.com/mediapipe/framework/framework_concepts/overview.md):
+Use absolute paths with `bazel run`. On Windows, use the `.exe` under
+`bazel-bin\mediapipe\examples\desktop\openvino_classification` and the same flags.
+The package READMEs document calculator options and Python usage.
 
-*   [Packets](https://developers.google.com/mediapipe/framework/framework_concepts/packets.md)
-*   [Graphs](https://developers.google.com/mediapipe/framework/framework_concepts/graphs.md)
-*   [Calculators](https://developers.google.com/mediapipe/framework/framework_concepts/calculators.md)
+## CI
 
-## Community
+The Jenkins pipeline adapts the build-image, demos-image, unit-test and C++-demo
+stages from the OpenVINO toolkit MediaPipe pipeline. Configure the Jenkins job's
+script path as `ci/testOnCommit.groovy`. It requires a Docker-capable Linux agent
+(`ovmscheck` by default) and a Windows agent (`windows` by default); both labels
+are parameters. The Windows agent must have Visual Studio, CMake and Git, plus
+permission to install dependencies in `C:\opt`.
 
-*   [Slack community](https://mediapipe.page.link/joinslack) for MediaPipe
-    users.
-*   [Discuss](https://groups.google.com/forum/#!forum/mediapipe) - General
-    community discussion around MediaPipe.
-*   [Awesome MediaPipe](https://mediapipe.page.link/awesome-mediapipe) - A
-    curated list of awesome MediaPipe related frameworks, libraries and
-    software.
+```sh
+make docker_build ovms_demos_image
+make tests_in_docker run_demos_in_docker
+```
 
-## Contributing
+Both native and container tests produce Bazel JUnit XML. Docker targets export
+results to `test-results`, and Jenkins collects XML and logs on both platforms.
+The Docker image uses Ubuntu 24.04 and the same OpenCV setup script as local builds.
 
-We welcome contributions. Please follow these
-[guidelines](https://github.com/google/mediapipe/blob/master/CONTRIBUTING.md).
+## Scope And License
 
-We use GitHub issues for tracking requests and bugs. Please post questions to
-the MediaPipe Stack Overflow with a `mediapipe` tag.
+Only custom extension sources and required build integration belong in this
+repository. Update the pinned MediaPipe archive and compatibility patches together.
+The pre-existing executable-bit change to `build_desktop_examples.sh` and local
+untracked SDK/install files were preserved during extraction; the old desktop
+script is not part of the extension build and still refers to upstream examples.
 
-## Privacy Notice
-
-Last modified: June 5, 2026
-
-When you use MediaPipe Tasks, processing of the input data (e.g. images, video,
-text) takes place on device, and MediaPipe does not send that input data to
-Google servers. As a result, you can use our MediaPipe Tasks APIs for
-processing data that should not leave the device.
-
-MediaPipe Tasks APIs send metrics about the performance and utilization of the
-APIs in your app to Google. Google uses this metrics data to measure
-performance, usage, debug, maintain and improve the MediaPipe Tasks, as further
-described in our [Privacy Policy](https://policies.google.com/privacy).
-
-**You are responsible for obtaining informed consent from your app users about
-Google's processing of MediaPipe metrics data as required by applicable law.**
-
-## Resources
-
-### Publications
-
-*   [Bringing artworks to life with AR](https://developers.googleblog.com/2021/07/bringing-artworks-to-life-with-ar.html)
-    in Google Developers Blog
-*   [Prosthesis control via Mirru App using MediaPipe hand tracking](https://developers.googleblog.com/2021/05/control-your-mirru-prosthesis-with-mediapipe-hand-tracking.html)
-    in Google Developers Blog
-*   [SignAll SDK: Sign language interface using MediaPipe is now available for
-    developers](https://developers.googleblog.com/2021/04/signall-sdk-sign-language-interface-using-mediapipe-now-available.html)
-    in Google Developers Blog
-*   [MediaPipe Holistic - Simultaneous Face, Hand and Pose Prediction, on
-    Device](https://ai.googleblog.com/2020/12/mediapipe-holistic-simultaneous-face.html)
-    in Google AI Blog
-*   [Background Features in Google Meet, Powered by Web ML](https://ai.googleblog.com/2020/10/background-features-in-google-meet.html)
-    in Google AI Blog
-*   [MediaPipe 3D Face Transform](https://developers.googleblog.com/2020/09/mediapipe-3d-face-transform.html)
-    in Google Developers Blog
-*   [Instant Motion Tracking With MediaPipe](https://developers.googleblog.com/2020/08/instant-motion-tracking-with-mediapipe.html)
-    in Google Developers Blog
-*   [BlazePose - On-device Real-time Body Pose Tracking](https://ai.googleblog.com/2020/08/on-device-real-time-body-pose-tracking.html)
-    in Google AI Blog
-*   [MediaPipe Iris: Real-time Eye Tracking and Depth Estimation](https://ai.googleblog.com/2020/08/mediapipe-iris-real-time-iris-tracking.html)
-    in Google AI Blog
-*   [MediaPipe KNIFT: Template-based feature matching](https://developers.googleblog.com/2020/04/mediapipe-knift-template-based-feature-matching.html)
-    in Google Developers Blog
-*   [Alfred Camera: Smart camera features using MediaPipe](https://developers.googleblog.com/2020/03/alfred-camera-smart-camera-features-using-mediapipe.html)
-    in Google Developers Blog
-*   [Real-Time 3D Object Detection on Mobile Devices with MediaPipe](https://ai.googleblog.com/2020/03/real-time-3d-object-detection-on-mobile.html)
-    in Google AI Blog
-*   [AutoFlip: An Open Source Framework for Intelligent Video Reframing](https://ai.googleblog.com/2020/02/autoflip-open-source-framework-for.html)
-    in Google AI Blog
-*   [MediaPipe on the Web](https://developers.googleblog.com/2020/01/mediapipe-on-web.html)
-    in Google Developers Blog
-*   [Object Detection and Tracking using MediaPipe](https://developers.googleblog.com/2019/12/object-detection-and-tracking-using-mediapipe.html)
-    in Google Developers Blog
-*   [On-Device, Real-Time Hand Tracking with MediaPipe](https://ai.googleblog.com/2019/08/on-device-real-time-hand-tracking-with.html)
-    in Google AI Blog
-*   [MediaPipe: A Framework for Building Perception Pipelines](https://arxiv.org/abs/1906.08172)
-
-### Videos
-
-*   [YouTube Channel](https://www.youtube.com/c/MediaPipe)
+Apache License 2.0; see `LICENSE`. Downloaded dependencies retain their own licenses.
