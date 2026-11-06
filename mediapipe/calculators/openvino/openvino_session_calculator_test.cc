@@ -19,6 +19,7 @@
 #include <vector>
 
 #include "absl/strings/str_format.h"
+#include "mediapipe/calculators/openvino/openvino_test_util.h"
 #include "mediapipe/framework/calculator_framework.h"
 #include "mediapipe/framework/port/gtest.h"
 #include "mediapipe/framework/port/parse_text_proto.h"
@@ -54,6 +55,10 @@ std::vector<ov::Tensor> RunGraph(const std::string& session_options,
   const std::string graph_text = absl::StrFormat(kGraphTemplate, session_options);
   CalculatorGraphConfig graph_config =
       ParseTextProtoOrDie<CalculatorGraphConfig>(graph_text);
+  if (!ResolveTestModelPath(&graph_config)) {
+    ADD_FAILURE() << "Cannot resolve the test model through Bazel runfiles";
+    return {};
+  }
   std::vector<Packet> output_packets;
   tool::AddVectorSink("output_tensors", &graph_config, &output_packets);
 

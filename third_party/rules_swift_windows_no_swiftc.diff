@@ -1,0 +1,15 @@
+--- a/swift/internal/swift_autoconfiguration.bzl
++++ b/swift/internal/swift_autoconfiguration.bzl
+@@ -352,7 +352,11 @@
+ def _create_windows_toolchain(repository_ctx):
+     path_to_swiftc = repository_ctx.which("swiftc.exe")
+     if not path_to_swiftc:
+-        fail("No 'swiftc.exe' executable found in Path")
++        repository_ctx.file(
++            "BUILD",
++            "# No 'swiftc.exe' executable found in Path. Not auto-generating a Windows Swift toolchain.\n",
++        )
++        return
+ 
+     root = path_to_swiftc.dirname.dirname
+     enabled_features = [

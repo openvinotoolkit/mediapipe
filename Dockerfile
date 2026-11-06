@@ -1,82 +1,36 @@
-# Copyright 2019 The MediaPipe Authors.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-FROM ubuntu:22.04
-
-MAINTAINER <mediapipe@google.com>
-
-WORKDIR /io
-WORKDIR /mediapipe
+FROM ubuntu:24.04 AS dependencies
 
 ENV DEBIAN_FRONTEND=noninteractive
-
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        build-essential \
-        gcc g++ \
-        ca-certificates \
-        curl \
-        ffmpeg \
-        git \
-        wget \
-        unzip \
-        nodejs \
-        npm \
-        python3-dev \
-        python3-opencv \
-        python3-pip \
-        libopencv-core-dev \
-        libopencv-highgui-dev \
-        libopencv-imgproc-dev \
-        libopencv-video-dev \
-        libopencv-calib3d-dev \
-        libopencv-features2d-dev \
-        software-properties-common && \
-    apt-get update && apt-get install -y openjdk-21-jdk && \
-    apt-get install -y mesa-common-dev libegl1-mesa-dev libgles2-mesa-dev && \
-    apt-get install -y mesa-utils && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+    build-essential ca-certificates cmake curl ffmpeg git libavcodec-dev \
+    libavformat-dev libavutil-dev libeigen3-dev libgtk-3-dev libjpeg-dev \
+    libnuma1 libpng-dev libswscale-dev libtbb-dev libtiff-dev \
+    ocl-icd-libopencl1 patch pkg-config \
+    python3-dev unzip zip && rm -rf /var/lib/apt/lists/*
 
-# Install Clang 16
-RUN wget https://apt.llvm.org/llvm.sh
-RUN chmod +x llvm.sh
-RUN ./llvm.sh 16
-RUN ln -sf /usr/bin/clang-16 /usr/bin/clang
-RUN ln -sf /usr/bin/clang++-16 /usr/bin/clang++
-RUN ln -sf /usr/bin/clang-format-16 /usr/bin/clang-format
+# OpenVINO loads its GPU/NPU plugins even when CPU is selected. Install their
+# ICD/Level Zero loaders; physical acceleration still requires host devices and
+# the corresponding vendor drivers.
+ARG LEVEL_ZERO_DEB_URL=https://snapshot.ppa.launchpadcontent.net/kobuk-team/intel-graphics/ubuntu/20260830T100000Z/pool/main/l/level-zero-loader/libze1_1.32.0-1~24.04~ppa1_amd64.deb
+ARG LEVEL_ZERO_DEB_SHA256=d4001dc474d3cb74ded50a449b9f646cfdfbb31e69e70b8af38f2d18273dfce1
+RUN curl --fail --location --retry 3 "${LEVEL_ZERO_DEB_URL}" -o /tmp/libze1.deb && \
+    echo "${LEVEL_ZERO_DEB_SHA256}  /tmp/libze1.deb" | sha256sum --check - && \
+    apt-get update && apt-get install -y --no-install-recommends /tmp/libze1.deb && \
+    rm -f /tmp/libze1.deb && rm -rf /var/lib/apt/lists/*
 
-RUN pip3 install --upgrade setuptools
-RUN pip3 install wheel
-RUN pip3 install future
-RUN pip3 install absl-py "numpy<2" jax[cpu] opencv-contrib-python protobuf==3.20.1
-RUN pip3 install six==1.14.0
-RUN pip3 install tensorflow
-RUN pip3 install tf_slim
+WORKDIR /workspace
+COPY .bazelversion setup_opencv.sh ./
+RUN BAZEL_VERSION="$(tr -d '\r\n' < .bazelversion)" && \
+    curl --fail --location --retry 3 \
+    "https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-linux-x86_64" \
+    -o /usr/local/bin/bazel && chmod +x /usr/local/bin/bazel
+ARG JOBS=16
+RUN JOBS="${JOBS}" bash setup_opencv.sh && ldconfig
 
-RUN ln -s /usr/bin/python3 /usr/bin/python
+FROM dependencies AS builder
+COPY . .
+ARG JOBS=16
+RUN make build JOBS="${JOBS}"
 
-# Install bazel
-ARG BAZEL_VERSION=7.7.0
-RUN mkdir /bazel && \
-    wget --no-check-certificate -O /bazel/installer.sh "https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/b\
-azel-${BAZEL_VERSION}-installer-linux-x86_64.sh" && \
-    wget --no-check-certificate -O  /bazel/LICENSE.txt "https://raw.githubusercontent.com/bazelbuild/bazel/master/LICENSE" && \
-    chmod +x /bazel/installer.sh && \
-    /bazel/installer.sh  && \
-    rm -f /bazel/installer.sh
-
-COPY . /mediapipe/
-
-# If we want the docker image to contain the pre-built object_detection_offline_demo binary, do the following
-# RUN bazel build -c opt --define MEDIAPIPE_DISABLE_GPU=1 mediapipe/examples/desktop/demo:object_detection_tensorflow_demo
+FROM builder AS demos
+CMD ["make", "example-tests"]

@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("@org_tensorflow//tensorflow:tensorflow.bzl", "pybind_extension")
+load("@pybind11_bazel//:build_defs.bzl", "pybind_extension")
+load("//third_party:copy_runtime_dlls.bzl", "copy_runtime_dlls")
 
 licenses(["notice"])
 
@@ -21,25 +22,31 @@ package(default_visibility = ["//visibility:public"])
 pybind_extension(
     name = "_openvino_bindings",
     srcs = ["openvino_bindings.cc"],
-    module_name = "_openvino_bindings",
+    data = [":runtime_dlls"],
     deps = [
         "//mediapipe/calculators/openvino:openvino_calculators",
-        "//mediapipe/framework:basic_types_registration",
-        "//mediapipe/framework:packet",
-        "//mediapipe/python/pybind:calculator_graph",
-        "//mediapipe/python/pybind:packet",
-        "//mediapipe/python/pybind:resource_util",
-        "//mediapipe/python/pybind:timestamp",
-        "//mediapipe/python/pybind:validated_graph_config",
-        "@openvino//:openvino",
+        "@mediapipe//mediapipe/framework:basic_types_registration",
+        "@mediapipe//mediapipe/framework:packet",
+        "@mediapipe//mediapipe/python/pybind:calculator_graph",
+        "@mediapipe//mediapipe/python/pybind:packet",
+        "@mediapipe//mediapipe/python/pybind:resource_util",
+        "@mediapipe//mediapipe/python/pybind:timestamp",
+        "@mediapipe//mediapipe/python/pybind:validated_graph_config",
+        "//third_party:openvino",
+        "@rules_python//python/cc:current_py_cc_libs",
     ],
+)
+
+copy_runtime_dlls(
+    name = "runtime_dlls",
+    srcs = ["//third_party:windows_openvino_runtime_dlls"],
 )
 
 py_library(
     name = "openvino",
     srcs = ["__init__.py"],
     srcs_version = "PY3",
-    deps = [":_openvino_bindings"],
+    data = [":_openvino_bindings", ":runtime_dlls"],
 )
 
 py_binary(
@@ -49,7 +56,7 @@ py_binary(
     srcs_version = "PY3",
     deps = [
         ":openvino",
-        "@mediapipe_pip_deps_numpy//:pkg",
-        "@mediapipe_pip_deps_opencv_contrib_python//:pkg",
+        "@openvino_pip//numpy",
+        "@openvino_pip//opencv_contrib_python",
     ],
 )

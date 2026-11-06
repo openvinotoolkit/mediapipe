@@ -15,10 +15,6 @@ exports_files(["LICENSE"])
 # Bazel stages them next to libopenvino.so in the solib directory. Versioned
 # libraries (libfoo.so.X) are never linked by Bazel, they are only made
 # available at runtime, which is exactly what a dlopen()-ed plugin needs.
-#
-# The GPU plugin is intentionally excluded because it has a hard NEEDED
-# dependency on libOpenCL.so.1 which is not part of this archive. Add it back
-# (and install the OpenCL ICD loader) if you need the GPU device.
 cc_library(
     name = "openvino",
     srcs = glob(
@@ -29,9 +25,6 @@ cc_library(
             "runtime/3rdparty/tbb/lib/libtbbbind_2_5.so*",
             "runtime/3rdparty/tbb/lib/libtbbmalloc.so*",
             "runtime/3rdparty/tbb/lib/libhwloc.so*",
-        ],
-        exclude = [
-            "runtime/lib/intel64/libopenvino_intel_gpu_plugin.so",
         ],
     ),
     hdrs = glob([

@@ -1,6 +1,20 @@
-workspace(name = "mediapipe")
+workspace(name = "mediapipe_openvino")
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+load("//third_party:local_opencv.bzl", "local_opencv")
+
+http_archive(
+    name = "mediapipe",
+    patch_args = ["-p1"],
+    patches = [
+        "//third_party:mediapipe_windows.diff",
+        "//third_party:mediapipe_python_visibility.diff",
+    ],
+    sha256 = "751b1b62ad29e67cead3658e97cc8bcce593c655604fc1e97c3927b7518f0078",
+    strip_prefix = "mediapipe-8ac5a39c659578c2595a54ef5277608173c217fe",
+    type = "tar.gz",
+    urls = ["https://codeload.github.com/google-ai-edge/mediapipe/tar.gz/8ac5a39c659578c2595a54ef5277608173c217fe"],
+)
 
 # Protobuf expects an //external:python_headers target
 bind(
@@ -34,7 +48,7 @@ http_archive(
 # that the target @zlib//:mini_zlib is available
 http_archive(
     name = "zlib",
-    build_file = "@//third_party:zlib.BUILD",
+    build_file = "@mediapipe//third_party:zlib.BUILD",
     sha256 = "17e88863f3600672ab49182f217281b6fc4d3c762bde361935e436a95214d05c",
     strip_prefix = "zlib-1.3.1",
     url = "https://github.com/madler/zlib/archive/refs/tags/v1.3.1.tar.gz",
@@ -60,12 +74,12 @@ http_archive(
 
 http_archive(
     name = "com_github_glog_glog_no_gflags",
-    build_file = "@//third_party:glog_no_gflags.BUILD",
+    build_file = "@mediapipe//third_party:glog_no_gflags.BUILD",
     patch_args = [
         "-p1",
     ],
     patches = [
-        "@//third_party:com_github_glog_glog.diff",
+        "@mediapipe//third_party:com_github_glog_glog.diff",
     ],
     sha256 = "8a83bf982f37bb70825df71a9709fa90ea9f4447fb3c099e1d720a439d88bad6",
     strip_prefix = "glog-0.6.0",
@@ -83,8 +97,8 @@ http_archive(
         "-p1",
     ],
     patches = [
-        "@//third_party:com_github_glog_glog.diff",
-        "@//third_party:com_github_glog_glog_windows_patch.diff",
+        "@mediapipe//third_party:com_github_glog_glog.diff",
+        "@mediapipe//third_party:com_github_glog_glog_windows_patch.diff",
     ],
     sha256 = "170d08f80210b82d95563f4723a15095eff1aad1863000e8eeb569c96a98fefb",
     strip_prefix = "glog-3a0d4d22c5ae0b9a2216988411cfa6bf860cc372",
@@ -266,11 +280,13 @@ http_archive(
     ],
     patches = [
         # Fixes experimental C API headers/exports needed by MediaPipe C++ bindings.
-        "@//third_party:org_tensorflow_c_api_experimental.diff",
+        "@mediapipe//third_party:org_tensorflow_c_api_experimental.diff",
         # Works around a Bzlmod repository canonical-name issue in tflite_combine_cc_tests
         # (tensorflow/lite/build_def.bzl) where link_extra_lib is duplicated when rules_cc has
         # a version-suffixed canonical name (e.g., under single_version_override or complex dependency graphs).
-        "@//third_party:org_tensorflow_combine_cc_tests_link_extra_lib.diff",
+        "@mediapipe//third_party:org_tensorflow_combine_cc_tests_link_extra_lib.diff",
+        # Use MediaPipe's stable mirror for XLA's pinned LLVM archive.
+        "@//third_party:org_tensorflow_xla_llvm_url.diff",
     ],
     sha256 = _TENSORFLOW_SHA256,
     strip_prefix = "tensorflow-%s" % _TENSORFLOW_GIT_COMMIT,
@@ -294,14 +310,14 @@ python_init_repositories(
     default_python_version = "system",
     local_wheel_dist_folder = "dist",
     local_wheel_inclusion_list = ["mediapipe*"],
-    local_wheel_workspaces = ["//:WORKSPACE"],
+    local_wheel_workspaces = ["@mediapipe//:WORKSPACE"],
     requirements = {
-        "3.9": "//:requirements_lock.txt",
-        "3.10": "//:requirements_lock_3_10.txt",
-        "3.11": "//:requirements_lock_3_11.txt",
-        "3.12": "//:requirements_lock_3_12.txt",
-        "3.13": "//:requirements_lock_3_13.txt",
-        "3.14": "//:requirements_lock_3_14.txt",
+        "3.9": "@mediapipe//:requirements_lock.txt",
+        "3.10": "@mediapipe//:requirements_lock_3_10.txt",
+        "3.11": "@mediapipe//:requirements_lock_3_11.txt",
+        "3.12": "@mediapipe//:requirements_lock_3_12.txt",
+        "3.13": "@mediapipe//:requirements_lock_3_13.txt",
+        "3.14": "@mediapipe//:requirements_lock_3_14.txt",
     },
 )
 
@@ -322,7 +338,7 @@ install_deps()
 # override org_tensorflow's kissfft workspace, ensuring kissfftr is provided.
 http_archive(
     name = "kissfft",
-    build_file = "@//third_party:kissfft.BUILD",
+    build_file = "@mediapipe//third_party:kissfft.BUILD",
     sha256 = "76c1aac87ddb7258f34b08a13f0eebf9e53afa299857568346aa5c82bcafaf1a",
     strip_prefix = "kissfft-131.1.0",
     urls = ["https://github.com/mborgerding/kissfft/archive/refs/tags/131.1.0.tar.gz"],
@@ -351,26 +367,6 @@ load("@rules_python//python:repositories.bzl", "py_repositories")
 
 py_repositories()
 
-load("@rules_python//python:pip.bzl", "pip_parse")
-
-pip_parse(
-    name = "mediapipe_pip_deps",
-    requirements_lock = "@//:requirements_lock.txt",
-)
-
-load("@mediapipe_pip_deps//:requirements.bzl", mp_install_deps = "install_deps")
-
-mp_install_deps()
-
-pip_parse(
-    name = "model_maker_pip_deps",
-    requirements_lock = "@//mediapipe/model_maker:requirements_lock.txt",
-)
-
-load("@model_maker_pip_deps//:requirements.bzl", mm_install_deps = "install_deps")
-
-mm_install_deps()
-
 http_archive(
     name = "rules_foreign_cc",
     sha256 = "a2e6fb56e649c1ee79703e99aa0c9d13c6cc53c8d7a0cbb8797ab2888bbc99a3",
@@ -392,7 +388,7 @@ all_content = """filegroup(name = "all", srcs = glob(["**"]), visibility = ["//v
 # Google Benchmark library v1.6.1 released on 2022-01-10.
 http_archive(
     name = "com_google_benchmark",
-    build_file = "@//third_party:benchmark.BUILD",
+    build_file = "@mediapipe//third_party:benchmark.BUILD",
     sha256 = "6132883bc8c9b0df5375b16ab520fac1a85dc9e4cf5be59480448ece74b278d4",
     strip_prefix = "benchmark-1.6.1",
     urls = ["https://github.com/google/benchmark/archive/refs/tags/v1.6.1.tar.gz"],
@@ -401,7 +397,7 @@ http_archive(
 # easyexif
 http_archive(
     name = "easyexif",
-    build_file = "@//third_party:easyexif.BUILD",
+    build_file = "@mediapipe//third_party:easyexif.BUILD",
     strip_prefix = "easyexif-master",
     url = "https://github.com/mayanklahiri/easyexif/archive/master.zip",
 )
@@ -409,7 +405,7 @@ http_archive(
 # libyuv
 http_archive(
     name = "libyuv",
-    build_file = "@//third_party:libyuv.BUILD",
+    build_file = "@mediapipe//third_party:libyuv.BUILD",
     # Error: operand type mismatch for `vbroadcastss' caused by commit 8a13626e42f7fdcf3a6acbb0316760ee54cda7d8.
     urls = [
         "https://storage.googleapis.com/tensorstore-bazel-mirror/chromium.googlesource.com/libyuv/libyuv/+archive/2525698acba9bf9b701ba6b4d9584291a1f62257.tar.gz",
@@ -427,7 +423,7 @@ http_archive(
     urls = ["https://github.com/protocolbuffers/protobuf/archive/refs/tags/v6.31.1.zip"],
 )
 
-load("@//third_party/flatbuffers:workspace.bzl", flatbuffers = "repo")
+load("@mediapipe//third_party/flatbuffers:workspace.bzl", flatbuffers = "repo")
 
 flatbuffers()
 
@@ -435,7 +431,7 @@ http_archive(
     name = "com_google_audio_tools",
     patch_args = ["-p1"],
     # TODO: Fix this in AudioTools directly
-    patches = ["@//third_party:com_google_audio_tools_fixes.diff"],
+    patches = ["@mediapipe//third_party:com_google_audio_tools_fixes.diff"],
     repo_mapping = {"@com_github_glog_glog": "@com_github_glog_glog_no_gflags"},
     sha256 = "7d7227cc6bb1f8917a9c9013e8f3578ec681c49e20fe2fc38ba90965394de60c",
     strip_prefix = "multichannel-audio-tools-bbf15de4b7cd825d650296d21917afc07e8fe18b",
@@ -444,7 +440,7 @@ http_archive(
 
 http_archive(
     name = "pffft",
-    build_file = "@//third_party:pffft.BUILD",
+    build_file = "@mediapipe//third_party:pffft.BUILD",
     strip_prefix = "jpommier-pffft-7c3b5a7dc510",
     urls = ["https://bitbucket.org/jpommier/pffft/get/7c3b5a7dc510.zip"],
 )
@@ -453,14 +449,14 @@ http_archive(
 http_archive(
     name = "com_google_sentencepiece",
     add_prefix = "sentencepiece",
-    build_file = "@//third_party:sentencepiece.BUILD",
+    build_file = "@mediapipe//third_party:sentencepiece.BUILD",
     patch_args = [
         "-d",
         "sentencepiece",
         "-p1",
     ],
     # Fixes build compatibility and removes conflicting protobuf dependencies in sentencepiece.
-    patches = ["@//third_party:com_google_sentencepiece.diff"],
+    patches = ["@mediapipe//third_party:com_google_sentencepiece.diff"],
     sha256 = "8409b0126ebd62b256c685d5757150cf7fcb2b92a2f2b98efb3f38fc36719754",
     strip_prefix = "sentencepiece-0.1.96",
     urls = [
@@ -470,7 +466,7 @@ http_archive(
 
 http_archive(
     name = "darts_clone",
-    build_file = "@//third_party:darts_clone.BUILD",
+    build_file = "@mediapipe//third_party:darts_clone.BUILD",
     sha256 = "96946b2c1ec2a6e171665c5b5b3ec52fc27c325c80e0c957a415bb4c5145e7df",
     strip_prefix = "darts-clone-87b71afd6cf784953e3c08f24c64203397f3b724",
     urls = [
@@ -485,7 +481,7 @@ http_archive(
         # Replaces tf_cc_library with standard cc_library for core tokenizer kernels (regex_split,
         # wordpiece_tokenizer, etc.) so they can be compiled as lightweight standalone C++ libraries
         # without pulling in TensorFlow op libraries or Python headers.
-        "@//third_party:tensorflow_text_remove_tf_deps.diff",
+        "@mediapipe//third_party:tensorflow_text_remove_tf_deps.diff",
         # tftext.bzl unconditionally loads pybind_extension/pywrap_binaries/
         # pywrap_library from "@local_xla//third_party/py/rules_pywrap", a
         # repo name org_tensorflow's own build wires up internally for its
@@ -495,7 +491,7 @@ http_archive(
         # org_tensorflow_text (regex_split, wordpiece_tokenizer, ...) call
         # py_tf_text_library, so the load is dead weight - stub it out
         # instead of standing up a "local_xla" repo just for this.
-        "@//third_party:tensorflow_text_stub_pywrap.diff",
+        "@mediapipe//third_party:tensorflow_text_stub_pywrap.diff",
     ],
     repo_mapping = {"@com_google_re2": "@com_googlesource_code_re2"},
     sha256 = "e08834bed6f544be9cc0315895898bf48d94b8090bca993ab45526329df291c8",
@@ -512,7 +508,7 @@ http_archive(
         "-p1",
     ],
     patches = [
-        "@//third_party:ceres_solver_compatibility_fixes.diff",
+        "@mediapipe//third_party:ceres_solver_compatibility_fixes.diff",
     ],
     sha256 = "8b7b16ceb363420e0fd499576daf73fa338adb0b1449f58bea7862766baa1ac7",
     strip_prefix = "ceres-solver-123fba61cf2611a3c8bddc9d91416db26b10b558",
@@ -536,21 +532,30 @@ http_archive(
     url = "https://storage.openvinotoolkit.org/repositories/openvino/packages/2026.4/linux/openvino_toolkit_ubuntu24_2026.4.0.22959.99c81491cc3_x86_64.tgz",
 )
 
-new_local_repository(
+# Windows counterpart of @openvino, selected by //third_party:openvino.
+http_archive(
+    name = "windows_openvino",
+    build_file = "@//third_party:openvino_windows.BUILD",
+    sha256 = "888f16e0dfcc46a02af15f2ed19c3fb65f748fd46f8e19216183a0e2e2a29e9f",
+    strip_prefix = "openvino_toolkit_windows_2026.4.0.22959.99c81491cc3_x86_64",
+    url = "https://storage.openvinotoolkit.org/repositories/openvino/packages/2026.4/windows/openvino_toolkit_windows_2026.4.0.22959.99c81491cc3_x86_64.zip",
+)
+
+local_opencv(
     name = "linux_opencv",
     build_file = "@//third_party:opencv_linux.BUILD",
-    path = "/usr/local",
+    default_path = "/usr/local",
 )
 
 new_local_repository(
     name = "linux_ffmpeg",
-    build_file = "@//third_party:ffmpeg_linux.BUILD",
+    build_file = "@mediapipe//third_party:ffmpeg_linux.BUILD",
     path = "/usr",
 )
 
 new_local_repository(
     name = "macos_opencv",
-    build_file = "@//third_party:opencv_macos.BUILD",
+    build_file = "@mediapipe//third_party:opencv_macos.BUILD",
     # For local MacOS builds, the path should point to an opencv@3 installation.
     # If you edit the path here, you will also need to update the corresponding
     # prefix in "opencv_macos.BUILD".
@@ -559,26 +564,26 @@ new_local_repository(
 
 new_local_repository(
     name = "macos_ffmpeg",
-    build_file = "@//third_party:ffmpeg_macos.BUILD",
+    build_file = "@mediapipe//third_party:ffmpeg_macos.BUILD",
     path = "/usr/local/opt/ffmpeg",
 )
 
-new_local_repository(
+local_opencv(
     name = "windows_opencv",
     build_file = "@//third_party:opencv_windows.BUILD",
-    path = "C:\\opencv\\build",
+    default_path = "C:/opt/opencv",
 )
 
 # protobuf requires @system_python in WORKSPACE
 new_local_repository(
     name = "system_python",
-    build_file = "@//third_party:python_runtime.BUILD",
+    build_file = "@mediapipe//third_party:python_runtime.BUILD",
     path = ".",
 )
 
 http_archive(
     name = "android_opencv",
-    build_file = "@//third_party:opencv_android.BUILD",
+    build_file = "@mediapipe//third_party:opencv_android.BUILD",
     strip_prefix = "OpenCV-android-sdk",
     type = "zip",
     url = "https://github.com/opencv/opencv/releases/download/4.12.0/opencv-4.12.0-android-sdk.zip",
@@ -590,7 +595,7 @@ http_archive(
 # '-DBUILD_PROTOBUF=OFF -DBUILD_opencv_dnn=OFF'.
 http_archive(
     name = "ios_opencv",
-    build_file = "@//third_party:opencv_ios.BUILD",
+    build_file = "@mediapipe//third_party:opencv_ios.BUILD",
     sha256 = "7dd536d06f59e6e1156b546bd581523d8df92ce83440002885ec5abc06558de2",
     type = "zip",
     url = "https://github.com/opencv/opencv/releases/download/3.2.0/opencv-3.2.0-ios-framework.zip",
@@ -606,7 +611,7 @@ http_archive(
 # Task libraries are built.
 http_archive(
     name = "ios_opencv_source",
-    build_file = "@//third_party:opencv_ios_source.BUILD",
+    build_file = "@mediapipe//third_party:opencv_ios_source.BUILD",
     sha256 = "a61e7a4618d353140c857f25843f39b2abe5f451b018aab1604ef0bc34cd23d5",
     type = "zip",
     url = "https://github.com/opencv/opencv/archive/refs/tags/4.5.3.zip",
@@ -614,13 +619,13 @@ http_archive(
 
 http_archive(
     name = "stblib",
-    build_file = "@//third_party:stblib.BUILD",
+    build_file = "@mediapipe//third_party:stblib.BUILD",
     patch_args = [
         "-p1",
     ],
     patches = [
         # Fixes image implementation definitions and warnings in stblib header-only libraries.
-        "@//third_party:stb_image_impl.diff",
+        "@mediapipe//third_party:stb_image_impl.diff",
     ],
     sha256 = "9a955b1b49a4410088a2e0ee2a9c057c3c907d0c1d75454144cb980aca0ba515",
     strip_prefix = "stb-2c980bb59875b0d32144a71867fbdebb2f77cd20",
@@ -629,7 +634,7 @@ http_archive(
 
 http_archive(
     name = "google_toolbox_for_mac",
-    build_file = "@//third_party:google_toolbox_for_mac.BUILD",
+    build_file = "@mediapipe//third_party:google_toolbox_for_mac.BUILD",
     sha256 = "e3ac053813c989a88703556df4dc4466e424e30d32108433ed6beaec76ba4fdc",
     strip_prefix = "google-toolbox-for-mac-2.2.1",
     url = "https://github.com/google/google-toolbox-for-mac/archive/v2.2.1.zip",
@@ -718,15 +723,15 @@ load("@coral_crosstool//:configure.bzl", "cc_crosstool")
 
 cc_crosstool(name = "crosstool")
 
-load("@//third_party:external_files.bzl", "external_files")
+load("@mediapipe//third_party:external_files.bzl", "external_files")
 
 external_files()
 
-load("@//third_party:wasm_files.bzl", "wasm_files")
+load("@mediapipe//third_party:wasm_files.bzl", "wasm_files")
 
 wasm_files()
 
-load("@//third_party:sqlite_prebuilt_files.bzl", "sqlite_prebuilt_files")
+load("@mediapipe//third_party:sqlite_prebuilt_files.bzl", "sqlite_prebuilt_files")
 
 sqlite_prebuilt_files()
 
@@ -739,7 +744,7 @@ EIGEN_SHA256 = "35c6126e246585d9cf6600b65471582c2701aae64b784a6fd19168a90cfc841e
 
 http_archive(
     name = "eigen",
-    build_file = "@//third_party:eigen.BUILD",
+    build_file = "@mediapipe//third_party:eigen.BUILD",
     sha256 = EIGEN_SHA256,
     strip_prefix = "eigen-{commit}".format(commit = EIGEN_COMMIT),
     urls = ["https://gitlab.com/libeigen/eigen/-/archive/{commit}/eigen-{commit}.tar.gz".format(commit = EIGEN_COMMIT)],
@@ -749,13 +754,13 @@ http_archive(
 
 new_local_repository(
     name = "halide",
-    build_file = "@//third_party/halide:BUILD.bazel",
+    build_file = "@mediapipe//third_party/halide:BUILD.bazel",
     path = "third_party/halide",
 )
 
 http_archive(
     name = "linux_halide",
-    build_file = "@//third_party:halide.BUILD",
+    build_file = "@mediapipe//third_party:halide.BUILD",
     sha256 = "d290fadf3f358c94aacf43c883de6468bb98883e26116920afd491ec0e440cd2",
     strip_prefix = "Halide-15.0.1-x86-64-linux",
     urls = ["https://github.com/halide/Halide/releases/download/v15.0.1/Halide-15.0.1-x86-64-linux-4c63f1befa1063184c5982b11b6a2cc17d4e5815.tar.gz"],
@@ -763,7 +768,7 @@ http_archive(
 
 http_archive(
     name = "macos_x86_64_halide",
-    build_file = "@//third_party:halide.BUILD",
+    build_file = "@mediapipe//third_party:halide.BUILD",
     sha256 = "48ff073ac1aee5c4aca941a4f043cac64b38ba236cdca12567e09d803594a61c",
     strip_prefix = "Halide-15.0.1-x86-64-osx",
     urls = ["https://github.com/halide/Halide/releases/download/v15.0.1/Halide-15.0.1-x86-64-osx-4c63f1befa1063184c5982b11b6a2cc17d4e5815.tar.gz"],
@@ -771,7 +776,7 @@ http_archive(
 
 http_archive(
     name = "macos_arm_64_halide",
-    build_file = "@//third_party:halide.BUILD",
+    build_file = "@mediapipe//third_party:halide.BUILD",
     sha256 = "db5d20d75fa7463490fcbc79c89f0abec9c23991f787c8e3e831fff411d5395c",
     strip_prefix = "Halide-15.0.1-arm-64-osx",
     urls = ["https://github.com/halide/Halide/releases/download/v15.0.1/Halide-15.0.1-arm-64-osx-4c63f1befa1063184c5982b11b6a2cc17d4e5815.tar.gz"],
@@ -779,7 +784,7 @@ http_archive(
 
 http_archive(
     name = "windows_halide",
-    build_file = "@//third_party:halide.BUILD",
+    build_file = "@mediapipe//third_party:halide.BUILD",
     sha256 = "61fd049bd75ee918ac6c30d0693aac6048f63f8d1fc4db31001573e58eae8dae",
     strip_prefix = "Halide-15.0.1-x86-64-windows",
     urls = ["https://github.com/halide/Halide/releases/download/v15.0.1/Halide-15.0.1-x86-64-windows-4c63f1befa1063184c5982b11b6a2cc17d4e5815.zip"],
@@ -794,7 +799,7 @@ http_archive(
 
 http_archive(
     name = "com_github_nlohmann_json",
-    build_file = "@//third_party:nlohmann.BUILD",
+    build_file = "@mediapipe//third_party:nlohmann.BUILD",
     sha256 = "6bea5877b1541d353bd77bdfbdb2696333ae5ed8f9e8cc22df657192218cad91",
     urls = ["https://github.com/nlohmann/json/releases/download/v3.9.1/include.zip"],
 )
@@ -822,7 +827,7 @@ http_archive(
 
 http_archive(
     name = "gradle_distribution",
-    build_file = "@//third_party:gradle_distribution.BUILD",
+    build_file = "@mediapipe//third_party:gradle_distribution.BUILD",
     sha256 = "3e1af3ae886920c3ac87f7a91f816c0c7c436f276a6eefdb3da152100fef72ae",
     strip_prefix = "gradle-8.4",
     urls = ["https://services.gradle.org/distributions/gradle-8.4-bin.zip"],
@@ -837,7 +842,7 @@ http_archive(
 
 http_archive(
     name = "libcurl",
-    build_file = "@//third_party:curl.BUILD",
+    build_file = "@mediapipe//third_party:curl.BUILD",
     sha256 = "d15ebab765d793e2e96db090f0e172d127859d78ca6f6391d7eafecfd894bbc0",
     strip_prefix = "curl-8.10.1",
     url = "https://curl.haxx.se/download/curl-8.10.1.tar.gz",
@@ -865,9 +870,9 @@ http_archive(
     # py_test/py_library/py_binary macros don't accept either at mediapipe's
     # pinned version) - rather than trying to reconcile XLA versions.
     patches = [
-        "@//third_party:litert_rules_python_and_strict_deps.diff",
-        "@//third_party:litert_custom_ops.diff",
-        "@//third_party:litert_internal_fbs_fix.diff",
+        "@mediapipe//third_party:litert_rules_python_and_strict_deps.diff",
+        "@mediapipe//third_party:litert_custom_ops.diff",
+        "@mediapipe//third_party:litert_internal_fbs_fix.diff",
     ],
     sha256 = "b40bc9629e123071596bfdf7c6a682f2a5e62430178d72d6b4fcb8a0a16af6ce",
     strip_prefix = "LiteRT-d90e665105195e58c98ca0e1f08f7fc700a40b05",
@@ -884,7 +889,7 @@ http_archive(
     patch_args = ["-p1"],
     patch_tool = "patch",
     patches = [
-        "@//third_party:litert_lm.diff",
+        "@mediapipe//third_party:litert_lm.diff",
     ],
     repo_mapping = {
         "@minizip": "@zlib",
@@ -898,7 +903,7 @@ http_archive(
 # Transitive dependency of LiteRT-LM.
 http_archive(
     name = "miniaudio",
-    build_file = "@//third_party:miniaudio.BUILD",
+    build_file = "@mediapipe//third_party:miniaudio.BUILD",
     sha256 = "bcb07bfb27e6fa94d34da73ba2d5642d4940b208ec2a660dbf4e52e6b7cd492f",
     strip_prefix = "miniaudio-0.11.22",
     urls = ["https://github.com/mackron/miniaudio/archive/refs/tags/0.11.22.tar.gz"],

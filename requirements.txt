@@ -1,7 +1,2 @@
-absl-py~=2.3
-certifi
-numpy
-sounddevice~=0.5
-flatbuffers~=25.9
-opencv-contrib-python
-matplotlib
+numpy==1.26.4
+opencv-contrib-python==4.11.0.86

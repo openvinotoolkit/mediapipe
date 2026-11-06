@@ -18,6 +18,7 @@
 #include <thread>  // NOLINT
 #include <vector>
 
+#include "mediapipe/calculators/openvino/openvino_test_util.h"
 #include "mediapipe/framework/calculator_framework.h"
 #include "mediapipe/framework/port/gtest.h"
 #include "mediapipe/framework/port/parse_text_proto.h"
@@ -70,6 +71,10 @@ ov::Tensor MakeInputTensor(float fill_value) {
 std::vector<float> RunGraphAndGetSum(float input1_fill, float input2_fill) {
   CalculatorGraphConfig graph_config =
       ParseTextProtoOrDie<CalculatorGraphConfig>(kGraphConfig);
+  if (!ResolveTestModelPath(&graph_config)) {
+    ADD_FAILURE() << "Cannot resolve the test model through Bazel runfiles";
+    return {};
+  }
   std::vector<Packet> output_packets;
   tool::AddVectorSink("output_tensors", &graph_config, &output_packets);
 

@@ -1,2 +1,11 @@
 .git
-Dockerfile
+bazel-*
+.configure.bazelrc
+.user.bazelrc
+MODULE.bazel.lock
+test-results
+gstreamer
+installer.sh
+LICENSE.txt
+*.tar.gz
+**/__pycache__

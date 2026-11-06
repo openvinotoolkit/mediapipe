@@ -1,0 +1,135 @@
+diff --git a/src/google/protobuf/json/internal/untyped_message.cc b/src/google/protobuf/json/internal/untyped_message.cc
+--- a/src/google/protobuf/json/internal/untyped_message.cc
++++ b/src/google/protobuf/json/internal/untyped_message.cc
+@@ -525,41 +525,61 @@ template <typename T>
+ absl::Status UntypedMessage::InsertField(const ResolverPool::Field& field,
+                                          T&& value) {
+   int32_t number = field.proto().number();
+-  auto emplace_result = fields_.try_emplace(number, std::forward<T>(value));
+-  if (emplace_result.second) {
+-    return absl::OkStatus();
+-  }
++  using value_type = std::decay_t<T>;
++  bool is_repeated = field.proto().cardinality() ==
++                     google::protobuf::Field::CARDINALITY_REPEATED;
+ 
+-  if (field.proto().cardinality() !=
+-      google::protobuf::Field::CARDINALITY_REPEATED) {
++  if constexpr (std::is_same_v<value_type, UntypedMessage>) {
++    auto emplace_result =
++        fields_.try_emplace(number, std::vector<UntypedMessage>());
++    if (!emplace_result.second && !is_repeated) {
++      return absl::InvalidArgumentError(
++          absl::StrCat("repeated entries for singular field number ", number));
++    }
++    Value& slot = emplace_result.first->second;
++    if (auto* extant = std::get_if<std::vector<UntypedMessage>>(&slot)) {
++      extant->push_back(std::forward<T>(value));
++      return absl::OkStatus();
++    }
+     return absl::InvalidArgumentError(
+-        absl::StrCat("repeated entries for singular field number ", number));
+-  }
+-
+-  Value& slot = emplace_result.first->second;
+-  using value_type = std::decay_t<T>;
+-  if (auto* extant = std::get_if<value_type>(&slot)) {
+-    std::vector<value_type> repeated;
+-    repeated.push_back(std::move(*extant));
+-    repeated.push_back(std::forward<T>(value));
+-
+-    slot = std::move(repeated);
+-  } else if (auto* extant = std::get_if<std::vector<value_type>>(&slot)) {
+-    extant->push_back(std::forward<T>(value));
++        absl::StrFormat("inconsistent types for field number %d: tried to "
++                        "insert a message, but index was %d",
++                        number, slot.index()));
+   } else {
+-    absl::optional<absl::string_view> name =
+-        google::protobuf::internal::RttiTypeName<value_type>();
+-    if (!name.has_value()) {
+-      name = "<unknown>";
++    auto emplace_result = fields_.try_emplace(number, std::forward<T>(value));
++    if (emplace_result.second) {
++      return absl::OkStatus();
+     }
+ 
+-    return absl::InvalidArgumentError(
+-        absl::StrFormat("inconsistent types for field number %d: tried to "
+-                        "insert '%s', but index was %d",
+-                        number, *name, slot.index()));
+-  }
++    if (!is_repeated) {
++      return absl::InvalidArgumentError(
++          absl::StrCat("repeated entries for singular field number ", number));
++    }
+ 
+-  return absl::OkStatus();
++    Value& slot = emplace_result.first->second;
++    if (auto* extant = std::get_if<value_type>(&slot)) {
++      std::vector<value_type> repeated;
++      repeated.push_back(std::move(*extant));
++      repeated.push_back(std::forward<T>(value));
++
++      slot = std::move(repeated);
++    } else if (auto* extant = std::get_if<std::vector<value_type>>(&slot)) {
++      extant->push_back(std::forward<T>(value));
++    } else {
++      absl::optional<absl::string_view> name =
++          google::protobuf::internal::RttiTypeName<value_type>();
++      if (!name.has_value()) {
++        name = "<unknown>";
++      }
++
++      return absl::InvalidArgumentError(
++          absl::StrFormat("inconsistent types for field number %d: tried to "
++                          "insert '%s', but index was %d",
++                          number, *name, slot.index()));
++    }
++
++    return absl::OkStatus();
++  }
+ }
+ 
+ }  // namespace json_internal
+diff --git a/src/google/protobuf/json/internal/untyped_message.h b/src/google/protobuf/json/internal/untyped_message.h
+--- a/src/google/protobuf/json/internal/untyped_message.h
++++ b/src/google/protobuf/json/internal/untyped_message.h
+@@ -149,8 +149,11 @@ class UntypedMessage final {
+  public:
+   // New nominal type instead of `bool` to avoid vector<bool> shenanigans.
+   enum Bool : unsigned char { kTrue, kFalse };
++  // UntypedMessage is incomplete here, so it can only appear inside a vector
++  // (MSVC in C++20 rejects incomplete variant alternatives). Message fields
++  // are therefore always stored as std::vector<UntypedMessage>.
+   using Value = std::variant<Bool, int32_t, uint32_t, int64_t, uint64_t, float,
+-                             double, std::string, UntypedMessage,
++                             double, std::string,
+                              //
+                              std::vector<Bool>, std::vector<int32_t>,
+                              std::vector<uint32_t>, std::vector<int64_t>,
+@@ -196,15 +199,17 @@ class UntypedMessage final {
+       return {};
+     }
+ 
+-    if (auto* val = std::get_if<T>(&it->second)) {
+-      return absl::Span<const T>(val, 1);
+-    } else if (auto* vec = std::get_if<std::vector<T>>(&it->second)) {
++    if constexpr (!std::is_same_v<T, UntypedMessage>) {
++      if (auto* val = std::get_if<T>(&it->second)) {
++        return absl::Span<const T>(val, 1);
++      }
++    }
++    if (auto* vec = std::get_if<std::vector<T>>(&it->second)) {
+       return *vec;
+-    } else {
+-      ABSL_CHECK(false) << "wrong type for UntypedMessage::Get(" << field_number
+-                        << ")";
+-      return {};  // avoid compiler warning.
+     }
++    ABSL_CHECK(false) << "wrong type for UntypedMessage::Get(" << field_number
++                      << ")";
++    return {};  // avoid compiler warning.
+   }
+ 
+   const ResolverPool::Message& desc() const { return *desc_; }
