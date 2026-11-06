@@ -9,8 +9,8 @@ IMAGE ?= mediapipe-openvino:$(OVMS_MEDIA_IMAGE_TAG)
 DEMOS_IMAGE ?= mediapipe-openvino-demos:$(OVMS_MEDIA_IMAGE_TAG)
 
 ifeq ($(OS),Windows_NT)
-SHELL := cmd.exe
-.SHELLFLAGS := /C
+SHELL := bash.exe
+.SHELLFLAGS := -c
 BAZEL_STARTUP_FLAGS ?= --output_user_root=C:/b
 else
 SHELL := /bin/bash
