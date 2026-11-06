@@ -25,6 +25,7 @@
 :: Version overrides via environment: OPENCV_VERSION, PYTHON_VERSION.
 :: Behind a proxy, set http_proxy and https_proxy before running; they are honored by curl, git, pacman and gpg.
 @echo off
+:: Keep CRLF endings so cmd.exe can resolve the setup subroutine labels.
 setlocal EnableExtensions EnableDelayedExpansion
 
 set "expunge=0"
