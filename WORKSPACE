@@ -285,6 +285,8 @@ http_archive(
         # (tensorflow/lite/build_def.bzl) where link_extra_lib is duplicated when rules_cc has
         # a version-suffixed canonical name (e.g., under single_version_override or complex dependency graphs).
         "@mediapipe//third_party:org_tensorflow_combine_cc_tests_link_extra_lib.diff",
+        # Use MediaPipe's stable mirror for XLA's pinned LLVM archive.
+        "@//third_party:org_tensorflow_xla_llvm_url.diff",
     ],
     sha256 = _TENSORFLOW_SHA256,
     strip_prefix = "tensorflow-%s" % _TENSORFLOW_GIT_COMMIT,
