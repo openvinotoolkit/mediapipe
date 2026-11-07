@@ -58,9 +58,7 @@ pipeline {
                 stage('Windows') {
                     agent { label "${params.WINDOWS_AGENT}" }
                     environment {
-                        PATH+MSYS2 = 'C:\\opt\\msys64\\usr\\bin'
-                        PATH+PYTHON = 'C:\\opt\\Python312;C:\\opt\\Python312\\Scripts'
-                        PATH+BAZEL = 'C:\\opt'
+                        PATH = "C:\\opt\\msys64\\usr\\bin;C:\\opt\\Python312;C:\\opt\\Python312\\Scripts;C:\\opt;${env.PATH}"
                         BAZEL_SH = 'C:\\opt\\msys64\\usr\\bin\\bash.exe'
                         PYTHON_BIN_PATH = 'C:\\opt\\Python312\\python.exe'
                         OPENCV_PREFIX = 'C:\\opt\\opencv_4.14.0'
