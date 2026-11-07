@@ -45,8 +45,7 @@ class ClassificationTest(unittest.TestCase):
                 'output_stream: "TENSORS:output_tensors" }\n',
                 encoding="utf-8",
             )
-            result = subprocess.run(
-                [
+            command = [
                     str(Path(OPTIONS.binary).resolve()),
                     f"--calculator_graph_config_file={graph}",
                     f"--input_video_path={video}",
@@ -54,17 +53,49 @@ class ClassificationTest(unittest.TestCase):
                     "--input_height=16",
                     "--max_frames=2",
                     "--top_k=0",
-                ],
+                ]
+            for sources in (1, 20):
+                with self.subTest(sources=sources):
+                    result = subprocess.run(
+                        command + [f"--num_sources={sources}"],
+                        capture_output=True,
+                        text=True,
+                        timeout=60,
+                    )
+                    self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                    self.assertEqual(result.stdout.count("frame 0 output[0]"), sources)
+                    self.assertEqual(result.stdout.count("frame 1 output[0]"), sources)
+                    self.assertNotIn("frame 2 output[0]", result.stdout)
+                    self.assertRegex(result.stdout, r"shape=\[1,\s*3,\s*16,\s*16\]")
+                    self.assertIn("values: 128 128 128", result.stdout)
+                    for source in range(sources):
+                        self.assertIn(f"source {source} frames=2\n", result.stdout)
+                    self.assertIn(
+                        f"benchmark sources={sources} frames={sources * 2} ",
+                        result.stdout,
+                    )
+                    self.assertEqual(
+                        (result.stdout + result.stderr).count(
+                            "OpenVINOSessionCalculator compiled "
+                        ),
+                        1,
+                    )
+            result = subprocess.run(
+                command + ["--num_sources=20", "--print_tensors=false"],
                 capture_output=True,
                 text=True,
                 timeout=60,
             )
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-            self.assertIn("frame 0 output[0]", result.stdout)
-            self.assertIn("frame 1 output[0]", result.stdout)
-            self.assertNotIn("frame 2 output[0]", result.stdout)
-            self.assertRegex(result.stdout, r"shape=\[1,\s*3,\s*16,\s*16\]")
-            self.assertIn("values: 128 128 128", result.stdout)
+            self.assertNotIn("output[", result.stdout)
+            self.assertIn("benchmark sources=20 frames=40 ", result.stdout)
+            result = subprocess.run(
+                command + ["--num_sources=20", f"--input_video_path={root / 'missing.avi'}"],
+                capture_output=True,
+                text=True,
+                timeout=60,
+            )
+            self.assertNotEqual(result.returncode, 0)
 
 
 if __name__ == "__main__":

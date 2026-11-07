@@ -88,14 +88,14 @@ python = use_extension("@rules_python_bzlmod//python/extensions:python.bzl", "py
 python.toolchain(
     ignore_root_user_error = True,
     is_default = True,
-    python_version = "3.11",
+    python_version = "3.12",
 )
-use_repo(python, "python_3_11")
+use_repo(python, "python_3_12")
 
 pip = use_extension("@rules_python_bzlmod//python/extensions:pip.bzl", "pip")
 pip.parse(
     hub_name = "openvino_pip",
-    python_version = "3.11",
+    python_version = "3.12",
     requirements_lock = "//:requirements.txt",
 )
 use_repo(pip, "openvino_pip")

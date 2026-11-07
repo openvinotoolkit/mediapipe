@@ -73,7 +73,7 @@ py_test(
     ],
     deps = [
         "@openvino_pip//numpy",
-        "@openvino_pip//opencv_contrib_python",
+        "@openvino_pip//opencv_python_headless",
         "@rules_python//python/runfiles",
     ],
 )

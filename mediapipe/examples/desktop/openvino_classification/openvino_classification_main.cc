@@ -17,12 +17,15 @@
 // OpenVINOInferenceCalculator, and prints the resulting tensor.
 
 #include <algorithm>
+#include <chrono>
 #include <cstdint>
 #include <cstdlib>
 #include <iostream>
 #include <memory>
+#include <mutex>
 #include <numeric>
 #include <string>
+#include <thread>
 #include <vector>
 
 #include "absl/flags/flag.h"
@@ -56,6 +59,9 @@ ABSL_FLAG(double, scale, 1.0,
           "normalize to [0,1]).");
 ABSL_FLAG(int, max_frames, 0, "Stop after N frames. 0 means the whole video.");
 ABSL_FLAG(int, top_k, 5, "How many top scoring classes to print per frame.");
+ABSL_FLAG(int, num_sources, 1,
+          "Number of producer threads and graphs sharing one model session.");
+ABSL_FLAG(bool, print_tensors, true, "Print tensors for each completed frame.");
 
 namespace {
 
@@ -132,25 +138,9 @@ void PrintTensor(int frame_index, const std::vector<ov::Tensor>& tensors,
   std::cout.flush();
 }
 
-absl::Status RunClassification() {
-  RET_CHECK(!absl::GetFlag(FLAGS_calculator_graph_config_file).empty())
-      << "--calculator_graph_config_file is required";
-  RET_CHECK(!absl::GetFlag(FLAGS_input_video_path).empty())
-      << "--input_video_path is required";
-
-  std::string config_contents;
-  ABSL_RETURN_IF_ERROR(mediapipe::file::GetContents(
-      absl::GetFlag(FLAGS_calculator_graph_config_file), &config_contents));
-  mediapipe::CalculatorGraphConfig config =
-      mediapipe::ParseTextProtoOrDie<mediapipe::CalculatorGraphConfig>(
-          config_contents);
-
-  mediapipe::CalculatorGraph graph;
-  ABSL_RETURN_IF_ERROR(graph.Initialize(config));
-  ABSL_ASSIGN_OR_RETURN(mediapipe::OutputStreamPoller poller,
-                        graph.AddOutputStreamPoller(kOutputStream));
-  ABSL_RETURN_IF_ERROR(graph.StartRun({}));
-
+absl::Status RunSource(mediapipe::CalculatorGraph& graph,
+             mediapipe::OutputStreamPoller& poller, int source_index,
+             int& completed_frames, std::mutex& output_mutex) {
   cv::VideoCapture capture(absl::GetFlag(FLAGS_input_video_path));
   RET_CHECK(capture.isOpened())
       << "Cannot open video " << absl::GetFlag(FLAGS_input_video_path);
@@ -174,14 +164,89 @@ absl::Status RunClassification() {
 
     mediapipe::Packet output_packet;
     RET_CHECK(poller.Next(&output_packet)) << "Graph produced no output";
-    PrintTensor(frame_index, output_packet.Get<std::vector<ov::Tensor>>(),
-                absl::GetFlag(FLAGS_top_k));
+    RET_CHECK(!output_packet.Get<std::vector<ov::Tensor>>().empty())
+        << "Graph produced no tensors";
+    if (absl::GetFlag(FLAGS_print_tensors)) {
+      std::lock_guard<std::mutex> lock(output_mutex);
+      if (absl::GetFlag(FLAGS_num_sources) > 1) {
+        std::cout << "source " << source_index << "\n";
+      }
+      PrintTensor(frame_index, output_packet.Get<std::vector<ov::Tensor>>(),
+                  absl::GetFlag(FLAGS_top_k));
+    }
     ++frame_index;
+    completed_frames = frame_index;
   }
   capture.release();
 
   ABSL_RETURN_IF_ERROR(graph.CloseInputStream(kInputStream));
   return graph.WaitUntilDone();
+}
+
+absl::Status RunClassification() {
+  RET_CHECK(!absl::GetFlag(FLAGS_calculator_graph_config_file).empty())
+      << "--calculator_graph_config_file is required";
+  RET_CHECK(!absl::GetFlag(FLAGS_input_video_path).empty())
+      << "--input_video_path is required";
+  const int num_sources = absl::GetFlag(FLAGS_num_sources);
+  RET_CHECK_GT(num_sources, 0) << "--num_sources must be positive";
+
+  std::string config_contents;
+  ABSL_RETURN_IF_ERROR(mediapipe::file::GetContents(
+      absl::GetFlag(FLAGS_calculator_graph_config_file), &config_contents));
+  const auto config =
+      mediapipe::ParseTextProtoOrDie<mediapipe::CalculatorGraphConfig>(
+          config_contents);
+
+  std::vector<std::unique_ptr<mediapipe::CalculatorGraph>> graphs;
+  std::vector<mediapipe::OutputStreamPoller> pollers;
+  for (int source = 0; source < num_sources; ++source) {
+    auto graph = std::make_unique<mediapipe::CalculatorGraph>();
+    ABSL_RETURN_IF_ERROR(graph->Initialize(config));
+    ABSL_ASSIGN_OR_RETURN(auto poller,
+                          graph->AddOutputStreamPoller(kOutputStream));
+    ABSL_RETURN_IF_ERROR(graph->StartRun({}));
+    graphs.push_back(std::move(graph));
+    pollers.push_back(std::move(poller));
+  }
+
+  std::mutex output_mutex;
+  std::vector<std::thread> producers;
+  std::vector<absl::Status> statuses(num_sources);
+  std::vector<int> completed_frames(num_sources, 0);
+  const auto start = std::chrono::steady_clock::now();
+  for (int source = 0; source < num_sources; ++source) {
+    producers.emplace_back([&, source]() {
+      try {
+        statuses[source] = RunSource(*graphs[source], pollers[source], source,
+                                     completed_frames[source], output_mutex);
+      } catch (const std::exception& error) {
+        statuses[source] = absl::InternalError(error.what());
+      }
+      if (!statuses[source].ok()) {
+        graphs[source]->Cancel();
+        graphs[source]->WaitUntilDone().IgnoreError();
+      }
+    });
+  }
+  for (auto& producer : producers) {
+    producer.join();
+  }
+  const double seconds = std::chrono::duration<double>(
+      std::chrono::steady_clock::now() - start).count();
+  int64_t total_frames = 0;
+  for (int source = 0; source < num_sources; ++source) {
+    std::cout << "source " << source << " frames=" << completed_frames[source]
+              << "\n";
+    total_frames += completed_frames[source];
+    ABSL_RETURN_IF_ERROR(statuses[source]);
+  }
+  std::cout << "benchmark sources=" << num_sources << " frames=" << total_frames
+            << " seconds=" << seconds
+            << " aggregate_fps=" << total_frames / seconds
+            << " fps_per_source=" << total_frames / seconds / num_sources
+            << "\n";
+  return absl::OkStatus();
 }
 
 }  // namespace

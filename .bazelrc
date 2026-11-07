@@ -2,7 +2,7 @@
 
 common  --enable_bzlmod
 common --enable_workspace
-common --repo_env=HERMETIC_PYTHON_VERSION=3.11
+common --repo_env=HERMETIC_PYTHON_VERSION=3.12
 
 # Tensorflow needs remote repo
 common --experimental_repo_remote_exec

@@ -57,6 +57,6 @@ py_binary(
     deps = [
         ":openvino",
         "@openvino_pip//numpy",
-        "@openvino_pip//opencv_contrib_python",
+        "@openvino_pip//opencv_python_headless",
     ],
 )

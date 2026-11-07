@@ -1,0 +1,6 @@
+# type<TAB>workspace-relative source<TAB>package-relative destination
+cpp	bazel-bin/mediapipe/examples/desktop/openvino_classification/openvino_classification	openvino_classification
+file	mediapipe/examples/desktop/openvino_classification/openvino_classification.pbtxt	openvino_classification.pbtxt
+file	mediapipe/calculators/openvino/testdata/identity.xml	testdata/identity.xml
+file	mediapipe/calculators/openvino/testdata/identity.bin	testdata/identity.bin
+python	mediapipe/python/openvino

@@ -25,7 +25,7 @@ esac
 
 repo_dir="$(cd "$(dirname "$0")" && pwd -P)"
 prefix="${OPENCV_PREFIX:-/usr/local}"
-version="${OPENCV_VERSION:-4.13.0}"
+version="${OPENCV_VERSION:-4.14.0}"
 
 if [[ "${1:-}" != config_only ]]; then
   build_dir="$(mktemp -d "${TMPDIR:-/tmp}/opencv.XXXXXXXX")"
@@ -35,7 +35,7 @@ if [[ "${1:-}" != config_only ]]; then
   cmake -S "$build_dir/opencv" -B "$build_dir/build" \
     -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$prefix" \
     -DOPENCV_EXTRA_MODULES_PATH="$build_dir/opencv_contrib/modules" \
-    -DBUILD_LIST=core,imgproc,imgcodecs,calib3d,features2d,highgui,video,videoio,optflow \
+    -DBUILD_LIST=core,imgproc,imgcodecs,calib3d,features2d,video,videoio,optflow \
     -DBUILD_SHARED_LIBS=ON -DBUILD_TESTS=OFF -DBUILD_PERF_TESTS=OFF \
     -DBUILD_EXAMPLES=OFF -DBUILD_DOCS=OFF -DBUILD_opencv_apps=OFF \
     -DBUILD_opencv_python3=OFF -DBUILD_JAVA=OFF \

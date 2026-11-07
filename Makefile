@@ -7,6 +7,7 @@ DOCKER ?= docker
 OVMS_MEDIA_IMAGE_TAG ?= local
 IMAGE ?= mediapipe-openvino:$(OVMS_MEDIA_IMAGE_TAG)
 DEMOS_IMAGE ?= mediapipe-openvino-demos:$(OVMS_MEDIA_IMAGE_TAG)
+RUNTIME_IMAGE ?= mediapipe-openvino-runtime:$(OVMS_MEDIA_IMAGE_TAG)
 
 ifeq ($(OS),Windows_NT)
 SHELL := bash.exe
@@ -25,7 +26,7 @@ UNIT_TESTS := //mediapipe/calculators/openvino:openvino_session_calculator_test 
 EXAMPLE_TEST := //mediapipe/examples/desktop/openvino_classification:openvino_classification_test
 PYTHON_DEMO := //mediapipe/python/openvino:openvino_classification_demo
 
-.PHONY: all build tests test example-tests python clean docker_build ovms_demos_image tests_in_docker run_demos_in_docker
+.PHONY: all build tests test example-tests python clean docker_build ovms_demos_image release_image test_release_image tests_in_docker run_demos_in_docker
 
 all: build tests example-tests
 
@@ -51,6 +52,23 @@ docker_build:
 
 ovms_demos_image:
 	$(DOCKER) build --target demos --build-arg JOBS=$(JOBS) -t $(DEMOS_IMAGE) .
+
+release_image:
+	$(DOCKER) build --target release --build-arg JOBS=$(JOBS) -t $(RUNTIME_IMAGE) .
+
+test_release_image:
+	mkdir -p test-results
+	$(DOCKER) run --rm -v "$(CURDIR)/test-results:/test-results" $(IMAGE) \
+	  ffmpeg -hide_banner -loglevel error -f lavfi -i 'testsrc=size=64x48:rate=5:duration=1' \
+	  -frames:v 3 -c:v mjpeg -pix_fmt yuvj420p -y /test-results/example_video.avi
+	$(DOCKER) run --rm -v "$(CURDIR)/test-results/example_video.avi:/mediapipe/testdata/example_video.avi:ro" $(RUNTIME_IMAGE) \
+	  --model_path=/mediapipe/testdata/identity.xml \
+	  --input_video_path=/mediapipe/testdata/example_video.avi \
+	  --device=CPU --input_width=2 --input_height=1 --max_frames=2 --top_k=0 \
+	  > test-results/release-smoke.log 2>&1
+	grep -Fq 'frame 0 output[0]' test-results/release-smoke.log
+	grep -Fq 'frame 1 output[0]' test-results/release-smoke.log
+	! grep -Fq 'frame 2 output[0]' test-results/release-smoke.log
 
 tests_in_docker:
 	mkdir -p test-results
