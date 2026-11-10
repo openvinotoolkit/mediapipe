@@ -186,16 +186,12 @@ public:
       const auto &bindings = options.tag_to_output_tensor_names();
       RET_CHECK_EQ(bindings.size(), cc->Outputs().GetTags().size())
           << "Provide one tag_to_output_tensor_names entry per output stream";
-      std::vector<std::string> bound_names;
       for (const std::string &tag : cc->Outputs().GetTags()) {
         const auto binding = bindings.find(tag);
         RET_CHECK(binding != bindings.end())
             << "Missing output tensor mapping for tag: " << tag;
         RET_CHECK(ContainsName(session_->output_names, binding->second))
             << "Unknown model output tensor name: " << binding->second;
-        RET_CHECK(!ContainsName(bound_names, binding->second))
-            << "Duplicate model output tensor mapping: " << binding->second;
-        bound_names.push_back(binding->second);
       }
     }
     return absl::OkStatus();

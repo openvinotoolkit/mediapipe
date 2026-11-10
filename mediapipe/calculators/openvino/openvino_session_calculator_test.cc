@@ -153,6 +153,7 @@ TEST(OpenVINOSessionCalculatorTest,
     input_stream: "first"
     input_stream: "second"
     output_stream: "sum"
+    output_stream: "sum_copy"
     node {
       calculator: "OpenVINOSessionCalculator"
       output_side_packet: "SESSION:session"
@@ -169,11 +170,13 @@ TEST(OpenVINOSessionCalculatorTest,
       input_stream: "INPUT1:first"
       input_stream: "INPUT2:second"
       output_stream: "SUM:sum"
+      output_stream: "SUM_COPY:sum_copy"
       node_options:
           {[type.googleapis.com / mediapipe.OpenVINOInferenceCalculatorOptions
     ] {tag_to_input_tensor_names {key: "INPUT1" value: "input1"}
        tag_to_input_tensor_names {key: "INPUT2" value: "input2"}
-       tag_to_output_tensor_names {key: "SUM" value: "sum"}}}
+       tag_to_output_tensor_names {key: "SUM" value: "sum"}
+       tag_to_output_tensor_names {key: "SUM_COPY" value: "sum"}}}
     }
   )pb";
   CalculatorGraphConfig graph_config =
@@ -182,6 +185,8 @@ TEST(OpenVINOSessionCalculatorTest,
 
   std::vector<Packet> output_packets;
   tool::AddVectorSink("sum", &graph_config, &output_packets);
+  std::vector<Packet> output_copy_packets;
+  tool::AddVectorSink("sum_copy", &graph_config, &output_copy_packets);
   CalculatorGraph graph;
   MP_EXPECT_OK(graph.Initialize(graph_config));
   MP_EXPECT_OK(graph.StartRun({}));
@@ -200,6 +205,13 @@ TEST(OpenVINOSessionCalculatorTest,
   const float *output_data = output.data<const float>();
   for (int i = 0; i < 10; ++i) {
     EXPECT_FLOAT_EQ(output_data[i], 11.0f + 2.0f * i);
+  }
+  ASSERT_EQ(output_copy_packets.size(), 1);
+  const ov::Tensor &output_copy = output_copy_packets[0].Get<ov::Tensor>();
+  EXPECT_EQ(output_copy.get_shape(), (ov::Shape{1, 10}));
+  const float *output_copy_data = output_copy.data<const float>();
+  for (int i = 0; i < 10; ++i) {
+    EXPECT_FLOAT_EQ(output_copy_data[i], 11.0f + 2.0f * i);
   }
 }
 
