@@ -36,11 +36,9 @@ constexpr char kGraphTemplate[] = R"pb(
   node {
     calculator: "OpenVINOSessionCalculator"
     output_side_packet: "SESSION:session"
-    node_options: {
-      [type.googleapis.com/mediapipe.OpenVINOSessionCalculatorOptions] {
-        %s
-      }
-    }
+    node_options:
+        {[type.googleapis.com / mediapipe.OpenVINOSessionCalculatorOptions] {
+            % s}}
   }
   node {
     calculator: "OpenVINOInferenceCalculator"
@@ -50,9 +48,10 @@ constexpr char kGraphTemplate[] = R"pb(
   }
 )pb";
 
-std::vector<ov::Tensor> RunGraph(const std::string& session_options,
+std::vector<ov::Tensor> RunGraph(const std::string &session_options,
                                  std::vector<ov::Tensor> inputs) {
-  const std::string graph_text = absl::StrFormat(kGraphTemplate, session_options);
+  const std::string graph_text =
+      absl::StrFormat(kGraphTemplate, session_options);
   CalculatorGraphConfig graph_config =
       ParseTextProtoOrDie<CalculatorGraphConfig>(graph_text);
   if (!ResolveTestModelPath(&graph_config)) {
@@ -71,14 +70,16 @@ std::vector<ov::Tensor> RunGraph(const std::string& session_options,
   MP_EXPECT_OK(graph.CloseInputStream("input_tensors"));
   MP_EXPECT_OK(graph.WaitUntilDone());
 
-  if (output_packets.size() != 1) return {};
+  if (output_packets.size() != 1)
+    return {};
   return output_packets[0].Get<std::vector<ov::Tensor>>();
 }
 
-ov::Tensor MakeFilledTensor(const ov::Shape& shape, float start) {
+ov::Tensor MakeFilledTensor(const ov::Shape &shape, float start) {
   ov::Tensor tensor(ov::element::f32, shape);
-  float* data = tensor.data<float>();
-  for (size_t i = 0; i < tensor.get_size(); ++i) data[i] = start + i;
+  float *data = tensor.data<float>();
+  for (size_t i = 0; i < tensor.get_size(); ++i)
+    data[i] = start + i;
   return tensor;
 }
 
@@ -96,8 +97,9 @@ TEST(OpenVINOSessionCalculatorTest, AppliesNamedShapeAndIgnoresBatchSize) {
 
   ASSERT_EQ(outputs.size(), 1);
   EXPECT_EQ(outputs[0].get_shape(), (ov::Shape{2, 10}));
-  const float* data = outputs[0].data<float>();
-  for (int i = 0; i < 20; ++i) EXPECT_FLOAT_EQ(data[i], 101.0f + 2 * i);
+  const float *data = outputs[0].data<float>();
+  for (int i = 0; i < 20; ++i)
+    EXPECT_FLOAT_EQ(data[i], 101.0f + 2 * i);
 }
 
 TEST(OpenVINOSessionCalculatorTest, AppliesInputPreprocessing) {
@@ -113,17 +115,18 @@ TEST(OpenVINOSessionCalculatorTest, AppliesInputPreprocessing) {
     num_infer_requests: 1
   )pb";
   ov::Tensor input(ov::element::u8, ov::Shape{2, 1, 2, 3});
-  uint8_t* input_data = input.data<uint8_t>();
-  for (int i = 0; i < 12; ++i) input_data[i] = static_cast<uint8_t>(i + 1);
+  uint8_t *input_data = input.data<uint8_t>();
+  for (int i = 0; i < 12; ++i)
+    input_data[i] = static_cast<uint8_t>(i + 1);
 
   std::vector<ov::Tensor> outputs = RunGraph(kOptions, {std::move(input)});
 
   ASSERT_EQ(outputs.size(), 1);
   EXPECT_EQ(outputs[0].get_shape(), (ov::Shape{2, 3, 1, 2}));
-  const float* output = outputs[0].data<float>();
+  const float *output = outputs[0].data<float>();
   const std::vector<float> expected = {
       1.0f, 2.5f, 0.0f, 0.75f, -0.25f, 0.125f,
-      4.0f, 5.5f, 1.5f, 2.25f, 0.5f, 0.875f,
+      4.0f, 5.5f, 1.5f, 2.25f, 0.5f,   0.875f,
   };
   for (size_t i = 0; i < expected.size(); ++i) {
     EXPECT_FLOAT_EQ(output[i], expected[i]) << "index " << i;
@@ -144,5 +147,61 @@ TEST(OpenVINOSessionCalculatorTest, AcceptsAutoShape) {
   EXPECT_EQ(outputs[0].get_shape(), (ov::Shape{2, 3, 1, 2}));
 }
 
-}  // namespace
-}  // namespace mediapipe
+TEST(OpenVINOSessionCalculatorTest,
+     BindsNamedTensorStreamsWithoutVectorAdapters) {
+  constexpr char kGraph[] = R"pb(
+    input_stream: "first"
+    input_stream: "second"
+    output_stream: "sum"
+    node {
+      calculator: "OpenVINOSessionCalculator"
+      output_side_packet: "SESSION:session"
+      node_options:
+          {[type.googleapis.com / mediapipe.OpenVINOSessionCalculatorOptions] {
+            model_path: "mediapipe/calculators/openvino/testdata/add.xml"
+            device: "CPU"
+            num_infer_requests: 1
+          }}
+    }
+    node {
+      calculator: "OpenVINOInferenceCalculator"
+      input_side_packet: "SESSION:session"
+      input_stream: "INPUT1:first"
+      input_stream: "INPUT2:second"
+      output_stream: "SUM:sum"
+      node_options:
+          {[type.googleapis.com / mediapipe.OpenVINOInferenceCalculatorOptions
+    ] {tag_to_input_tensor_names {key: "INPUT1" value: "input1"}
+       tag_to_input_tensor_names {key: "INPUT2" value: "input2"}
+       tag_to_output_tensor_names {key: "SUM" value: "sum"}}}
+    }
+  )pb";
+  CalculatorGraphConfig graph_config =
+      ParseTextProtoOrDie<CalculatorGraphConfig>(kGraph);
+  ASSERT_TRUE(ResolveTestModelPath(&graph_config));
+
+  std::vector<Packet> output_packets;
+  tool::AddVectorSink("sum", &graph_config, &output_packets);
+  CalculatorGraph graph;
+  MP_EXPECT_OK(graph.Initialize(graph_config));
+  MP_EXPECT_OK(graph.StartRun({}));
+  MP_EXPECT_OK(graph.AddPacketToInputStream(
+      "first", MakePacket<ov::Tensor>(MakeFilledTensor({1, 10}, 1.0f))
+                   .At(Timestamp(0))));
+  MP_EXPECT_OK(graph.AddPacketToInputStream(
+      "second", MakePacket<ov::Tensor>(MakeFilledTensor({1, 10}, 10.0f))
+                    .At(Timestamp(0))));
+  MP_EXPECT_OK(graph.CloseAllPacketSources());
+  MP_EXPECT_OK(graph.WaitUntilDone());
+
+  ASSERT_EQ(output_packets.size(), 1);
+  const ov::Tensor &output = output_packets[0].Get<ov::Tensor>();
+  EXPECT_EQ(output.get_shape(), (ov::Shape{1, 10}));
+  const float *output_data = output.data<const float>();
+  for (int i = 0; i < 10; ++i) {
+    EXPECT_FLOAT_EQ(output_data[i], 11.0f + 2.0f * i);
+  }
+}
+
+} // namespace
+} // namespace mediapipe
