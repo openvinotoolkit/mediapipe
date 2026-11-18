@@ -39,4 +39,15 @@ message OpenVINOInferenceCalculatorOptions {
   // Optional explicit ordering of the produced tensor vector. When empty, the
   // outputs are emitted in model output order.
   repeated string output_order = 2;
+
+  // Maps individually tagged ov::Tensor input streams to model input names.
+  // Use instead of input_order when the graph combines inputs from separate
+  // branches. Each input tag must identify exactly one stream.
+  map<string, string> tag_to_input_tensor_names = 3;
+
+  // Maps model output names to individually tagged ov::Tensor output streams.
+  // Use instead of output_order when downstream branches consume outputs as
+  // separate packets.
+  map<string, string> tag_to_output_tensor_names = 4;
+
 }

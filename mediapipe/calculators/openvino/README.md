@@ -6,12 +6,12 @@ A pair of MediaPipe calculators that run inference with the
 | Calculator | Role |
 | --- | --- |
 | `OpenVINOSessionCalculator` | Compiles a model once and publishes a shared pool of `ov::InferRequest` objects as an output side packet. |
-| `OpenVINOInferenceCalculator` | Borrows a free request from that pool for every incoming packet, runs inference, returns the request. |
+| `OpenVINOInferenceCalculator` | Borrows a free request from that pool for every incoming packet and supports vector or named tensor streams. |
 
-The split mirrors the OVMS calculators
-(`openvinomodelserversessioncalculator` / `openvinoinferencecalculator`): model
-loading is a graph-lifetime operation, inference is a per-packet operation, and
-keeping them apart is what allows several graphs to share one compiled model.
+Model compilation is a graph-lifetime operation, while inference is a
+per-packet operation. Keeping them separate lets graphs share one compiled
+model and request pool. In OVMS, this interface is used with direct model paths
+and does not select servables from the Model Server model configuration.
 
 ## Files
 
@@ -116,23 +116,45 @@ A single process-wide `ov::Core` is used, so the plugin-level model cache
 
 ## `OpenVINOInferenceCalculator`
 
-| Tag | Direction | Type | Notes |
-| --- | --- | --- | --- |
-| `SESSION` | input side packet | `std::shared_ptr<OpenVINOSession>` | From the session node. |
-| `TENSORS` | input stream | `std::vector<ov::Tensor>` | Host tensors. |
-| `REMOTE_TENSORS` | input stream | `std::vector<ov::RemoteTensor>` | Device tensors. |
-| `TENSORS` | output stream | `std::vector<ov::Tensor>` | One entry per model output. |
+`SESSION` is always an input side packet of type
+`std::shared_ptr<OpenVINOSession>`. For tensor streams, choose one of two
+mutually exclusive contracts:
 
-Exactly one of `TENSORS` / `REMOTE_TENSORS` must be connected — the contract
-check is a hard `RET_CHECK`. The incoming vector must have exactly as many
-entries as the model has inputs.
+| Mode | Inputs | Outputs |
+| --- | --- | --- |
+| Vector | One `TENSORS` stream carrying `std::vector<ov::Tensor>`, or one `REMOTE_TENSORS` stream carrying `std::vector<ov::RemoteTensor>`. Vector length must equal the model input count. | One `TENSORS` stream carrying `std::vector<ov::Tensor>`. |
+| Named | One tagged `ov::Tensor` stream per model input, mapped to model names. | One tagged `ov::Tensor` stream per requested output, mapped from model names. |
 
-Node parameters (`OpenVINOInferenceCalculatorOptions`), both optional:
+Do not mix vector and named streams on the same side of one inference node.
+Named mode requires a distinct tag for each stream, one binding for every model
+input, and one binding for each output stream. It can connect branch outputs
+directly without a merge/split adapter:
 
-| Field | Meaning |
-| --- | --- |
-| `input_order` | Tensor names to bind the incoming vector to, in order. Empty = bind by index (`set_input_tensor(i, ...)`). |
-| `output_order` | Tensor names to emit, in order. Empty = model output order. |
+```pbtxt
+node {
+  calculator: "OpenVINOInferenceCalculator"
+  input_side_packet: "SESSION:session"
+  input_stream: "INPUT_A:branch_a"
+  input_stream: "INPUT_B:branch_b"
+  output_stream: "SCORES:scores"
+  output_stream: "EMBEDDING:embedding"
+  node_options: {
+    [type.googleapis.com/mediapipe.OpenVINOInferenceCalculatorOptions] {
+      tag_to_input_tensor_names { key: "INPUT_A" value: "input_a" }
+      tag_to_input_tensor_names { key: "INPUT_B" value: "input_b" }
+      tag_to_output_tensor_names { key: "SCORES" value: "scores" }
+      tag_to_output_tensor_names { key: "EMBEDDING" value: "embedding" }
+    }
+  }
+}
+```
+
+Vector mode remains more compact when a producer naturally emits one tensor
+vector or when graph branches are not important. `input_order` maps vector
+positions to model input names; when omitted, binding is by model index.
+`output_order` selects and orders output tensors; when omitted, model output
+order is used. Do not set order options together with their corresponding named
+stream mapping.
 
 ```pbtxt
 node {
@@ -181,11 +203,12 @@ immutable, reference-counted payload, and downstream calculators read it with
   if the buffer is unsuitable (wrong precision, or not aligned for the plugin);
   allocate with `ov::Tensor(type, shape)` so that the plugin's allocator is
   used and the data pointer stays live.
-* **Inference node → consumer**: the emitted `std::vector<ov::Tensor>` is moved
-  into the packet, and every downstream node sees the same buffers. No copy
-  happens per consumer, even with a fan-out of several nodes.
+* **Inference node → consumer**: the output vector is moved into the packet,
+  and named output packets contain `ov::Tensor` handles. Downstream fan-out
+  does not copy tensor buffers.
 
-One copy does remain today, inside `Process()`:
+One copy does remain today, inside `Process()`, for both vector and named
+outputs:
 
 ```c++
 ov::Tensor copy(source.get_element_type(), source.get_shape());
@@ -194,8 +217,11 @@ source.copy_to(copy);
 
 It is required because the `ov::InferRequest` goes straight back into the
 shared queue and its internal output buffer will be overwritten by the next
-packet. If you need to eliminate it, pre-allocate the output tensors and bind
-them to the request before `infer()`:
+packet. A future zero-copy output mode must keep the inference request leased
+until downstream packets release their references; otherwise a later inference
+can overwrite data still being read. Pre-allocating output tensors and binding
+them before `infer()` avoids this copy only for static output shapes, but does
+not by itself tie request reuse to downstream packet lifetime:
 
 ```c++
 ov::Tensor out(port.get_element_type(), port.get_shape());  // static shapes only
