@@ -1,4 +1,4 @@
-// Copyright (c) 2023 Intel Corporation
+// Copyright 2024 Intel Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,7 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
 
 syntax = "proto2";
 
@@ -19,42 +18,36 @@ package mediapipe;
 
 import "mediapipe/framework/calculator.proto";
 
-// Full Example:
+// Example:
 //
 // node {
 //   calculator: "OpenVINOInferenceCalculator"
-//   input_stream: "TENSOR_IN:image_tensors"
-//   output_stream: "TENSOR_OUT:result_tensors"
-//   options {
-//     [mediapipe.OpenVINOInferenceCalculatorOptions.ext] {
-//       model_path: "model.openvino"
-//       device { gpu {} }
-//     }
-//   }
+//   input_side_packet: "SESSION:session"
+//   input_stream: "TENSORS:input_tensors"
+//   output_stream: "TENSORS:output_tensors"
 // }
-//
 message OpenVINOInferenceCalculatorOptions {
   extend mediapipe.CalculatorOptions {
-    optional OpenVINOInferenceCalculatorOptions ext = 113766539;
+    optional OpenVINOInferenceCalculatorOptions ext = 113344557;
   }
 
-  message Device {
-    // Default inference provided by openvino.
-    message CPU {}
-    message GPU {}
-    message AUTO {}
+  // Optional explicit mapping of the incoming tensor vector onto model inputs.
+  // When empty, the i-th tensor of the input vector is bound to the i-th model
+  // input.
+  repeated string input_order = 1;
 
-    oneof device {
-      AUTO auto = 1;
-      CPU cpu = 2;
-      GPU gpu = 3;
-    }
-  }
+  // Optional explicit ordering of the produced tensor vector. When empty, the
+  // outputs are emitted in model output order.
+  repeated string output_order = 2;
 
-  // Path to the OpenVINO supported model (IR, ONNX, ...)
-  optional string model_path = 1;
+  // Maps individually tagged ov::Tensor input streams to model input names.
+  // Use instead of input_order when the graph combines inputs from separate
+  // branches. Each input tag must identify exactly one stream.
+  map<string, string> tag_to_input_tensor_names = 3;
 
-  // OpenVINO device to run inference.
-  optional Device device = 2;
+  // Maps model output names to individually tagged ov::Tensor output streams.
+  // Use instead of output_order when downstream branches consume outputs as
+  // separate packets.
+  map<string, string> tag_to_output_tensor_names = 4;
+
 }
-

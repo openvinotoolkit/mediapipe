@@ -19,7 +19,6 @@ cc_library(
         #"include/arm-linux-gnueabihf/opencv4/opencv2/cvconfig.h",
         #"include/x86_64-linux-gnu/opencv4/opencv2/cvconfig.h",
         "include/opencv4/opencv2/**/*.h*",
-        "include/opencv4/opencv2/*.h*",
     ]),
     includes = [
         # For OpenCV 4.x
@@ -29,16 +28,13 @@ cc_library(
         "include/opencv4/",
     ],
     linkopts = [
-        "-L/usr/local/lib",
-        "-l:libopencv_core.so",
-        "-l:libopencv_calib3d.so",
-        "-l:libopencv_features2d.so",
-        "-l:libopencv_highgui.so",
-        "-l:libopencv_imgcodecs.so",
-        "-l:libopencv_imgproc.so",
-        "-l:libopencv_video.so",
-        "-l:libopencv_videoio.so",
-        "-l:libopencv_optflow.so",
+        "-ldl",
+        "-lpthread",
     ],
+    srcs = glob([
+        "lib/libopencv_*.so*",
+        "lib64/libopencv_*.so*",
+        "lib/x86_64-linux-gnu/libopencv_*.so*",
+    ]),
     visibility = ["//visibility:public"],
 )

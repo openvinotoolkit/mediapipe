@@ -1,127 +1,79 @@
-#
-# Copyright (c) 2023 Intel Corporation
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
+.DEFAULT_GOAL := all
 
-HTTP_PROXY := "$(http_proxy)"
-HTTPS_PROXY := "$(https_proxy)"
-OVMS_MEDIA_DOCKER_IMAGE ?= mediapipe_ovms
-OVMS_MEDIA_IMAGE_TAG ?= latest
-BASE_IMAGE := "ubuntu:22.04"
+BAZEL ?= bazel
+BAZEL_FLAGS ?=
+JOBS ?= 16
+DOCKER ?= docker
+OVMS_MEDIA_IMAGE_TAG ?= local
+IMAGE ?= mediapipe-openvino:$(OVMS_MEDIA_IMAGE_TAG)
+DEMOS_IMAGE ?= mediapipe-openvino-demos:$(OVMS_MEDIA_IMAGE_TAG)
+RUNTIME_IMAGE ?= mediapipe-openvino-runtime:$(OVMS_MEDIA_IMAGE_TAG)
 
-INPUT_VIDEO_LINK ?= "https://www.pexels.com/download/video/3044127/?fps=24.0&h=1080&w=1920"
-# Ignore HTTP connection:close header when streaming (#3113)
-OVMS_COMMIT ?="130d25794f4a4239f834761b80bf555b8bc93691"
-JOBS ?= $(shell python3 -c 'import multiprocessing as mp; print(mp.cpu_count())')
-DLDT_PACKAGE_URL ?= https://storage.openvinotoolkit.org/repositories/openvino/packages/pre-release/2025.3.0rc2/openvino_toolkit_ubuntu22_2025.3.0.dev20250826_x86_64.tgz
+ifeq ($(OS),Windows_NT)
+SHELL := bash.exe
+.SHELLFLAGS := -c
+BAZEL_STARTUP_FLAGS ?= --output_user_root=C:/b
+else
+SHELL := /bin/bash
+BAZEL_STARTUP_FLAGS ?=
+endif
 
-# Targets to use outside running mediapipe_ovms container
+BAZEL_CMD = $(BAZEL) $(BAZEL_STARTUP_FLAGS)
+CALCULATORS := //mediapipe/calculators/openvino:openvino_calculators
+EXAMPLE := //mediapipe/examples/desktop/openvino_classification:openvino_classification
+UNIT_TESTS := //mediapipe/calculators/openvino:openvino_session_calculator_test \
+              //mediapipe/calculators/openvino:openvino_calculators_concurrency_test
+EXAMPLE_TEST := //mediapipe/examples/desktop/openvino_classification:openvino_classification_test
+PYTHON_DEMO := //mediapipe/python/openvino:openvino_classification_demo
+
+.PHONY: all build tests test example-tests python clean docker_build ovms_demos_image release_image test_release_image tests_in_docker run_demos_in_docker
+
+all: build tests example-tests
+
+build:
+	$(BAZEL_CMD) build --jobs=$(JOBS) $(BAZEL_FLAGS) $(CALCULATORS) $(EXAMPLE)
+
+tests:
+	$(BAZEL_CMD) test --jobs=$(JOBS) --test_output=errors $(BAZEL_FLAGS) $(UNIT_TESTS)
+
+test: tests example-tests
+
+example-tests:
+	$(BAZEL_CMD) test --jobs=$(JOBS) --test_output=errors $(BAZEL_FLAGS) $(EXAMPLE_TEST)
+
+python:
+	$(BAZEL_CMD) build --jobs=$(JOBS) $(BAZEL_FLAGS) $(PYTHON_DEMO)
+
+clean:
+	$(BAZEL_CMD) clean
+
 docker_build:
-	docker build -f Dockerfile.openvino \
-	--build-arg http_proxy=$(HTTP_PROXY) --build-arg https_proxy=$(HTTPS_PROXY) \
-	--build-arg DLDT_PACKAGE_URL=$(DLDT_PACKAGE_URL) \
-	--build-arg BASE_IMAGE=$(BASE_IMAGE) \
-	--build-arg JOBS=$(JOBS) . \
-	--build-arg OVMS_COMMIT=$(OVMS_COMMIT) \
-	-t $(OVMS_MEDIA_DOCKER_IMAGE):$(OVMS_MEDIA_IMAGE_TAG) \
-	--target=build
-
-tests: run_unit_tests run_hello_world run_hello_ovms
-run_hello_ovms:
-	docker run $(OVMS_MEDIA_DOCKER_IMAGE):$(OVMS_MEDIA_IMAGE_TAG) bazel-bin/mediapipe/examples/desktop/hello_ovms/hello_ovms | grep -q "Output tensor data: 9 - 11"
-
-MEDIAPIPE_UNSTABLE_TESTS_REGEX="MuxInputStreamHandlerTest.RemovesUnusedDataStreamPackets"
-run_unit_tests:
-	docker run -e http_proxy=$(HTTP_PROXY) -e https_proxy=$(HTTPS_PROXY) $(OVMS_MEDIA_DOCKER_IMAGE):$(OVMS_MEDIA_IMAGE_TAG) bazel test --define=MEDIAPIPE_DISABLE_GPU=1 --test_output=streamed --test_filter="-${MEDIAPIPE_UNSTABLE_TESTS_REGEX}" //mediapipe/framework/...
-	docker run -e http_proxy=$(HTTP_PROXY) -e https_proxy=$(HTTPS_PROXY) $(OVMS_MEDIA_DOCKER_IMAGE):$(OVMS_MEDIA_IMAGE_TAG) bazel test --define=MEDIAPIPE_DISABLE_GPU=1 --test_output=streamed //mediapipe/calculators/ovms:all
-	docker run -e http_proxy=$(HTTP_PROXY) -e https_proxy=$(HTTPS_PROXY) $(OVMS_MEDIA_DOCKER_IMAGE):$(OVMS_MEDIA_IMAGE_TAG) bazel test --define=MEDIAPIPE_DISABLE_GPU=1 --test_output=streamed //mediapipe/calculators/geti/serialization:all
-
-run_hello_world:
-	docker run $(OVMS_MEDIA_DOCKER_IMAGE):$(OVMS_MEDIA_IMAGE_TAG) bazel-bin/mediapipe/examples/desktop/hello_world/hello_world
-
-run_demos_in_docker:
-	docker run $(OVMS_MEDIA_DOCKER_IMAGE)-demos:$(OVMS_MEDIA_IMAGE_TAG) make run_demos 2>&1 | tee test_demos.log 
-	cat test_demos.log | grep -a FPS | grep -v echo
-	if [ `cat test_demos.log | grep -a FPS: | wc -l` != "5" ]; then echo "Some demo was not executed correctly. Check the logs"; fi
-
-	# report error if performance reported for less then 5 demos
-	cat test_demos.log | grep -a FPS: | wc -l | grep -q "5"
-
-run_python_demos_in_docker:
-	docker run $(OVMS_MEDIA_DOCKER_IMAGE)-demos:$(OVMS_MEDIA_IMAGE_TAG) make run_python_demos
-
-# Targets to use inside running mediapipe_ovms container
-run_demos: run_holistic_tracking run_face_detection run_iris_tracking run_object_detection run_pose_tracking
-
-run_python_demos: run_python_object_detection run_python_holistic_tracking run_python_face_detection
-
-run_object_detection:
-	echo "Running FPS test for object_detection demo"
-	rm -rf /mediapipe/output_object_detection_ovms.mp4
-	bazel-bin/mediapipe/examples/desktop/object_detection/object_detection_ovms --calculator_graph_config_file mediapipe/graphs/object_detection/object_detection_desktop_ovms_graph.pbtxt --input_video_path=/mediapipe/mediapipe/examples/desktop/object_detection/test_video.mp4 --output_video_path=/mediapipe/object_detection_ovms.mp4
-	
-run_holistic_tracking:
-	echo "Running FPS test for holistic_tracking demo"
-	rm -rf /mediapipe/output_holistic_ovms.mp4
-	if [ ! -f video.mp4 ]; then wget -O video.mp4 $(INPUT_VIDEO_LINK); fi
-	bazel-bin/mediapipe/examples/desktop/holistic_tracking/holistic_tracking_cpu --calculator_graph_config_file /mediapipe/mediapipe/graphs/holistic_tracking/holistic_tracking_cpu.pbtxt --input_video_path=/mediapipe/video.mp4 --output_video_path=/mediapipe/output_holistic_ovms.mp4
-
-run_face_detection:
-	echo "Running FPS test for face_detection demo"
-	rm -rf /mediapipe/output_face_detection_ovms.mp4
-	if [ ! -f video.mp4 ]; then wget -O video.mp4 $(INPUT_VIDEO_LINK); fi
-	bazel-bin/mediapipe/examples/desktop/face_detection/face_detection_cpu --calculator_graph_config_file /mediapipe/mediapipe/graphs/face_detection/face_detection_desktop_live.pbtxt --input_video_path=/mediapipe/video.mp4 --output_video_path=/mediapipe/output_face_detection_ovms.mp4
-
-run_iris_tracking:
-	echo "Running FPS test for iris_tracking demo"
-	rm -rf /mediapipe/output_iris_tracking_ovms.mp4
-	if [ ! -f video.mp4 ]; then wget -O video.mp4 $(INPUT_VIDEO_LINK); fi
-	bazel-bin/mediapipe/examples/desktop/iris_tracking/iris_tracking_cpu --calculator_graph_config_file /mediapipe/mediapipe/graphs/iris_tracking/iris_tracking_cpu.pbtxt --input_video_path=/mediapipe/video.mp4 --output_video_path=/mediapipe/output_iris_tracking_ovms.mp4
-
-run_pose_tracking:
-	echo "Running FPS test for pose_tracking demo"
-	rm -rf /mediapipe/output_pose_track_ovms.mp4
-	if [ ! -f video.mp4 ]; then wget -O video.mp4 $(INPUT_VIDEO_LINK); fi
-	bazel-bin/mediapipe/examples/desktop/pose_tracking/pose_tracking_cpu --calculator_graph_config_file /mediapipe/mediapipe/graphs/pose_tracking/pose_tracking_cpu.pbtxt --input_video_path=/mediapipe/video.mp4 --output_video_path=/mediapipe/output_pose_track_ovms.mp4
-
-run_python_object_detection:
-	echo "Running python ovms object detection demo"
-	cp build/lib.linux-x86_64-cpython-38/mediapipe/examples/python/ovms_object_detection.py build/lib.linux-x86_64-cpython-38
-	python build/lib.linux-x86_64-cpython-38/ovms_object_detection.py
-
-run_python_holistic_tracking:
-	echo "Running python ovms holistic tracking demo"
-	if [ ! -f video.mp4 ]; then wget -O video.mp4 $(INPUT_VIDEO_LINK); fi
-	cp build/lib.linux-x86_64-cpython-38/mediapipe/examples/python/ovms_holistic_tracking.py build/lib.linux-x86_64-cpython-38
-	python build/lib.linux-x86_64-cpython-38/ovms_holistic_tracking.py
-
-run_python_face_detection:
-	echo "Running python ovms face detection demo"
-	if [ ! -f video.mp4 ]; then wget -O video.mp4 $(INPUT_VIDEO_LINK); fi
-	cp build/lib.linux-x86_64-cpython-38/mediapipe/examples/python/ovms_face_detection.py build/lib.linux-x86_64-cpython-38
-	python build/lib.linux-x86_64-cpython-38/ovms_face_detection.py
-
-bandit:
-	@echo "Checking python files..."
-	@bash -c "./ci/bandit.sh"
+	$(DOCKER) build --target builder --build-arg JOBS=$(JOBS) -t $(IMAGE) .
 
 ovms_demos_image:
-	docker build -f Dockerfile.openvino \
-	--build-arg http_proxy=$(HTTP_PROXY) --build-arg https_proxy=$(HTTPS_PROXY) \
-	--build-arg DLDT_PACKAGE_URL=$(DLDT_PACKAGE_URL) \
-	--build-arg BASE_IMAGE=$(BASE_IMAGE) \
-	--build-arg JOBS=$(JOBS) . \
-	--build-arg OVMS_COMMIT=$(OVMS_COMMIT) \
-	-t $(OVMS_MEDIA_DOCKER_IMAGE)-demos:$(OVMS_MEDIA_IMAGE_TAG) \
-	--target=demos
+	$(DOCKER) build --target demos --build-arg JOBS=$(JOBS) -t $(DEMOS_IMAGE) .
+
+release_image:
+	$(DOCKER) build --target release --build-arg JOBS=$(JOBS) -t $(RUNTIME_IMAGE) .
+
+test_release_image:
+	mkdir -p test-results
+	$(DOCKER) run --rm -v "$(CURDIR)/test-results:/test-results" $(IMAGE) \
+	  ffmpeg -hide_banner -loglevel error -f lavfi -i 'testsrc=size=64x48:rate=5:duration=1' \
+	  -frames:v 3 -c:v mjpeg -pix_fmt yuvj420p -y /test-results/example_video.avi
+	$(DOCKER) run --rm -v "$(CURDIR)/test-results/example_video.avi:/mediapipe/testdata/example_video.avi:ro" $(RUNTIME_IMAGE) \
+	  --model_path=/mediapipe/testdata/identity.xml \
+	  --input_video_path=/mediapipe/testdata/example_video.avi \
+	  --device=CPU --input_width=2 --input_height=1 --max_frames=2 --top_k=0 \
+	  > test-results/release-smoke.log 2>&1
+	grep -Fq 'frame 0 output[0]' test-results/release-smoke.log
+	grep -Fq 'frame 1 output[0]' test-results/release-smoke.log
+	! grep -Fq 'frame 2 output[0]' test-results/release-smoke.log
+
+tests_in_docker:
+	mkdir -p test-results
+	$(DOCKER) run --rm -v "$(CURDIR)/test-results:/test-results" -e TEST_RESULTS_DIR=/test-results $(IMAGE) bash ci/run_tests.sh tests
+
+run_demos_in_docker:
+	mkdir -p test-results
+	$(DOCKER) run --rm -v "$(CURDIR)/test-results:/test-results" -e TEST_RESULTS_DIR=/test-results $(DEMOS_IMAGE) bash ci/run_tests.sh example-tests

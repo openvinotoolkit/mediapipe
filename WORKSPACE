@@ -1,6 +1,20 @@
-workspace(name = "mediapipe")
+workspace(name = "mediapipe_openvino")
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+load("//third_party:local_opencv.bzl", "local_opencv")
+
+http_archive(
+    name = "mediapipe",
+    patch_args = ["-p1"],
+    patches = [
+        "//third_party:mediapipe_windows.diff",
+        "//third_party:mediapipe_python_visibility.diff",
+    ],
+    sha256 = "751b1b62ad29e67cead3658e97cc8bcce593c655604fc1e97c3927b7518f0078",
+    strip_prefix = "mediapipe-8ac5a39c659578c2595a54ef5277608173c217fe",
+    type = "tar.gz",
+    urls = ["https://codeload.github.com/google-ai-edge/mediapipe/tar.gz/8ac5a39c659578c2595a54ef5277608173c217fe"],
+)
 
 # Protobuf expects an //external:python_headers target
 bind(
@@ -8,134 +22,69 @@ bind(
     actual = "@local_config_python//:python_headers",
 )
 
-http_archive(
-    name = "bazel_skylib",
-    sha256 = "74d544d96f4a5bb630d465ca8bbcfe231e3594e5aae57e1edbf17a6eb3ca2506",
-    urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/bazelbuild/bazel-skylib/releases/download/1.3.0/bazel-skylib-1.3.0.tar.gz",
-        "https://github.com/bazelbuild/bazel-skylib/releases/download/1.3.0/bazel-skylib-1.3.0.tar.gz",
-    ],
-)
-load("@bazel_skylib//:workspace.bzl", "bazel_skylib_workspace")
-bazel_skylib_workspace()
-load("@bazel_skylib//lib:versions.bzl", "versions")
-versions.check(minimum_bazel_version = "3.7.2")
+load("@com_google_protobuf//bazel/private:proto_bazel_features.bzl", "proto_bazel_features")  # buildifier: disable=bzl-visibility
 
-# ABSL on 2023-10-18
-http_archive(
-    name = "com_google_absl",
-    urls = ["https://github.com/abseil/abseil-cpp/archive//9687a8ea750bfcddf790372093245a1d041b21a3.tar.gz"],
-    patches = [
-        "@//third_party:com_google_absl_windows_patch.diff"
-    ],
-    patch_args = [
-        "-p1",
-    ],
-    strip_prefix = "abseil-cpp-9687a8ea750bfcddf790372093245a1d041b21a3",
-    sha256 = "f841f78243f179326f2a80b719f2887c38fe226d288ecdc46e2aa091e6aa43bc",
-)
-
-http_archive(
-    name = "rules_java",
-    sha256 = "c73336802d0b4882e40770666ad055212df4ea62cfa6edf9cb0f9d29828a0934",
-    url = "https://github.com/bazelbuild/rules_java/releases/download/5.3.5/rules_java-5.3.5.tar.gz",
-)
-
+proto_bazel_features(name = "proto_bazel_features")
 
 http_archive(
     name = "rules_android_ndk",
-    sha256 = "d230a980e0d3a42b85d5fce2cb17ec3ac52b88d2cff5aaf86bae0f05b48adc55",
-    strip_prefix = "rules_android_ndk-d5c9d46a471e8fcd80e7ec5521b78bb2df48f4e0",
-    url = "https://github.com/bazelbuild/rules_android_ndk/archive/d5c9d46a471e8fcd80e7ec5521b78bb2df48f4e0.zip",
+    sha256 = "89bf5012567a5bade4c78eac5ac56c336695c3bfd281a9b0894ff6605328d2d5",
+    strip_prefix = "rules_android_ndk-0.1.3",
+    url = "https://github.com/bazelbuild/rules_android_ndk/releases/download/v0.1.3/rules_android_ndk-v0.1.3.tar.gz",
 )
 
-load("@rules_android_ndk//:rules.bzl", "android_ndk_repository")
-
-http_archive(
-    name = "build_bazel_rules_apple",
-    sha256 = "3e2c7ae0ddd181c4053b6491dad1d01ae29011bc322ca87eea45957c76d3a0c3",
-    url = "https://github.com/bazelbuild/rules_apple/releases/download/2.1.0/rules_apple.2.1.0.tar.gz",
-    patches = [
-        # Bypass checking ios unit test runner when building MP ios applications.
-        "@//third_party:build_bazel_rules_apple_bypass_test_runner_check.diff",
-        # https://github.com/bazelbuild/rules_apple/commit/95b1305255dc29874cacc3dc7fdc017f16d8dbe8
-        "@//third_party:build_bazel_rules_apple_multi_arch_split_with_new_transition.diff"
-    ],
-    patch_args = [
-        "-p1",
-    ],
-)
-
-http_archive(
-    name = "com_google_protobuf",
-    sha256 = "87407cd28e7a9c95d9f61a098a53cf031109d451a7763e7dd1253abf8b4df422",
-    strip_prefix = "protobuf-3.19.1",
-    urls = ["https://github.com/protocolbuffers/protobuf/archive/v3.19.1.tar.gz"],
-    patches = [
-        "@//third_party:com_google_protobuf_fixes.diff"
-    ],
-    patch_args = [
-        "-p1",
-    ],
-)
-
+load("@rules_android_ndk//:rules.bzl", "android_ndk_repository")  # @unused
 
 # GoogleTest/GoogleMock framework. Used by most unit-tests.
 # Last updated 2021-07-02.
 http_archive(
     name = "com_google_googletest",
-    urls = ["https://github.com/google/googletest/archive/4ec4cd23f486bf70efcc5d2caa40f24368f752e3.zip"],
-    strip_prefix = "googletest-4ec4cd23f486bf70efcc5d2caa40f24368f752e3",
     sha256 = "de682ea824bfffba05b4e33b67431c247397d6175962534305136aa06f92e049",
+    strip_prefix = "googletest-4ec4cd23f486bf70efcc5d2caa40f24368f752e3",
+    urls = ["https://github.com/google/googletest/archive/4ec4cd23f486bf70efcc5d2caa40f24368f752e3.zip"],
 )
 
 # Load Zlib before initializing TensorFlow and the iOS build rules to guarantee
 # that the target @zlib//:mini_zlib is available
 http_archive(
     name = "zlib",
-    build_file = "@//third_party:zlib.BUILD",
-    # Removed patch for 1.2.11-13 version Does not apply in 1.3.1 - IOS specific changes for mediapipe
-    #patch_args = [
-    #    "-p1",
-    #],
-    #patches = [
-    #    "@//third_party:zlib.diff",
-    #],
-    sha256 = "9a93b2b7dfdac77ceba5a558a580e74667dd6fede4585b91eefb60f03b72df23",
+    build_file = "@mediapipe//third_party:zlib.BUILD",
+    sha256 = "17e88863f3600672ab49182f217281b6fc4d3c762bde361935e436a95214d05c",
     strip_prefix = "zlib-1.3.1",
-    url = "http://zlib.net/fossils/zlib-1.3.1.tar.gz",
+    url = "https://github.com/madler/zlib/archive/refs/tags/v1.3.1.tar.gz",
 )
 
 # gflags needed by glog
 http_archive(
     name = "com_github_gflags_gflags",
-    strip_prefix = "gflags-2.2.2",
     sha256 = "19713a36c9f32b33df59d1c79b4958434cb005b5b47dc5400a7a4b078111d9b5",
+    strip_prefix = "gflags-2.2.2",
     url = "https://github.com/gflags/gflags/archive/v2.2.2.zip",
 )
 
 # 2020-08-21
 http_archive(
     name = "com_github_glog_glog",
-    strip_prefix = "glog-0.6.0",
     sha256 = "8a83bf982f37bb70825df71a9709fa90ea9f4447fb3c099e1d720a439d88bad6",
+    strip_prefix = "glog-0.6.0",
     urls = [
         "https://github.com/google/glog/archive/v0.6.0.tar.gz",
     ],
 )
+
 http_archive(
     name = "com_github_glog_glog_no_gflags",
-    strip_prefix = "glog-0.6.0",
-    sha256 = "8a83bf982f37bb70825df71a9709fa90ea9f4447fb3c099e1d720a439d88bad6",
-    build_file = "@//third_party:glog_no_gflags.BUILD",
-    urls = [
-        "https://github.com/google/glog/archive/v0.6.0.tar.gz",
-    ],
-    patches = [
-        "@//third_party:com_github_glog_glog.diff",
-    ],
+    build_file = "@mediapipe//third_party:glog_no_gflags.BUILD",
     patch_args = [
         "-p1",
+    ],
+    patches = [
+        "@mediapipe//third_party:com_github_glog_glog.diff",
+    ],
+    sha256 = "8a83bf982f37bb70825df71a9709fa90ea9f4447fb3c099e1d720a439d88bad6",
+    strip_prefix = "glog-0.6.0",
+    urls = [
+        "https://github.com/google/glog/archive/v0.6.0.tar.gz",
     ],
 )
 
@@ -144,29 +93,30 @@ http_archive(
 # crashes on some Android devices.
 http_archive(
     name = "com_github_glog_glog_windows",
-    strip_prefix = "glog-3a0d4d22c5ae0b9a2216988411cfa6bf860cc372",
-    sha256 = "170d08f80210b82d95563f4723a15095eff1aad1863000e8eeb569c96a98fefb",
-    urls = [
-      "https://github.com/google/glog/archive/3a0d4d22c5ae0b9a2216988411cfa6bf860cc372.zip",
-    ],
-    patches = [
-        "@//third_party:com_github_glog_glog.diff",
-        "@//third_party:com_github_glog_glog_windows_patch.diff",
-    ],
     patch_args = [
         "-p1",
+    ],
+    patches = [
+        "@mediapipe//third_party:com_github_glog_glog.diff",
+        "@mediapipe//third_party:com_github_glog_glog_windows_patch.diff",
+    ],
+    sha256 = "170d08f80210b82d95563f4723a15095eff1aad1863000e8eeb569c96a98fefb",
+    strip_prefix = "glog-3a0d4d22c5ae0b9a2216988411cfa6bf860cc372",
+    urls = [
+        "https://github.com/google/glog/archive/3a0d4d22c5ae0b9a2216988411cfa6bf860cc372.zip",
     ],
 )
 
 # Maven dependencies.
-RULES_JVM_EXTERNAL_TAG = "4.0"
-RULES_JVM_EXTERNAL_SHA = "31701ad93dbfe544d597dbe62c9a1fdd76d81d8a9150c2bf1ecf928ecdf97169"
+RULES_JVM_EXTERNAL_TAG = "6.1"
+
+RULES_JVM_EXTERNAL_SHA = "08ea921df02ffe9924123b0686dc04fd0ff875710bfadb7ad42badb931b0fd50"
 
 http_archive(
     name = "rules_jvm_external",
-    strip_prefix = "rules_jvm_external-%s" % RULES_JVM_EXTERNAL_TAG,
     sha256 = RULES_JVM_EXTERNAL_SHA,
-    url = "https://github.com/bazelbuild/rules_jvm_external/archive/%s.zip" % RULES_JVM_EXTERNAL_TAG,
+    strip_prefix = "rules_jvm_external-%s" % RULES_JVM_EXTERNAL_TAG,
+    url = "https://github.com/bazel-contrib/rules_jvm_external/releases/download/%s/rules_jvm_external-%s.tar.gz" % (RULES_JVM_EXTERNAL_TAG, RULES_JVM_EXTERNAL_TAG),
 )
 
 load("@rules_jvm_external//:defs.bzl", "maven_install")
@@ -174,43 +124,57 @@ load("@rules_jvm_external//:defs.bzl", "maven_install")
 # Important: there can only be one maven_install rule. Add new maven deps here.
 maven_install(
     artifacts = [
-        "androidx.concurrent:concurrent-futures:1.0.0-alpha03",
-        "androidx.lifecycle:lifecycle-common:2.3.1",
-        "androidx.activity:activity:1.2.2",
-        "androidx.exifinterface:exifinterface:1.3.3",
-        "androidx.fragment:fragment:1.3.4",
-        "androidx.annotation:annotation:aar:1.1.0",
+        "androidx.activity:activity:aar:1.2.2",
+        "androidx.annotation:annotation:1.1.0",
         "androidx.appcompat:appcompat:aar:1.1.0-rc01",
-        "androidx.camera:camera-core:1.0.0-beta10",
-        "androidx.camera:camera-camera2:1.0.0-beta10",
-        "androidx.camera:camera-lifecycle:1.0.0-beta10",
+        "androidx.camera:camera-camera2:aar:1.0.0-beta10",
+        "androidx.camera:camera-core:aar:1.0.0-beta10",
+        "androidx.camera:camera-lifecycle:aar:1.0.0-beta10",
         "androidx.constraintlayout:constraintlayout:aar:1.1.3",
+        "androidx.appsearch:appsearch:aar:1.2.0-alpha02",
+        "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.1",
+        "org.jetbrains.kotlin:kotlin-stdlib:1.9.0",
+        "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.9.0",
+        "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.0",
+        "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.1",
+        "androidx.appsearch:appsearch-local-storage:aar:1.2.0-alpha02",
+        "androidx.concurrent:concurrent-futures:1.0.0-alpha03",
         "androidx.core:core:aar:1.1.0-rc03",
+        "androidx.exifinterface:exifinterface:aar:1.3.3",
+        "androidx.fragment:fragment:aar:1.3.4",
         "androidx.legacy:legacy-support-v4:aar:1.0.0",
+        "androidx.lifecycle:lifecycle-common:2.3.1",
         "androidx.recyclerview:recyclerview:aar:1.1.0-beta02",
-        "androidx.test.espresso:espresso-core:3.1.1",
+        "androidx.test.espresso:espresso-core:aar:3.1.1",
+        "com.android.tools.build:gradle-api:8.12.0",
         "com.github.bumptech.glide:glide:4.11.0",
-        "com.google.android.material:material:aar:1.0.0-rc01",
-        "com.google.auto.value:auto-value:1.8.1",
-        "com.google.auto.value:auto-value-annotations:1.8.1",
-        "com.google.code.findbugs:jsr305:latest.release",
         "com.google.android.datatransport:transport-api:3.0.0",
         "com.google.android.datatransport:transport-backend-cct:3.1.0",
         "com.google.android.datatransport:transport-runtime:3.1.0",
+        "com.google.android.material:material:aar:1.0.0-rc01",
+        "com.google.android.play:ai-delivery:aar:0.1.1-alpha01",
+        "com.google.android.play:asset-delivery:aar:2.3.0",
+        "com.google.android.play:feature-delivery:aar:2.1.0",
+        "com.google.auto.value:auto-value-annotations:1.8.1",
+        "com.google.auto.value:auto-value:1.8.1",
+        "com.google.code.findbugs:jsr305:latest.release",
+        "com.google.code.gson:gson:2.13.2",
         "com.google.flogger:flogger-system-backend:0.6",
         "com.google.flogger:flogger:0.6",
         "com.google.guava:guava:27.0.1-android",
         "com.google.guava:listenablefuture:1.0",
+        "com.squareup:kotlinpoet-jvm:2.2.0",
         "junit:junit:4.12",
         "org.hamcrest:hamcrest-library:1.3",
+        "org.jetbrains.kotlin:kotlin-gradle-plugin:2.2.21",
     ],
+    fetch_sources = True,
     repositories = [
         "https://maven.google.com",
         "https://dl.google.com/dl/android/maven2",
         "https://repo1.maven.org/maven2",
         "https://jcenter.bintray.com",
     ],
-    fetch_sources = True,
     version_conflict_policy = "pinned",
 )
 
@@ -225,128 +189,183 @@ http_archive(
     ],
 )
 
-# XNNPACK on 2024-09-24
+# XNNPACK
+# org_tensorflow and @litert depend on XNNPACK. If updating tensorflow
+# or LiteRT version, make sure to bump XNNPACK version as well and vice versa.
+# Bumped to match what @litert (LiteRT v2.2.0's own pinned org_tensorflow,
+# commit bcdab1a62e138c8f8784a7477c0be8af6dd0bd0a) expects - its
+# tflite/delegates/xnnpack code uses newer XNNPACK API (qint2/qint4,
+# xnn_define_static_constant_pad_v2) than mediapipe's org_tensorflow
+# v2.21.0 pin's own XNNPACK version had.
 http_archive(
     name = "XNNPACK",
     # `curl -L <url> | shasum -a 256`
-    sha256 = "feecde71526d955a0125f7ddd28b9f2d282cd6fca6c1c6bde48f29f86365dd0b",
-    strip_prefix = "XNNPACK-9007aa93227010168e615f9c6552035040c94a15",
-    url = "https://github.com/google/XNNPACK/archive/9007aa93227010168e615f9c6552035040c94a15.zip",
+    sha256 = "13ae01126b6d4a8b6769433c2a942d6204a3f97157d9c83d79cbfeec1041398c",
+    strip_prefix = "XNNPACK-53a1797ba4360cbde068f2a984652be0f0b7b6fe",
+    url = "https://github.com/google/XNNPACK/archive/53a1797ba4360cbde068f2a984652be0f0b7b6fe.zip",
 )
-# taken from OVMS begin
-#http_archive(
-#  name = "pybind11_bazel",
-#  strip_prefix = "pybind11_bazel-b162c7c88a253e3f6b673df0c621aca27596ce6b",
-#  urls = ["https://github.com/pybind/pybind11_bazel/archive/b162c7c88a253e3f6b673df0c621aca27596ce6b.zip"],
-#)
-#http_archive(
-#  name = "pybind11",
-#  build_file = "@pybind11_bazel//:pybind11.BUILD",
-#  strip_prefix = "pybind11-2.11.1", #  Jul 17, 2023
-#  urls = ["https://github.com/pybind/pybind11/archive/v2.11.1.tar.gz"],
-#)
-#load("@pybind11_bazel//:python_configure.bzl", "python_configure")
-#python_configure(name = "local_config_python")
-# taken from OVMS end
-# 2020-07-09
+
 http_archive(
     name = "pybind11_bazel",
-    strip_prefix = "pybind11_bazel-203508e14aab7309892a1c5f7dd05debda22d9a5",
-    urls = ["https://github.com/pybind/pybind11_bazel/archive/203508e14aab7309892a1c5f7dd05debda22d9a5.zip"],
-    sha256 = "75922da3a1bdb417d820398eb03d4e9bd067c4905a4246d35a44c01d62154d91",
+    sha256 = "9df284330336958c837fb70dc34c0a6254dac52a5c983b3373a8c2bbb79ac35e",
+    strip_prefix = "pybind11_bazel-2.13.6",
+    urls = ["https://github.com/pybind/pybind11_bazel/archive/v2.13.6.zip"],
 )
 
-# 2022-10-20
 http_archive(
     name = "pybind11",
+    build_file = "@pybind11_bazel//:pybind11-BUILD.bazel",
+    sha256 = "d0a116e91f64a4a2d8fb7590c34242df92258a61ec644b79127951e821b47be6",
+    strip_prefix = "pybind11-2.13.6",
     urls = [
-        "https://github.com/pybind/pybind11/archive/v2.10.1.zip",
+        "https://github.com/pybind/pybind11/archive/v2.13.6.zip",
     ],
-    sha256 = "fcf94065efcfd0a7a828bacf118fa11c43f6390d0c805e3e6342ac119f2e9976",
-    strip_prefix = "pybind11-2.10.1",
-    build_file = "@pybind11_bazel//:pybind11.BUILD",
 )
 
+# 2025-02-10
+# org_tensorflow depends on pybind11_protobuf. If updating tensorflow version,
+# make sure to bump pybind11_protobuf version as well and vice versa.
 http_archive(
     name = "pybind11_protobuf",
-    sha256 = "baa1f53568283630a5055c85f0898b8810f7a6431bd01bbaedd32b4c1defbcb1",
-    strip_prefix = "pybind11_protobuf-3594106f2df3d725e65015ffb4c7886d6eeee683",
+    sha256 = "3cf7bf0f23954c5ce6c37f0a215f506efa3035ca06e3b390d67f4cbe684dce23",
+    strip_prefix = "pybind11_protobuf-f02a2b7653bc50eb5119d125842a3870db95d251",
     urls = [
-        "https://github.com/pybind/pybind11_protobuf/archive/3594106f2df3d725e65015ffb4c7886d6eeee683.tar.gz",
+        "https://github.com/pybind/pybind11_protobuf/archive/f02a2b7653bc50eb5119d125842a3870db95d251.zip",
     ],
 )
 
-# TF on 2024-09-24
-_TENSORFLOW_GIT_COMMIT = "5329ec8dd396487982ef3e743f98c0195af39a6b"
-_TENSORFLOW_SHA256 = "eb1f8d740d59ea3dee91108ab1fc19d91c4e9ac2fd17d9ab86d865c3c43d81c9"
+# KleidiAI is needed to get the best possible performance out of XNNPack.
+# Kept in sync with the KleidiAI version XNNPACK itself pins - see
+# cmake/DownloadKleidiAI.cmake at the XNNPACK commit above.
+http_archive(
+    name = "KleidiAI",
+    sha256 = "b147799b94c51f5e57492930bfd9e5294fb7ffe44fee1dbcd3f8048adeedd5e3",
+    strip_prefix = "kleidiai-b87ef9c94f45f11c81a6b1fdaed1b2b45ea58c0c",
+    urls = [
+        "https://gitlab.arm.com/kleidi/kleidiai/-/archive/b87ef9c94f45f11c81a6b1fdaed1b2b45ea58c0c/kleidiai-b87ef9c94f45f11c81a6b1fdaed1b2b45ea58c0c.zip",
+    ],
+)
+
+http_archive(
+    name = "cpuinfo",
+    sha256 = "9213f6f81784eb8679f0621ad1c20eac711e063cb9c7712738720609cbdf1c33",
+    strip_prefix = "cpuinfo-ea6b9f1bb6e1001d8b21574d5bc78ddef62e499d",
+    urls = [
+        "https://github.com/pytorch/cpuinfo/archive/ea6b9f1bb6e1001d8b21574d5bc78ddef62e499d.zip",
+    ],
+)
+
+# pthreadpool is a dependency of XNNPACK.
+http_archive(
+    name = "pthreadpool",
+    # `curl -L <url> | shasum -a 256`
+    sha256 = "5ab4e8f63e3dcf62048360c216532bdf62f00dc204883a52d91230402f0feb6a",
+    strip_prefix = "pthreadpool-02460584c6092e527c8b89f7df4de143d70e801f",
+    urls = ["https://github.com/google/pthreadpool/archive/02460584c6092e527c8b89f7df4de143d70e801f.zip"],
+)
+
+# TF v2.21.0
+# org_tensorflow depends on Eigen, XNNPACK, and pybind11_protobuf, which also have explicit
+# repository definitions in this WORKSPACE. If updating the tensorflow version, make sure to check
+# and bump those dependent versions as well and vice versa.
+_TENSORFLOW_GIT_COMMIT = "a481b10260dfdf833a1b16007eead49c1d7febf3"
+
 # curl -L https://github.com/tensorflow/tensorflow/archive/<COMMIT>.tar.gz | shasum -a 256
+_TENSORFLOW_SHA256 = "6438396f3b19af5d7ad787cf041f857af7505916dc08092e20b07d1b1f8df492"
+
 http_archive(
     name = "org_tensorflow",
-    urls = [
-      "https://github.com/tensorflow/tensorflow/archive/%s.tar.gz" % _TENSORFLOW_GIT_COMMIT,
-    ],
-    patches = [
-        "@//third_party:org_tensorflow_c_api_experimental.diff",
-        # Diff is generated with a script, don't update it manually.
-        "@//third_party:org_tensorflow_custom_ops.diff",
-        # Works around Bazel issue with objc_library.
-        # See https://github.com/bazelbuild/bazel/issues/19912
-        "@//third_party:org_tensorflow_objc_build_fixes.diff",
-    ],
     patch_args = [
         "-p1",
     ],
-    strip_prefix = "tensorflow-%s" % _TENSORFLOW_GIT_COMMIT,
+    patches = [
+        # Fixes experimental C API headers/exports needed by MediaPipe C++ bindings.
+        "@mediapipe//third_party:org_tensorflow_c_api_experimental.diff",
+        # Works around a Bzlmod repository canonical-name issue in tflite_combine_cc_tests
+        # (tensorflow/lite/build_def.bzl) where link_extra_lib is duplicated when rules_cc has
+        # a version-suffixed canonical name (e.g., under single_version_override or complex dependency graphs).
+        "@mediapipe//third_party:org_tensorflow_combine_cc_tests_link_extra_lib.diff",
+        # Use MediaPipe's stable mirror for XLA's pinned LLVM archive.
+        "@//third_party:org_tensorflow_xla_llvm_url.diff",
+    ],
     sha256 = _TENSORFLOW_SHA256,
+    strip_prefix = "tensorflow-%s" % _TENSORFLOW_GIT_COMMIT,
+    urls = [
+        "https://github.com/tensorflow/tensorflow/archive/%s.tar.gz" % _TENSORFLOW_GIT_COMMIT,
+    ],
 )
 
 load("@org_tensorflow//tensorflow:workspace3.bzl", "tf_workspace3")
+
 tf_workspace3()
 
 # Initialize hermetic Python
 load("@org_tensorflow//third_party/xla/third_party/py:python_init_rules.bzl", "python_init_rules")
+
 python_init_rules()
 
 load("@org_tensorflow//third_party/xla/third_party/py:python_init_repositories.bzl", "python_init_repositories")
+
 python_init_repositories(
     default_python_version = "system",
     local_wheel_dist_folder = "dist",
-    requirements = {
-        "3.9": "//:requirements_lock.txt",
-        "3.10": "//:requirements_lock_3_10.txt",
-        "3.11": "//:requirements_lock_3_11.txt",
-        "3.12": "//:requirements_lock_3_12.txt",
-    },
     local_wheel_inclusion_list = ["mediapipe*"],
-    local_wheel_workspaces = ["//:WORKSPACE"],
+    local_wheel_workspaces = ["@mediapipe//:WORKSPACE"],
+    requirements = {
+        "3.9": "@mediapipe//:requirements_lock.txt",
+        "3.10": "@mediapipe//:requirements_lock_3_10.txt",
+        "3.11": "@mediapipe//:requirements_lock_3_11.txt",
+        "3.12": "@mediapipe//:requirements_lock_3_12.txt",
+        "3.13": "@mediapipe//:requirements_lock_3_13.txt",
+        "3.14": "@mediapipe//:requirements_lock_3_14.txt",
+    },
 )
 
 load("@org_tensorflow//third_party/xla/third_party/py:python_init_toolchains.bzl", "python_init_toolchains")
+
 python_init_toolchains()
 
 load("@org_tensorflow//third_party/xla/third_party/py:python_init_pip.bzl", "python_init_pip")
+
 python_init_pip()
 
 load("@pypi//:requirements.bzl", "install_deps")
+
 install_deps()
 # End hermetic Python initialization
 
+# Transitive dependency of LiteRT-LM. We define this before tf_workspace2() to
+# override org_tensorflow's kissfft workspace, ensuring kissfftr is provided.
+http_archive(
+    name = "kissfft",
+    build_file = "@mediapipe//third_party:kissfft.BUILD",
+    sha256 = "76c1aac87ddb7258f34b08a13f0eebf9e53afa299857568346aa5c82bcafaf1a",
+    strip_prefix = "kissfft-131.1.0",
+    urls = ["https://github.com/mborgerding/kissfft/archive/refs/tags/131.1.0.tar.gz"],
+)
+
 load("@org_tensorflow//tensorflow:workspace2.bzl", "tf_workspace2")
+
 tf_workspace2()
 
-load("@rules_python//python:pip.bzl", "pip_parse")
-pip_parse(
-    name = "mediapipe_pip_deps",
-    requirements_lock = "@//:requirements_lock.txt",
-)
-load("@mediapipe_pip_deps//:requirements.bzl", mp_install_deps = "install_deps")
-mp_install_deps()
-pip_parse(
-    name = "model_maker_pip_deps",
-    requirements_lock = "@//mediapipe/model_maker:requirements_lock.txt",
-)
-load("@model_maker_pip_deps//:requirements.bzl", mm_install_deps = "install_deps")
-mm_install_deps()
+# LLVM/MLIR, needed by tensorflow/compiler/mlir/lite (e.g. metadata tooling
+# pulled in by mediapipe/tasks/c:libmediapipe). This is normally set up by
+# tf_workspace1(), but that macro also unconditionally calls grpc_deps(),
+# benchmark_deps(), and closure_repositories(), which collide with
+# repositories this WORKSPACE already defines explicitly above. @xla and its
+# @llvm-raw/@local_config_python prerequisites are already established by
+# tf_workspace2() above, so just call the one macro we actually need.
+load("@xla//third_party/llvm:setup.bzl", "llvm_setup")
+
+llvm_setup(name = "llvm-project")
+
+load("@rules_pkg//:deps.bzl", "rules_pkg_dependencies")
+
+rules_pkg_dependencies()
+
+load("@rules_python//python:repositories.bzl", "py_repositories")
+
+py_repositories()
 
 http_archive(
     name = "rules_foreign_cc",
@@ -356,182 +375,144 @@ http_archive(
 )
 
 load("@rules_foreign_cc//foreign_cc:repositories.bzl", "rules_foreign_cc_dependencies")
-# model_api requires 3.26 min
-rules_foreign_cc_dependencies(cmake_version="3.26.2")
+
+rules_foreign_cc_dependencies()
 
 load("@bazel_features//:deps.bzl", "bazel_features_deps")
+
 bazel_features_deps()
-
-http_archive(
-    name = "cpuinfo",
-    sha256 = "2bf2b62eb86e2d2eaf862d0b9683a6c467a4d69fb2f7f1dc47c799809148608f",
-    strip_prefix = "cpuinfo-fa1c679da8d19e1d87f20175ae1ec10995cd3dd3",
-    urls = [
-        "https://github.com/pytorch/cpuinfo/archive/fa1c679da8d19e1d87f20175ae1ec10995cd3dd3.zip",
-    ],
-)
-
-# KleidiAI is needed to get the best possible performance out of XNNPack
-http_archive(
-    name = "KleidiAI",
-    sha256 = "88233e427be6579560073267575f00f3b5fc370a31a43bbdd87a1810bd4bf1b6",
-    strip_prefix = "kleidiai-cddf991af5de49fd34949fa39690e4e906e04074",
-    urls = [
-        "https://gitlab.arm.com/kleidi/kleidiai/-/archive/cddf991af5de49fd34949fa39690e4e906e04074/kleidiai-cddf991af5de49fd34949fa39690e4e906e04074.zip",
-    ],
-)
-
-# TODO: This is an are indirect dependency. We should factor it out.
-http_archive(
-    name = "pthreadpool",
-    sha256 = "a4cf06de57bfdf8d7b537c61f1c3071bce74e57524fe053e0bbd2332feca7f95",
-    strip_prefix = "pthreadpool-4fe0e1e183925bf8cfa6aae24237e724a96479b8",
-    urls = ["https://github.com/Maratyszcza/pthreadpool/archive/4fe0e1e183925bf8cfa6aae24237e724a96479b8.zip"],
-)
-
-load(
-    "@build_bazel_rules_apple//apple:repositories.bzl",
-    "apple_rules_dependencies",
-)
-apple_rules_dependencies()
-
-load(
-    "@build_bazel_rules_swift//swift:repositories.bzl",
-    "swift_rules_dependencies",
-)
-swift_rules_dependencies()
-
-load(
-    "@build_bazel_rules_swift//swift:extras.bzl",
-    "swift_rules_extra_dependencies",
-)
-swift_rules_extra_dependencies()
-
-load(
-    "@build_bazel_apple_support//lib:repositories.bzl",
-    "apple_support_dependencies",
-)
-apple_support_dependencies()
 
 # This is used to select all contents of the archives for CMake-based packages to give CMake access to them.
 all_content = """filegroup(name = "all", srcs = glob(["**"]), visibility = ["//visibility:public"])"""
 
-
 # Google Benchmark library v1.6.1 released on 2022-01-10.
 http_archive(
     name = "com_google_benchmark",
-    urls = ["https://github.com/google/benchmark/archive/refs/tags/v1.6.1.tar.gz"],
-    strip_prefix = "benchmark-1.6.1",
+    build_file = "@mediapipe//third_party:benchmark.BUILD",
     sha256 = "6132883bc8c9b0df5375b16ab520fac1a85dc9e4cf5be59480448ece74b278d4",
-    build_file = "@//third_party:benchmark.BUILD",
+    strip_prefix = "benchmark-1.6.1",
+    urls = ["https://github.com/google/benchmark/archive/refs/tags/v1.6.1.tar.gz"],
 )
 
 # easyexif
 http_archive(
     name = "easyexif",
-    url = "https://github.com/mayanklahiri/easyexif/archive/master.zip",
+    build_file = "@mediapipe//third_party:easyexif.BUILD",
     strip_prefix = "easyexif-master",
-    build_file = "@//third_party:easyexif.BUILD",
+    url = "https://github.com/mayanklahiri/easyexif/archive/master.zip",
 )
 
 # libyuv
 http_archive(
     name = "libyuv",
+    build_file = "@mediapipe//third_party:libyuv.BUILD",
     # Error: operand type mismatch for `vbroadcastss' caused by commit 8a13626e42f7fdcf3a6acbb0316760ee54cda7d8.
-    urls = ["https://chromium.googlesource.com/libyuv/libyuv/+archive/2525698acba9bf9b701ba6b4d9584291a1f62257.tar.gz"],
-    build_file = "@//third_party:libyuv.BUILD",
+    urls = [
+        "https://storage.googleapis.com/tensorstore-bazel-mirror/chromium.googlesource.com/libyuv/libyuv/+archive/2525698acba9bf9b701ba6b4d9584291a1f62257.tar.gz",
+        "https://chromium.googlesource.com/libyuv/libyuv/+archive/2525698acba9bf9b701ba6b4d9584291a1f62257.tar.gz",
+    ],
 )
 
 # Note: protobuf-javalite is no longer released as a separate download, it's included in the main Java download.
 # ...but the Java download is currently broken, so we use the "source" download.
 http_archive(
     name = "com_google_protobuf_javalite",
-    sha256 = "87407cd28e7a9c95d9f61a098a53cf031109d451a7763e7dd1253abf8b4df422",
-    strip_prefix = "protobuf-3.19.1",
-    urls = ["https://github.com/protocolbuffers/protobuf/archive/v3.19.1.tar.gz"],
+    repo_mapping = {"@abseil-cpp": "@com_google_absl"},
+    sha256 = "6e09bbc950ba60c3a7b30280210cd285af8d7d8ed5e0a6ed101c72aff22e8d88",
+    strip_prefix = "protobuf-6.31.1",
+    urls = ["https://github.com/protocolbuffers/protobuf/archive/refs/tags/v6.31.1.zip"],
 )
 
-load("@//third_party/flatbuffers:workspace.bzl", flatbuffers = "repo")
+load("@mediapipe//third_party/flatbuffers:workspace.bzl", flatbuffers = "repo")
+
 flatbuffers()
 
 http_archive(
     name = "com_google_audio_tools",
-    strip_prefix = "multichannel-audio-tools-1f6b1319f13282eda6ff1317be13de67f4723860",
-    urls = ["https://github.com/google/multichannel-audio-tools/archive/1f6b1319f13282eda6ff1317be13de67f4723860.zip"],
-    sha256 = "fe346e1aee4f5069c4cbccb88706a9a2b2b4cf98aeb91ec1319be77e07dd7435",
-    repo_mapping = {"@com_github_glog_glog" : "@com_github_glog_glog_no_gflags"},
+    patch_args = ["-p1"],
     # TODO: Fix this in AudioTools directly
-    patches = ["@//third_party:com_google_audio_tools_fixes.diff"],
-    patch_args = ["-p1"]
+    patches = ["@mediapipe//third_party:com_google_audio_tools_fixes.diff"],
+    repo_mapping = {"@com_github_glog_glog": "@com_github_glog_glog_no_gflags"},
+    sha256 = "7d7227cc6bb1f8917a9c9013e8f3578ec681c49e20fe2fc38ba90965394de60c",
+    strip_prefix = "multichannel-audio-tools-bbf15de4b7cd825d650296d21917afc07e8fe18b",
+    urls = ["https://github.com/google/multichannel-audio-tools/archive/bbf15de4b7cd825d650296d21917afc07e8fe18b.tar.gz"],
 )
 
 http_archive(
     name = "pffft",
+    build_file = "@mediapipe//third_party:pffft.BUILD",
     strip_prefix = "jpommier-pffft-7c3b5a7dc510",
     urls = ["https://bitbucket.org/jpommier/pffft/get/7c3b5a7dc510.zip"],
-    build_file = "@//third_party:pffft.BUILD",
 )
 
 # Sentencepiece
 http_archive(
     name = "com_google_sentencepiece",
-    strip_prefix = "sentencepiece-0.1.96",
     add_prefix = "sentencepiece",
-    sha256 = "8409b0126ebd62b256c685d5757150cf7fcb2b92a2f2b98efb3f38fc36719754",
-    urls = [
-        "https://github.com/google/sentencepiece/archive/refs/tags/v0.1.96.zip"
+    build_file = "@mediapipe//third_party:sentencepiece.BUILD",
+    patch_args = [
+        "-d",
+        "sentencepiece",
+        "-p1",
     ],
-    build_file = "@//third_party:sentencepiece.BUILD",
-    patches = ["@//third_party:com_google_sentencepiece.diff"],
-    patch_args = ["-d", "sentencepiece", "-p1"],
+    # Fixes build compatibility and removes conflicting protobuf dependencies in sentencepiece.
+    patches = ["@mediapipe//third_party:com_google_sentencepiece.diff"],
+    sha256 = "8409b0126ebd62b256c685d5757150cf7fcb2b92a2f2b98efb3f38fc36719754",
+    strip_prefix = "sentencepiece-0.1.96",
+    urls = [
+        "https://github.com/google/sentencepiece/archive/refs/tags/v0.1.96.zip",
+    ],
 )
 
 http_archive(
     name = "darts_clone",
-    build_file = "@//third_party:darts_clone.BUILD",
-    sha256 = "c97f55d05c98da6fcaf7f9ecc6a6dc6bc5b18b8564465f77abff8879d446491c",
-    strip_prefix = "darts-clone-e40ce4627526985a7767444b6ed6893ab6ff8983",
+    build_file = "@mediapipe//third_party:darts_clone.BUILD",
+    sha256 = "96946b2c1ec2a6e171665c5b5b3ec52fc27c325c80e0c957a415bb4c5145e7df",
+    strip_prefix = "darts-clone-87b71afd6cf784953e3c08f24c64203397f3b724",
     urls = [
-        "https://github.com/s-yata/darts-clone/archive/e40ce4627526985a7767444b6ed6893ab6ff8983.zip",
+        "https://github.com/s-yata/darts-clone/archive/87b71afd6cf784953e3c08f24c64203397f3b724.zip",
     ],
 )
 
 http_archive(
     name = "org_tensorflow_text",
-    sha256 = "f64647276f7288d1b1fe4c89581d51404d0ce4ae97f2bcc4c19bd667549adca8",
-    strip_prefix = "text-2.2.0",
-    urls = [
-        "https://github.com/tensorflow/text/archive/v2.2.0.zip",
-    ],
-    patches = [
-        "@//third_party:tensorflow_text_remove_tf_deps.diff",
-        "@//third_party:tensorflow_text_a0f49e63.diff",
-    ],
     patch_args = ["-p1"],
+    patches = [
+        # Replaces tf_cc_library with standard cc_library for core tokenizer kernels (regex_split,
+        # wordpiece_tokenizer, etc.) so they can be compiled as lightweight standalone C++ libraries
+        # without pulling in TensorFlow op libraries or Python headers.
+        "@mediapipe//third_party:tensorflow_text_remove_tf_deps.diff",
+        # tftext.bzl unconditionally loads pybind_extension/pywrap_binaries/
+        # pywrap_library from "@local_xla//third_party/py/rules_pywrap", a
+        # repo name org_tensorflow's own build wires up internally for its
+        # Python-wheel packaging but that this WORKSPACE never defines (and
+        # that pulls in a large, unrelated dependency chain). None of the
+        # cc_library targets this WORKSPACE actually uses from
+        # org_tensorflow_text (regex_split, wordpiece_tokenizer, ...) call
+        # py_tf_text_library, so the load is dead weight - stub it out
+        # instead of standing up a "local_xla" repo just for this.
+        "@mediapipe//third_party:tensorflow_text_stub_pywrap.diff",
+    ],
     repo_mapping = {"@com_google_re2": "@com_googlesource_code_re2"},
-)
-
-http_archive(
-    name = "com_googlesource_code_re2",
-    sha256 = "ef516fb84824a597c4d5d0d6d330daedb18363b5a99eda87d027e6bdd9cba299",
-    strip_prefix = "re2-03da4fc0857c285e3a26782f6bc8931c4c950df4",
+    sha256 = "e08834bed6f544be9cc0315895898bf48d94b8090bca993ab45526329df291c8",
+    strip_prefix = "text-2.20.0",
     urls = [
-        "https://github.com/google/re2/archive/03da4fc0857c285e3a26782f6bc8931c4c950df4.tar.gz",
+        "https://github.com/tensorflow/text/archive/refs/tags/v2.20.0.zip",
     ],
 )
 
 # Point to the commit that deprecates the usage of Eigen::MappedSparseMatrix.
 http_archive(
     name = "ceres_solver",
-    url = "https://github.com/ceres-solver/ceres-solver/archive/123fba61cf2611a3c8bddc9d91416db26b10b558.zip",
-    patches = [
-        "@//third_party:ceres_solver_compatibility_fixes.diff"
-    ],
     patch_args = [
         "-p1",
     ],
-    strip_prefix = "ceres-solver-123fba61cf2611a3c8bddc9d91416db26b10b558",
+    patches = [
+        "@mediapipe//third_party:ceres_solver_compatibility_fixes.diff",
+    ],
     sha256 = "8b7b16ceb363420e0fd499576daf73fa338adb0b1449f58bea7862766baa1ac7",
+    strip_prefix = "ceres-solver-123fba61cf2611a3c8bddc9d91416db26b10b558",
+    url = "https://github.com/ceres-solver/ceres-solver/archive/123fba61cf2611a3c8bddc9d91416db26b10b558.zip",
 )
 
 http_archive(
@@ -541,38 +522,40 @@ http_archive(
     urls = ["https://github.com/opencv/opencv/archive/3.4.11.tar.gz"],
 )
 
-new_local_repository(
-    name = "linux_curl",
-    path = "/usr/",
-    build_file_content = """
-cc_library(
-    name = "curl",
-    hdrs = glob(["include/x86_64/curl/*"]),
-    srcs = glob(["lib/x86_64-linux-gnu/libcurl.so"]),
-    copts = ["-lcrypto", "-lssl"],
-    visibility = ["//visibility:public"],
-)
-""",
+# OpenVINO Runtime binary distribution, used by
+# //mediapipe/calculators/openvino:*
+http_archive(
+    name = "openvino",
+    build_file = "@//third_party:openvino.BUILD",
+    sha256 = "0bd86d578beb1e8805655f593315c69bf909008e212f801ed76e3a350927736f",
+    strip_prefix = "openvino_toolkit_ubuntu24_2026.4.0.22959.99c81491cc3_x86_64",
+    url = "https://storage.openvinotoolkit.org/repositories/openvino/packages/2026.4/linux/openvino_toolkit_ubuntu24_2026.4.0.22959.99c81491cc3_x86_64.tgz",
 )
 
-new_local_repository(
+# Windows counterpart of @openvino, selected by //third_party:openvino.
+http_archive(
+    name = "windows_openvino",
+    build_file = "@//third_party:openvino_windows.BUILD",
+    sha256 = "888f16e0dfcc46a02af15f2ed19c3fb65f748fd46f8e19216183a0e2e2a29e9f",
+    strip_prefix = "openvino_toolkit_windows_2026.4.0.22959.99c81491cc3_x86_64",
+    url = "https://storage.openvinotoolkit.org/repositories/openvino/packages/2026.4/windows/openvino_toolkit_windows_2026.4.0.22959.99c81491cc3_x86_64.zip",
+)
+
+local_opencv(
     name = "linux_opencv",
     build_file = "@//third_party:opencv_linux.BUILD",
-    path = "/usr/local", #commented out since for some reason inside Dockerile it is added again
-    # OVMS begin
-    #path = "/usr/local", commented out since for some reason inside Dockerile it is added again
-    # OVMS end
+    default_path = "/usr/local",
 )
 
 new_local_repository(
     name = "linux_ffmpeg",
-    build_file = "@//third_party:ffmpeg_linux.BUILD",
-    path = "/usr"
+    build_file = "@mediapipe//third_party:ffmpeg_linux.BUILD",
+    path = "/usr",
 )
 
 new_local_repository(
     name = "macos_opencv",
-    build_file = "@//third_party:opencv_macos.BUILD",
+    build_file = "@mediapipe//third_party:opencv_macos.BUILD",
     # For local MacOS builds, the path should point to an opencv@3 installation.
     # If you edit the path here, you will also need to update the corresponding
     # prefix in "opencv_macos.BUILD".
@@ -581,22 +564,29 @@ new_local_repository(
 
 new_local_repository(
     name = "macos_ffmpeg",
-    build_file = "@//third_party:ffmpeg_macos.BUILD",
+    build_file = "@mediapipe//third_party:ffmpeg_macos.BUILD",
     path = "/usr/local/opt/ffmpeg",
 )
 
-new_local_repository(
+local_opencv(
     name = "windows_opencv",
     build_file = "@//third_party:opencv_windows.BUILD",
-    path = "C:\\opencv\\build",
+    default_path = "C:/opt/opencv",
+)
+
+# protobuf requires @system_python in WORKSPACE
+new_local_repository(
+    name = "system_python",
+    build_file = "@mediapipe//third_party:python_runtime.BUILD",
+    path = ".",
 )
 
 http_archive(
     name = "android_opencv",
-    build_file = "@//third_party:opencv_android.BUILD",
+    build_file = "@mediapipe//third_party:opencv_android.BUILD",
     strip_prefix = "OpenCV-android-sdk",
     type = "zip",
-    url = "https://github.com/opencv/opencv/releases/download/4.10.0/opencv-4.10.0-android-sdk.zip",
+    url = "https://github.com/opencv/opencv/releases/download/4.12.0/opencv-4.12.0-android-sdk.zip",
 )
 
 # After OpenCV 3.2.0, the pre-compiled opencv2.framework has google protobuf symbols, which will
@@ -605,8 +595,8 @@ http_archive(
 # '-DBUILD_PROTOBUF=OFF -DBUILD_opencv_dnn=OFF'.
 http_archive(
     name = "ios_opencv",
+    build_file = "@mediapipe//third_party:opencv_ios.BUILD",
     sha256 = "7dd536d06f59e6e1156b546bd581523d8df92ce83440002885ec5abc06558de2",
-    build_file = "@//third_party:opencv_ios.BUILD",
     type = "zip",
     url = "https://github.com/opencv/opencv/releases/download/3.2.0/opencv-3.2.0-ios-framework.zip",
 )
@@ -621,38 +611,69 @@ http_archive(
 # Task libraries are built.
 http_archive(
     name = "ios_opencv_source",
+    build_file = "@mediapipe//third_party:opencv_ios_source.BUILD",
     sha256 = "a61e7a4618d353140c857f25843f39b2abe5f451b018aab1604ef0bc34cd23d5",
-    build_file = "@//third_party:opencv_ios_source.BUILD",
     type = "zip",
     url = "https://github.com/opencv/opencv/archive/refs/tags/4.5.3.zip",
 )
 
 http_archive(
     name = "stblib",
-    strip_prefix = "stb-b42009b3b9d4ca35bc703f5310eedc74f584be58",
-    sha256 = "13a99ad430e930907f5611325ec384168a958bf7610e63e60e2fd8e7b7379610",
-    urls = ["https://github.com/nothings/stb/archive/b42009b3b9d4ca35bc703f5310eedc74f584be58.tar.gz"],
-    build_file = "@//third_party:stblib.BUILD",
-    patches = [
-        "@//third_party:stb_image_impl.diff"
-    ],
+    build_file = "@mediapipe//third_party:stblib.BUILD",
     patch_args = [
         "-p1",
     ],
+    patches = [
+        # Fixes image implementation definitions and warnings in stblib header-only libraries.
+        "@mediapipe//third_party:stb_image_impl.diff",
+    ],
+    sha256 = "9a955b1b49a4410088a2e0ee2a9c057c3c907d0c1d75454144cb980aca0ba515",
+    strip_prefix = "stb-2c980bb59875b0d32144a71867fbdebb2f77cd20",
+    urls = ["https://github.com/nothings/stb/archive/2c980bb59875b0d32144a71867fbdebb2f77cd20.tar.gz"],
 )
-
-# More iOS deps.
 
 http_archive(
     name = "google_toolbox_for_mac",
-    url = "https://github.com/google/google-toolbox-for-mac/archive/v2.2.1.zip",
+    build_file = "@mediapipe//third_party:google_toolbox_for_mac.BUILD",
     sha256 = "e3ac053813c989a88703556df4dc4466e424e30d32108433ed6beaec76ba4fdc",
     strip_prefix = "google-toolbox-for-mac-2.2.1",
-    build_file = "@//third_party:google_toolbox_for_mac.BUILD",
+    url = "https://github.com/google/google-toolbox-for-mac/archive/v2.2.1.zip",
+)
+
+# Pin kept identical to the rules_ml_toolchain version org_tensorflow itself
+# vendors in third_party/xla/workspace0.bzl - see that file's fully-qualified
+# http_archive definition when bumping the org_tensorflow version above.
+http_archive(
+    name = "rules_ml_toolchain",
+    sha256 = "54c1a357f71f611efdb4891ebd4bcbe4aeb6dfa7e473f14fd7ecad5062096616",
+    strip_prefix = "rules_ml_toolchain-d8cb9c2c168cd64000eaa6eda0781a9615a26ffe",
+    urls = [
+        "https://github.com/google-ml-infra/rules_ml_toolchain/archive/d8cb9c2c168cd64000eaa6eda0781a9615a26ffe.tar.gz",
+    ],
 )
 
 load(
-    "@org_tensorflow//third_party/gpus/cuda/hermetic:cuda_json_init_repository.bzl",
+    "@org_tensorflow//third_party/xla/third_party/py:python_wheel.bzl",
+    "python_wheel_version_suffix_repository",
+)
+
+python_wheel_version_suffix_repository(name = "tf_wheel_version_suffix")
+
+# Hermetic C++
+# Must be initialized before any CUDA/SYCL initialization below - see
+# https://github.com/google-ml-infra/rules_ml_toolchain/blob/main/README.md
+load(
+    "@rules_ml_toolchain//cc/deps:cc_toolchain_deps.bzl",
+    "cc_toolchain_deps",
+)
+
+cc_toolchain_deps()
+
+# register_toolchains("@rules_ml_toolchain//cc:linux_x86_64_linux_x86_64")
+
+# Hermetic CUDA
+load(
+    "@rules_ml_toolchain//gpu/cuda:cuda_json_init_repository.bzl",
     "cuda_json_init_repository",
 )
 
@@ -664,125 +685,109 @@ load(
     "CUDNN_REDISTRIBUTIONS",
 )
 load(
-    "@org_tensorflow//third_party/gpus/cuda/hermetic:cuda_redist_init_repositories.bzl",
+    "@rules_ml_toolchain//gpu/cuda:cuda_redist_init_repositories.bzl",
     "cuda_redist_init_repositories",
     "cudnn_redist_init_repository",
 )
+
 cuda_redist_init_repositories(
     cuda_redistributions = CUDA_REDISTRIBUTIONS,
 )
+
 cudnn_redist_init_repository(
     cudnn_redistributions = CUDNN_REDISTRIBUTIONS,
 )
 
 load(
-    "@org_tensorflow//third_party/gpus/cuda/hermetic:cuda_configure.bzl",
+    "@rules_ml_toolchain//gpu/cuda:cuda_configure.bzl",
     "cuda_configure",
 )
+
 cuda_configure(name = "local_config_cuda")
 
 # Edge TPU
 http_archive(
-  name = "libedgetpu",
-  sha256 = "14d5527a943a25bc648c28a9961f954f70ba4d79c0a9ca5ae226e1831d72fe80",
-  strip_prefix = "libedgetpu-3164995622300286ef2bb14d7fdc2792dae045b7",
-  urls = [
-    "https://github.com/google-coral/libedgetpu/archive/3164995622300286ef2bb14d7fdc2792dae045b7.tar.gz"
-  ],
+    name = "libedgetpu",
+    sha256 = "14d5527a943a25bc648c28a9961f954f70ba4d79c0a9ca5ae226e1831d72fe80",
+    strip_prefix = "libedgetpu-3164995622300286ef2bb14d7fdc2792dae045b7",
+    urls = [
+        "https://github.com/google-coral/libedgetpu/archive/3164995622300286ef2bb14d7fdc2792dae045b7.tar.gz",
+    ],
 )
+
 load("@libedgetpu//:workspace.bzl", "libedgetpu_dependencies")
+
 libedgetpu_dependencies()
 
 load("@coral_crosstool//:configure.bzl", "cc_crosstool")
+
 cc_crosstool(name = "crosstool")
 
+load("@mediapipe//third_party:external_files.bzl", "external_files")
 
-# Node dependencies
-http_archive(
-    name = "build_bazel_rules_nodejs",
-    sha256 = "94070eff79305be05b7699207fbac5d2608054dd53e6109f7d00d923919ff45a",
-    urls = ["https://github.com/bazelbuild/rules_nodejs/releases/download/5.8.2/rules_nodejs-5.8.2.tar.gz"],
-)
-
-load("@build_bazel_rules_nodejs//:repositories.bzl", "build_bazel_rules_nodejs_dependencies")
-build_bazel_rules_nodejs_dependencies()
-
-# fetches nodejs, npm, and yarn
-load("@build_bazel_rules_nodejs//:index.bzl", "node_repositories", "yarn_install")
-node_repositories()
-yarn_install(
-    name = "npm",
-    package_json = "@//:package.json",
-    yarn_lock = "@//:yarn.lock",
-)
-
-# Protobuf for Node dependencies
-http_archive(
-    name = "rules_proto_grpc",
-    sha256 = "bbe4db93499f5c9414926e46f9e35016999a4e9f6e3522482d3760dc61011070",
-    strip_prefix = "rules_proto_grpc-4.2.0",
-    urls = ["https://github.com/rules-proto-grpc/rules_proto_grpc/archive/4.2.0.tar.gz"],
-)
-
-http_archive(
-    name = "com_google_protobuf_javascript",
-    sha256 = "35bca1729532b0a77280bf28ab5937438e3dcccd6b31a282d9ae84c896b6f6e3",
-    strip_prefix = "protobuf-javascript-3.21.2",
-    urls = ["https://github.com/protocolbuffers/protobuf-javascript/archive/refs/tags/v3.21.2.tar.gz"],
-)
-
-load("@rules_proto_grpc//:repositories.bzl", "rules_proto_grpc_toolchains", "rules_proto_grpc_repos")
-rules_proto_grpc_toolchains()
-rules_proto_grpc_repos()
-
-load("@rules_proto//proto:repositories.bzl", "rules_proto_dependencies", "rules_proto_toolchains")
-rules_proto_dependencies()
-rules_proto_toolchains()
-
-load("@//third_party:external_files.bzl", "external_files")
 external_files()
 
-load("@//third_party:wasm_files.bzl", "wasm_files")
+load("@mediapipe//third_party:wasm_files.bzl", "wasm_files")
+
 wasm_files()
+
+load("@mediapipe//third_party:sqlite_prebuilt_files.bzl", "sqlite_prebuilt_files")
+
+sqlite_prebuilt_files()
+
+# Eigen
+# org_tensorflow depends on Eigen. If updating tensorflow version,
+# make sure to bump Eigen version as well and vice versa.
+EIGEN_COMMIT = "ea13a98decd497a8c5588fb5de71b57bcf10d864"
+
+EIGEN_SHA256 = "35c6126e246585d9cf6600b65471582c2701aae64b784a6fd19168a90cfc841e"
+
+http_archive(
+    name = "eigen",
+    build_file = "@mediapipe//third_party:eigen.BUILD",
+    sha256 = EIGEN_SHA256,
+    strip_prefix = "eigen-{commit}".format(commit = EIGEN_COMMIT),
+    urls = ["https://gitlab.com/libeigen/eigen/-/archive/{commit}/eigen-{commit}.tar.gz".format(commit = EIGEN_COMMIT)],
+)
 
 # Halide
 
 new_local_repository(
     name = "halide",
-    build_file = "@//third_party/halide:BUILD.bazel",
-    path = "third_party/halide"
+    build_file = "@mediapipe//third_party/halide:BUILD.bazel",
+    path = "third_party/halide",
 )
 
 http_archive(
     name = "linux_halide",
+    build_file = "@mediapipe//third_party:halide.BUILD",
     sha256 = "d290fadf3f358c94aacf43c883de6468bb98883e26116920afd491ec0e440cd2",
     strip_prefix = "Halide-15.0.1-x86-64-linux",
     urls = ["https://github.com/halide/Halide/releases/download/v15.0.1/Halide-15.0.1-x86-64-linux-4c63f1befa1063184c5982b11b6a2cc17d4e5815.tar.gz"],
-    build_file = "@//third_party:halide.BUILD",
 )
 
 http_archive(
     name = "macos_x86_64_halide",
+    build_file = "@mediapipe//third_party:halide.BUILD",
     sha256 = "48ff073ac1aee5c4aca941a4f043cac64b38ba236cdca12567e09d803594a61c",
     strip_prefix = "Halide-15.0.1-x86-64-osx",
     urls = ["https://github.com/halide/Halide/releases/download/v15.0.1/Halide-15.0.1-x86-64-osx-4c63f1befa1063184c5982b11b6a2cc17d4e5815.tar.gz"],
-    build_file = "@//third_party:halide.BUILD",
 )
 
 http_archive(
     name = "macos_arm_64_halide",
+    build_file = "@mediapipe//third_party:halide.BUILD",
     sha256 = "db5d20d75fa7463490fcbc79c89f0abec9c23991f787c8e3e831fff411d5395c",
     strip_prefix = "Halide-15.0.1-arm-64-osx",
     urls = ["https://github.com/halide/Halide/releases/download/v15.0.1/Halide-15.0.1-arm-64-osx-4c63f1befa1063184c5982b11b6a2cc17d4e5815.tar.gz"],
-    build_file = "@//third_party:halide.BUILD",
 )
 
 http_archive(
     name = "windows_halide",
+    build_file = "@mediapipe//third_party:halide.BUILD",
     sha256 = "61fd049bd75ee918ac6c30d0693aac6048f63f8d1fc4db31001573e58eae8dae",
     strip_prefix = "Halide-15.0.1-x86-64-windows",
     urls = ["https://github.com/halide/Halide/releases/download/v15.0.1/Halide-15.0.1-x86-64-windows-4c63f1befa1063184c5982b11b6a2cc17d4e5815.zip"],
-    build_file = "@//third_party:halide.BUILD",
 )
 
 http_archive(
@@ -794,9 +799,9 @@ http_archive(
 
 http_archive(
     name = "com_github_nlohmann_json",
+    build_file = "@mediapipe//third_party:nlohmann.BUILD",
     sha256 = "6bea5877b1541d353bd77bdfbdb2696333ae5ed8f9e8cc22df657192218cad91",
     urls = ["https://github.com/nlohmann/json/releases/download/v3.9.1/include.zip"],
-    build_file = "@//third_party:nlohmann.BUILD",
 )
 
 http_archive(
@@ -806,223 +811,113 @@ http_archive(
     urls = ["https://github.com/abseil/abseil-py/archive/refs/tags/v1.4.0.tar.gz"],
 )
 
-# OVMS begin
-new_local_repository(
-    name = "linux_openvino",
-    build_file = "@ovms//third_party/openvino:BUILD",
-    path = "/opt/intel/openvino/runtime",
+http_archive(
+    name = "skia",
+    sha256 = "2fe28173428f8eebf2aa8a665bad32136086cc065f50c7154678a96250d1cde1",
+    strip_prefix = "skia-226ae9d866748a2e68b6dbf114b37129c380a298",
+    urls = ["https://github.com/google/skia/archive/226ae9d866748a2e68b6dbf114b37129c380a298.zip"],
 )
-load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 
 http_archive(
-    name = "aspect_bazel_lib",
-    sha256 = "7b39d9f38b82260a8151b18dd4a6219d2d7fc4a0ac313d4f5a630ae6907d205d",
-    strip_prefix = "bazel-lib-2.10.0",
-    url = "https://github.com/bazel-contrib/bazel-lib/releases/download/v2.10.0/bazel-lib-v2.10.0.tar.gz",
+    name = "skia_user_config",
+    sha256 = "2fe28173428f8eebf2aa8a665bad32136086cc065f50c7154678a96250d1cde1",
+    strip_prefix = "skia-226ae9d866748a2e68b6dbf114b37129c380a298/include/config",
+    urls = ["https://github.com/google/skia/archive/226ae9d866748a2e68b6dbf114b37129c380a298.zip"],
 )
 
-load("@aspect_bazel_lib//lib:repositories.bzl", "register_coreutils_toolchains")
-register_coreutils_toolchains()
+http_archive(
+    name = "gradle_distribution",
+    build_file = "@mediapipe//third_party:gradle_distribution.BUILD",
+    sha256 = "3e1af3ae886920c3ac87f7a91f816c0c7c436f276a6eefdb3da152100fef72ae",
+    strip_prefix = "gradle-8.4",
+    urls = ["https://services.gradle.org/distributions/gradle-8.4-bin.zip"],
+)
 
-git_repository(
-    name = "ovms",
-    remote = "https://github.com/openvinotoolkit/model_server",
-    commit = "19f9fa5269666d8175c0c0eb1fdcfe175bde979a", # Fix build paths for mediapipe (#3619) - release 2025/3
-    patches = [],
+http_archive(
+    name = "boringssl",
+    sha256 = "52e2d96759d483e384e3964a2513781ea05cb6b2d677f1f8f5a4049aea30535d",
+    strip_prefix = "boringssl-0.20260211.0",
+    url = "https://github.com/google/boringssl/archive/refs/tags/0.20260211.0.tar.gz",
+)
+
+http_archive(
+    name = "libcurl",
+    build_file = "@mediapipe//third_party:curl.BUILD",
+    sha256 = "d15ebab765d793e2e96db090f0e172d127859d78ca6f6391d7eafecfd894bbc0",
+    strip_prefix = "curl-8.10.1",
+    url = "https://curl.haxx.se/download/curl-8.10.1.tar.gz",
+)
+
+# LiteRT HEAD from 09/17/2026
+# Fetch just the source tree and let it use our already-defined workspace
+# dependencies (@org_tensorflow, @xla, etc.) to avoid collisions.
+#
+# IMPORTANT: LiteRT and org_tensorflow's TFLite both use `namespace tflite`.
+# Do not mix @litert and @org_tensorflow//tensorflow/lite/ targets in the
+# same binary to prevent duplicate-symbol/ODR violations.
+http_archive(
+    name = "litert",
     patch_args = ["-p1"],
+    # LiteRT's BUILD/bzl files load py_test/py_library/py_binary from
+    # "@xla//third_party/rules_python/python:*.bzl", a path that doesn't
+    # exist at mediapipe's pinned org_tensorflow/XLA commit (LiteRT expects a
+    # newer XLA layout). XLA's wrapper also adds a strict_deps attribute
+    # standard rules_python doesn't have. This patch adds an in-repo compat
+    # shim (rules_python_compat.bzl) that drops strict_deps and delegates to
+    # mediapipe's own working @rules_python, redirects all the broken loads
+    # to it, and strips the now-inapplicable strict_deps call-site
+    # arguments (a lint-only attribute org_tensorflow's own
+    # py_test/py_library/py_binary macros don't accept either at mediapipe's
+    # pinned version) - rather than trying to reconcile XLA versions.
+    patches = [
+        "@mediapipe//third_party:litert_rules_python_and_strict_deps.diff",
+        "@mediapipe//third_party:litert_custom_ops.diff",
+        "@mediapipe//third_party:litert_internal_fbs_fix.diff",
+    ],
+    sha256 = "b40bc9629e123071596bfdf7c6a682f2a5e62430178d72d6b4fcb8a0a16af6ce",
+    strip_prefix = "LiteRT-d90e665105195e58c98ca0e1f08f7fc700a40b05",
+    urls = ["https://github.com/google-ai-edge/LiteRT/archive/d90e665105195e58c98ca0e1f08f7fc700a40b05.tar.gz"],
 )
 
-### OpenVINO GenAI
-#load("@ovms//third_party/llm_engine:llm_engine.bzl", "llm_engine")
-#llm_engine()
+# LiteRT-LM
+# Fetch just the source tree and let it use our already-defined workspace
+# dependencies (@org_tensorflow, @com_google_absl, @litert, etc.) to avoid collisions.
+# Also map the @sentencepiece dependency to @com_google_sentencepiece which is already
+# provided by MediaPipe's WORKSPACE.
+http_archive(
+    name = "litert_lm",
+    patch_args = ["-p1"],
+    patch_tool = "patch",
+    patches = [
+        "@mediapipe//third_party:litert_lm.diff",
+    ],
+    repo_mapping = {
+        "@minizip": "@zlib",
+        "@sentencepiece": "@com_google_sentencepiece",
+        "@stb": "@stblib",
+    },
+    strip_prefix = "LiteRT-LM-e93f5f517e404bd4fa654c511ef50fbd0bb147fe",
+    urls = ["https://github.com/google-ai-edge/LiteRT-LM/archive/e93f5f517e404bd4fa654c511ef50fbd0bb147fe.tar.gz?v=9"],
+)
 
-load("@//third_party/model_api:model_api.bzl", "workspace_model_api")
-workspace_model_api()
-########################################################### Python support start
+# Transitive dependency of LiteRT-LM.
+http_archive(
+    name = "miniaudio",
+    build_file = "@mediapipe//third_party:miniaudio.BUILD",
+    sha256 = "bcb07bfb27e6fa94d34da73ba2d5642d4940b208ec2a660dbf4e52e6b7cd492f",
+    strip_prefix = "miniaudio-0.11.22",
+    urls = ["https://github.com/mackron/miniaudio/archive/refs/tags/0.11.22.tar.gz"],
+)
 
-load("@ovms//third_party/python:python_repo.bzl", "python_repository")
-python_repository(name = "_python3-linux")
-
+# Dummy local repository for litert_lm's unused transitive huggingface_tokenizer dependency
+# (disabled via --define=DISABLE_HUGGINGFACE_TOKENIZER=1 in .bazelrc).
 new_local_repository(
-    name = "python3_linux",
-    path = "/usr",
-    build_file = "@_python3-linux//:BUILD"
-)
-
-load("@rules_python//python:pip.bzl", "pip_parse")
-
-pip_parse(
-    name = "pip_deps",
-    requirements_lock = "@ovms//src/python/binding:tests/requirements.txt",
-)
-
-########################################################### Python support end
-# RapidJSON # TODO import from ovms
-# minitrace
-load("@bazel_tools//tools/build_defs/repo:git.bzl", "new_git_repository")
-new_git_repository(
-    name = "minitrace",
-    remote = "https://github.com/hrydgard/minitrace.git",
-    commit = "020f42b189e8d6ad50e4d8f45d69edee0a6b3f23",
+    name = "tokenizers_cpp",
     build_file_content = """
 cc_library(
-    name = "trace",
-    hdrs = ["minitrace.h"],
-    srcs = ["minitrace.c"],
+    name = "huggingface_tokenizer",
     visibility = ["//visibility:public"],
-    local_defines = [
-    ],
 )
 """,
+    path = ".",
 )
-# newest available is 2.18 with TF 6550e4bd80223cdb8be6c3afd1f81e86a4d433c3
-# Tensorflow #serving
-git_repository(
-    name = "tensorflow_serving",
-    remote = "https://github.com/tensorflow/serving.git",
-    #tag = "2.13.0",
-    tag = "2.18.0",
-    patch_args = ["-p1"],
-    patches = ["@ovms//external:net_http.patch", "@ovms//external:listen.patch", "@ovms//external:partial_2.18.patch"]
-    #                             ^^^^^^^^^^^^
-    #                       make bind address configurable
-    #          ^^^^^^^^^^^^
-    #        allow all http methods
-)
-
-load("@ovms//third_party/aws-sdk-cpp:aws-sdk-cpp.bzl", "aws_sdk_cpp")
-aws_sdk_cpp()
-
-### Libgit2
-load("@ovms//third_party/libgit2:libgit2_engine.bzl", "libgit2_engine")
-libgit2_engine()
-
-load("@ovms//third_party/drogon:drogon.bzl", "drogon_cpp")
-drogon_cpp()
-
-# Azure Storage SDK
-new_local_repository(
-    name = "azure",
-    build_file = "@ovms//third_party/azure:BUILD",
-    path = "/azure/azure-storage-cpp",
-)
-
-# Azure Storage SDK dependency - cpprest
-new_local_repository(
-    name = "cpprest",
-    build_file = "@ovms//third_party/cpprest:BUILD",
-    path = "/azure/cpprestsdk",
-)
-
-# Boost (needed for Azure Storage SDK)
-
-new_local_repository(
-    name = "boost",
-    path = "/usr/local/lib/",
-    build_file = "@ovms//third_party/boost:BUILD"
-)
-
-# Google Cloud SDK
-http_archive(
-    name = "google_cloud_cpp",
-    sha256 = "629cbfcc5bd581d38277ba8fa94a5b6591af1e0f6af0dab6d1d9ed796bf48b61",
-    strip_prefix = "google-cloud-cpp-2.39.0",
-    url = "https://github.com/googleapis/google-cloud-cpp/archive/v2.39.0.tar.gz",
-    repo_mapping = {"@com_github_curl_curl" : "@curl"}
-)
-
-load("@google_cloud_cpp//bazel:workspace0.bzl", "gl_cpp_workspace0")
-
-gl_cpp_workspace0()
-
-load("@google_cloud_cpp//bazel:workspace1.bzl", "gl_cpp_workspace1")
-
-gl_cpp_workspace1()
-
-load("@google_cloud_cpp//bazel:workspace2.bzl", "gl_cpp_workspace2")
-
-gl_cpp_workspace2()
-
-load("@google_cloud_cpp//bazel:workspace4.bzl", "gl_cpp_workspace4")
-
-gl_cpp_workspace4()
-
-load("@google_cloud_cpp//bazel:workspace5.bzl", "gl_cpp_workspace5")
-
-gl_cpp_workspace5()
-
-load("@com_github_grpc_grpc//bazel:grpc_deps.bzl", "grpc_deps")
-grpc_deps()
-
-load("@com_github_grpc_grpc//bazel:grpc_extra_deps.bzl", "grpc_extra_deps")
-grpc_extra_deps()
-
-http_archive(
-    name = "com_github_jarro2783_cxxopts",
-    url = "https://github.com/jarro2783/cxxopts/archive/v3.1.1.zip",
-    sha256 = "25b644a2bfa9c6704d723be51b026bc02420dfdee1277a49bfe5df3f19b0eaa4",
-    strip_prefix = "cxxopts-3.1.1",
-    build_file = "@ovms//third_party/cxxopts:BUILD",
-)
-
-# RapidJSON
-http_archive(
-    name = "com_github_tencent_rapidjson",
-    url = "https://github.com/Tencent/rapidjson/archive/973dc9c06dcd3d035ebd039cfb9ea457721ec213.tar.gz",
-    sha256 = "d0c9e52823d493206eb721d38cb3a669ca0212360862bd15a3c2f7d35ea7c6f7",
-    strip_prefix = "rapidjson-973dc9c06dcd3d035ebd039cfb9ea457721ec213",
-    build_file = "@ovms//third_party/rapidjson:BUILD"
-)
-
-# spdlog
-http_archive(
-    name = "com_github_gabime_spdlog",
-    urls = [ 
-        "https://github.com/gabime/spdlog/archive/refs/tags/v1.15.3.tar.gz",
-        "https://mirror.bazel.build/github.com/gabime/spdlog/archive/refs/tags/v1.15.3.tar.gz",
-    ],
-    sha256 = "15a04e69c222eb6c01094b5c7ff8a249b36bb22788d72519646fb85feb267e67",
-    strip_prefix = "spdlog-1.15.3",
-    build_file = "@ovms//third_party/spdlog:BUILD"
-)
-
-# fmtlib
-http_archive(
-    name = "fmtlib",
-    url = "https://github.com/fmtlib/fmt/archive/refs/tags/11.2.0.tar.gz",
-    sha256 = "bc23066d87ab3168f27cef3e97d545fa63314f5c79df5ea444d41d56f962c6af",
-    strip_prefix = "fmt-11.2.0",
-    build_file = "@ovms//third_party/fmtlib:BUILD"
-)
-
-# libevent
-http_archive(
-    name = "com_github_libevent_libevent",
-    url = "https://github.com/libevent/libevent/archive/release-2.1.8-stable.zip",
-    sha256 = "70158101eab7ed44fd9cc34e7f247b3cae91a8e4490745d9d6eb7edc184e4d96",
-    strip_prefix = "libevent-release-2.1.8-stable",
-    build_file = "@ovms//third_party/libevent:BUILD",
-)
-
-# prometheus-cpp
-http_archive(
-    name = "com_github_jupp0r_prometheus_cpp",
-    strip_prefix = "prometheus-cpp-1.0.1",
-    urls = ["https://github.com/jupp0r/prometheus-cpp/archive/refs/tags/v1.0.1.zip"],
-)
-load("@com_github_jupp0r_prometheus_cpp//bazel:repositories.bzl", "prometheus_cpp_repositories")
-prometheus_cpp_repositories()
-git_repository(
-    name = "nlohmann_json",
-    remote = "https://github.com/nlohmann/json/",
-    tag = "v3.11.3",
-)
-new_local_repository(
-    name = "mediapipe_calculators",
-    build_file = "@ovms//third_party/mediapipe_calculators:BUILD",
-    #path = "/ovms/third_party/mediapipe_calculators", # original path from OVMS repo
-    # for some reason Bazel needs to see repository definition even when it doesn't use it
-    # for actual build
-    path = "/mediapipe", # this is temporary hack - this is not actually used to build
-)
-# OVMS end

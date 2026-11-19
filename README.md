@@ -1,62 +1,114 @@
-# OpenVINO&trade; Model Server fork of [MediaPipe](https://google.github.io/mediapipe/).
-This repository allows users to take advantage of OpenVINO&trade; in the Mediapipe framework. It includes inference calculators which can replace Tensorflow backend with OpenVINO&trade; Runtime.
-That way, you can expect more efficient execution and lower latency on CPU.
+# MediaPipe OpenVINO Extension
 
-Check the included demos with pipeline examples or create your own graphs and execution flows.
+A collection of calculators and application examples for MediaPipe with OpenVINO acceleration for AI models.
 
-# List of changes introduced in this repository fork
+Benefits:
+- Inference execution boost with OpenVINO Runtime
+- Support for Intel accelerators including CPU, iGPU, dGPU, NPU
+- Support for Linux and Windows
+- Accelearated media content investion and processing with GStreamer and OpenCV
 
-- added [Dockerfile.openvino](Dockerfile.openvino) dockerfile that creates runtime and development environment. This is a build environment image not suitable for production use.
-- added [Makefile](Makefile) file with build, test and demo targets for the ease of use.
-- modified [build_desktop_examples.sh](build_desktop_examples.sh) script to build new demos.
-- added [calculators](mediapipe/calculators/ovms) and [calculators](mediapipe/calculators/openvino) for OpenVINO&trade; inference in mediapipe graphs
-  detailed [description](mediapipe/calculators/ovms/calculators.md).
-- added [calculators](mediapipe/calculators/geti) for serialization and inference tasks.
-- modified bazel [targets](mediapipe/examples/desktop) to use OpenVINO&trade; inference calculators (the list of available demos is in the table below).
-- modified [WORKSPACE](WORKSPACE) file to add OpenVINO&trade; Model Server dependencies.
-  Specifically target @ovms//src:ovms_lib as dependency from [OpenVINO Model Server](https://github.com/openvinotoolkit/model_server)
-- modified [graphs and bazel targets](mediapipe/modules/) to use OpenVINO&trade; inference instead of TensorFlow inference.
-- added [setup_ovms.py](setup_ovms.py) script to create models repository used in OpenVINO&trade; inference. The script needs to be executed to prepare specific directory structures with tflite models and config.json in the [mediapipe/models/ovms](directory).
-- modified setup_opecv.py to install 4.7.0 OpenCV version instead of previous 3.4.
+## Examples
 
-[]() OpenVINO&trade; demo                                                    | C++                                                     | [Python](mediapipe/examples/python/README.md)                              | Original Google demo                                                        |
-:---------------------------------------------------------------------------------------- | :-----------------------------------------------------: | :-----------------------------------------------------------: | :---------------------------------------------------------------------------------------: |
-[Face Detection](mediapipe/examples/desktop/face_detection/README.md)                     | ✅                                                      | ✅                                                              |[Face Detection](https://google.github.io/mediapipe/solutions/face_detection)             |
-[Iris](mediapipe/examples/desktop/iris_tracking/README.md)                                | ✅                                                      |                                                                |[Iris](https://google.github.io/mediapipe/solutions/iris)                                 |
-[Pose](mediapipe/examples/desktop/pose_tracking/README.md)                                | ✅                                                      |                                                                |[Pose](https://google.github.io/mediapipe/solutions/pose)                                 |
-[Holistic](mediapipe/examples/desktop/holistic_tracking/README.md)                        | ✅                                                      | ✅                                                              |[Holistic](https://google.github.io/mediapipe/solutions/holistic)                         |
-[Object Detection](mediapipe/examples/desktop/object_detection/README.md)                 | ✅                                                      | ✅                                                              |[Object Detection](https://google.github.io/mediapipe/solutions/object_detection)         |
+[Object detection graph with OpenVINO inference in c++ app](./mediapipe/examples/desktop/openvino_classification/README.md)
 
-# Quick start guide
+[Object detection graph with OpenVINO inference in python](./mediapipe/python/openvino/README.md)
 
-Check the [quick start guide](docs/quickstartguide.md) to with easy to follow instructions for building and running the example applications and graphs.
 
-# Development instructions
 
-The [developer guide](docs/development.md) includes the list of instructions and practices in developing your own application and graphs.
+## Linux build environment
 
-![MediaPipe](https://mediapipe.dev/images/mediapipe_small.png)
+Install Bazel 7.7.0 (or Bazelisk), GNU Make, a C++20 compiler, Python 3 with
+development headers, Git, CMake and OpenCV's development dependencies. On Ubuntu:
 
---------------------------------------------------------------------------------
+```sh
+sudo apt-get install build-essential cmake git python3-dev pkg-config ffmpeg \
+  libavcodec-dev libavformat-dev libavutil-dev libswscale-dev libgtk-3-dev \
+  libjpeg-dev libpng-dev libtiff-dev libtbb-dev libeigen3-dev
+bash setup_opencv.sh
+make
+```
 
-## Live ML anywhere
+The setup script builds OpenCV 4.14.0 with the video modules used by the example.
+Use an existing OpenCV 4 installation instead with
+`OPENCV_PREFIX=/path/to/opencv bash setup_opencv.sh config_only`.
+The default Linux prefix is `/usr/local`; `/usr` works for distro OpenCV packages.
+Set `OPENCV_PREFIX` in the environment or pass
+`BAZEL_FLAGS=--repo_env=OPENCV_PREFIX=/path/to/opencv` to Make.
 
-[MediaPipe](https://google.github.io/mediapipe/) offers cross-platform, customizable
-ML solutions for live and streaming media.
+## Windows build environment
 
-![accelerated.png](https://mediapipe.dev/images/accelerated_small.png)                                                               | ![cross_platform.png](https://mediapipe.dev/images/cross_platform_small.png)
-:------------------------------------------------------------------------------------------------------------: | :----------------------------------------------------:
-***End-to-End acceleration***: *Built-in fast ML inference and processing accelerated even on common hardware* | ***Build once, deploy anywhere***: *Unified solution works across Android, iOS, desktop/cloud, web and IoT*
-![ready_to_use.png](https://mediapipe.dev/images/ready_to_use_small.png)                                                             | ![open_source.png](https://mediapipe.dev/images/open_source_small.png)
-***Ready-to-use solutions***: *Cutting-edge ML solutions demonstrating full power of the framework*            | ***Free and open source***: *Framework and solutions both under Apache 2.0, fully extensible and customizable*
+Use Windows x64 with Visual Studio 2022's Desktop Development with C++ workload,
+CMake and Git for Windows. Run from `cmd.exe`:
 
-## ML solutions in MediaPipe OpenVINO&trade; fork
+```bat
+call prepare_build_dependencies.bat
+C:\opt\msys64\usr\bin\make.exe build tests example-tests
+```
 
-Face Detection                                                                                                                 | Iris                                                                                                      | Pose                                                                                                      | Holistic                                                                          | Object Detection                                              |
-:----------------------------------------------------------------------------------------------------------------------------: | :-------------------------------------------------------------------------------------------------------: | :-------------------------------------------------------------------------------------------------------: | :------: | :----------------------------------------------------------------------------------------------------------------------------------: |
-[![face_detection](https://mediapipe.dev/images/mobile/face_detection_android_gpu_small.gif)](https://google.github.io/mediapipe/solutions/face_detection) | [![iris](https://mediapipe.dev/images/mobile/iris_tracking_android_gpu_small.gif)](https://google.github.io/mediapipe/solutions/iris) | [![pose](https://mediapipe.dev/images/mobile/pose_tracking_android_gpu_small.gif)](https://google.github.io/mediapipe/solutions/pose) | [![holistic_tracking](https://mediapipe.dev/images/mobile/holistic_tracking_android_gpu_small.gif)](https://google.github.io/mediapipe/solutions/holistic) | [![object_detection](https://mediapipe.dev/images/mobile/object_detection_android_gpu_small.gif)](https://google.github.io/mediapipe/solutions/object_detection) |
+The setup script installs Bazel, MSYS2, GNU Make and Python under `C:\opt`, and
+builds OpenCV 4.13.0 with `opencv_world` and FFmpeg support. It exports the build
+environment to the calling command prompt. Bazel downloads OpenVINO itself.
+`OPENCV_PREFIX` can override the default `C:/opt/opencv` location.
+The Makefile defaults to `--output_user_root=C:/b` on Windows to limit path length.
+Native Bazel commands work too:
 
-## Fork baseline
-The fork is based on original mediapipe release origin/v0.10.3.
+```bat
+bazel --output_user_root=C:/b build //mediapipe/examples/desktop/openvino_classification:openvino_classification
+bazel --output_user_root=C:/b test //mediapipe/calculators/openvino:openvino_session_calculator_test //mediapipe/calculators/openvino:openvino_calculators_concurrency_test
+```
 
-Original v0.10.3 Google ML solutions in MediaPipe can be found [here](https://github.com/google/mediapipe/tree/v0.10.3)
+The Windows patches retain the MSVC protobuf, Java and Swift toolchain fixes.
+MediaPipe framework fixes are applied to the downloaded archive. C++20 and the
+conforming MSVC preprocessor are enabled for both local and external sources.
+OpenVINO/OpenCV runtime DLLs are staged next to the binaries; test assets use
+Bazel runfiles lookup, including Windows manifests.
+
+## Build Targets
+
+| Command | Result |
+| --- | --- |
+| `make build` | Calculator libraries and C++ classification application |
+| `make tests` | Calculator preprocessing, reshaping and concurrency tests |
+| `make example-tests` | C++ video/inference smoke test with a local IR model |
+| `make test` | All included C++ tests |
+| `make python` | Python extension and classification demo |
+| `make clean` | Clean Bazel build outputs |
+
+`make` builds the C++ components and runs all C++ tests. Override `BAZEL`,
+`BAZEL_STARTUP_FLAGS`, `BAZEL_FLAGS` and `JOBS` as needed. The Python bindings
+remain a separate target; do not import them alongside a separately installed
+MediaPipe extension, which would duplicate pybind type registrations.
+
+## Packaging
+
+After building the C++ and Python targets, create a reusable package from the
+workspace's `package.manifest`:
+
+```sh
+make build python
+./create_package.sh --workspace "$PWD" --output "$PWD/dist/package"
+```
+
+Extend the tab-separated manifest to add applications and data files. The
+packager gathers native-library dependencies and emits the Python wheel and
+venv when a `python` entry is present. For Docker, use `make release_image`
+followed by `make test_release_image`; the test video is generated outside the
+release image and mounted read-only for the smoke test.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,14 @@
+--- a/mediapipe/python/pybind/BUILD
++++ b/mediapipe/python/pybind/BUILD
+@@ -17,7 +17,10 @@
+ 
+ licenses(["notice"])
+ 
+-package(default_visibility = ["//mediapipe:__subpackages__"])
++package(default_visibility = [
++    "//mediapipe:__subpackages__",
++    "@//mediapipe/python/openvino:__pkg__",
++])
+ 
+ pybind_library(
+     name = "calculator_graph",

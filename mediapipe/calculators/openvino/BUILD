@@ -1,4 +1,4 @@
-# Copyright (c) 2023 Intel Corporation
+# Copyright 2024 Intel Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,242 +11,143 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
 
-load("//mediapipe/framework/port:build_config.bzl", "mediapipe_cc_proto_library", "mediapipe_proto_library")
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
+load("@mediapipe//mediapipe/framework/port:build_config.bzl", "mediapipe_proto_library")
+load("//third_party:copy_runtime_dlls.bzl", "copy_runtime_dlls")
 
 licenses(["notice"])
 
-package(default_visibility = ["//visibility:private"])
+package(default_visibility = ["//visibility:public"])
+
+exports_files([
+    "testdata/identity.bin",
+    "testdata/identity.xml",
+])
+
+mediapipe_proto_library(
+    name = "openvino_session_calculator_proto",
+    srcs = ["openvino_session_calculator.proto"],
+    deps = [
+        "@mediapipe//mediapipe/framework:calculator_options_proto",
+        "@mediapipe//mediapipe/framework:calculator_proto",
+    ],
+)
 
 mediapipe_proto_library(
     name = "openvino_inference_calculator_proto",
     srcs = ["openvino_inference_calculator.proto"],
-    visibility = ["//visibility:public"],
     deps = [
-        "//mediapipe/framework:calculator_options_proto",
-        "//mediapipe/framework:calculator_proto",
-    ],
-)
-
-mediapipe_proto_library(
-    name = "openvino_converter_calculator_proto",
-    srcs = ["openvino_converter_calculator.proto"],
-    visibility = ["//visibility:public"],
-    deps = [
-        "//mediapipe/framework:calculator_options_proto",
-        "//mediapipe/framework:calculator_proto",
-    ],
-)
-
-mediapipe_proto_library(
-    name = "openvino_tensors_to_classification_calculator_proto",
-    srcs = ["openvino_tensors_to_classification_calculator.proto"],
-    visibility = ["//visibility:public"],
-    deps = [
-        "//mediapipe/framework:calculator_options_proto",
-        "//mediapipe/framework:calculator_proto",
-    ],
-)
-
-mediapipe_proto_library(
-    name = "openvino_tensors_to_detections_calculator_proto",
-    srcs = ["openvino_tensors_to_detections_calculator.proto"],
-    visibility = ["//visibility:public"],
-    deps = [
-        "//mediapipe/framework:calculator_options_proto",
-        "//mediapipe/framework:calculator_proto",
+        "@mediapipe//mediapipe/framework:calculator_options_proto",
+        "@mediapipe//mediapipe/framework:calculator_proto",
     ],
 )
 
 cc_library(
-    name = "openvino_converter_calculator",
-    srcs = ["openvino_converter_calculator.cc"],
-    visibility = ["//visibility:public"],
+    name = "openvino_session",
+    hdrs = [
+        "openvino_infer_request_queue.h",
+        "openvino_session.h",
+    ],
+    deps = ["//third_party:openvino"],
+)
+
+cc_library(
+    name = "openvino_session_calculator",
+    srcs = ["openvino_session_calculator.cc"],
     deps = [
-        ":openvino_converter_calculator_cc_proto",
-        "//mediapipe/framework:calculator_framework",
-        "//mediapipe/framework/formats:image_frame",
-        "//mediapipe/framework/port:ret_check",
-        "//mediapipe/framework/stream_handler:fixed_size_input_stream_handler",
-        "//mediapipe/util:resource_util",
+        ":openvino_session",
+        ":openvino_session_calculator_cc_proto",
+        "@mediapipe//mediapipe/framework:calculator_framework",
+        "@mediapipe//mediapipe/framework/port:ret_check",
+        "@mediapipe//mediapipe/framework/port:status",
         "//third_party:openvino",
+        "@com_google_absl//absl/log:absl_log",
+        "@com_google_absl//absl/strings",
+        "@com_github_nlohmann_json//:json",
     ],
     alwayslink = 1,
-)
-
-cc_library(
-    name = "openvino_internal_utils",
-    srcs = ["internal/infer_request_wrap.hpp"],
-    #    srcs = glob([
-    #        "internal/*.cpp",
-    #        "internal/*.hpp",
-    #    ]),
-    visibility = ["//visibility:public"],
-    deps = [
-        "//third_party:openvino",
-    ],
 )
 
 cc_library(
     name = "openvino_inference_calculator",
     srcs = ["openvino_inference_calculator.cc"],
-    visibility = ["//visibility:public"],
     deps = [
-        ":openvino_internal_utils",
         ":openvino_inference_calculator_cc_proto",
-        "//mediapipe/framework:timestamp",
-        "@com_google_absl//absl/base:core_headers",
-        "@com_google_absl//absl/memory",
-        "//mediapipe/framework:calculator_context",
-        "//mediapipe/framework:calculator_framework",
-        "//mediapipe/framework/tool:status_util",
+        ":openvino_session",
+        "@mediapipe//mediapipe/framework:calculator_framework",
+        "@mediapipe//mediapipe/framework/port:ret_check",
+        "@mediapipe//mediapipe/framework/port:status",
+        "//third_party:openvino",
         "@com_google_absl//absl/strings",
-        "@com_google_absl//absl/synchronization",
-        "//mediapipe/framework/deps:clock",
-        "//mediapipe/framework/port:status",
-        "//mediapipe/framework/port:ret_check",
-        "//mediapipe/framework/port:map_util",
-        "//mediapipe/framework:packet",
-        "//third_party:openvino",
-    ] + select({
-        "//conditions:default": [
-        ],
-    }),
-    alwayslink = 1,
-)
-
-cc_library(
-    name = "openvino_tensors_to_classification_calculator",
-    srcs = ["openvino_tensors_to_classification_calculator.cc"],
-    visibility = ["//visibility:public"],
-    deps = [
-        ":openvino_tensors_to_classification_calculator_cc_proto",
-        "@com_google_absl//absl/container:node_hash_map",
-        "@com_google_absl//absl/strings:str_format",
-        "@com_google_absl//absl/types:span",
-        "//mediapipe/framework/formats:classification_cc_proto",
-        "//mediapipe/framework:calculator_framework",
-        "//mediapipe/framework/formats:location",
-        "//mediapipe/framework/port:ret_check",
-        "//mediapipe/util:resource_util",
-        "//third_party:openvino",
-    ] + select({
-        "//mediapipe:android": [
-            "//mediapipe/util/android/file/base",
-        ],
-        "//mediapipe:ios": [
-            "//mediapipe/util/android/file/base",
-        ],
-        "//mediapipe:macos": [
-            "//mediapipe/framework/port:file_helpers",
-        ],
-        "//conditions:default": [
-            "//mediapipe/framework/port:file_helpers",
-        ],
-    }),
-    alwayslink = 1,
-)
-
-cc_library(
-    name = "openvino_tensors_to_detections_calculator",
-    srcs = ["openvino_tensors_to_detections_calculator.cc"],
-    copts = select({
-        "//mediapipe:ios": [
-            "-x objective-c++",
-            "-fobjc-arc",  # enable reference-counting
-        ],
-        "//conditions:default": [],
-    }),
-    linkopts = select({
-        "//mediapipe:ios": [
-            "-framework CoreVideo",
-            "-framework MetalKit",
-        ],
-        "//conditions:default": [],
-    }),
-    visibility = ["//visibility:public"],
-    deps = [
-        ":openvino_tensors_to_detections_calculator_cc_proto",
-        "//mediapipe/framework/formats:detection_cc_proto",
-        "@com_google_absl//absl/strings:str_format",
-        "@com_google_absl//absl/types:span",
-        "//mediapipe/framework/deps:file_path",
-        "//mediapipe/framework:calculator_framework",
-        "//mediapipe/framework/formats:location",
-        "//mediapipe/framework/formats/object_detection:anchor_cc_proto",
-        "//mediapipe/framework/port:ret_check",
-        "//third_party:openvino",
     ],
     alwayslink = 1,
 )
 
-# To run this with native GPU on Linux, use:
-# bazel test //mediapipe/calculators/tflite:tflite_inference_calculator_test --copt=-DTFLITE_GPU_EXTRA_GLES_DEPS --copt=-DMESA_EGL_NO_X11_HEADERS --copt=-DEGL_NO_X11 --config=grte_v5 --test_strategy=local
+cc_library(
+    name = "openvino_calculators",
+    deps = [
+        ":openvino_inference_calculator",
+        ":openvino_session_calculator",
+    ],
+)
+
+copy_runtime_dlls(
+    name = "runtime_dlls",
+    srcs = ["//third_party:windows_openvino_runtime_dlls"],
+)
+
+cc_library(
+    name = "test_util",
+    testonly = True,
+    hdrs = ["openvino_test_util.h"],
+    deps = [
+        ":openvino_session_calculator_cc_proto",
+        "@bazel_tools//tools/cpp/runfiles",
+        "@mediapipe//mediapipe/framework:calculator_cc_proto",
+    ],
+)
+
 cc_test(
-    name = "openvino_inference_calculator_test",
-    srcs = [
-        "openvino_inference_calculator_test.cc",
-        "openvino_inference_calculator_test_common.h",
-    ],
+    name = "openvino_calculators_concurrency_test",
+    srcs = ["openvino_calculators_concurrency_test.cc"],
     data = [
+        ":runtime_dlls",
         "testdata/add.bin",
         "testdata/add.xml",
     ],
-    linkstatic = 1,
     deps = [
-        ":openvino_inference_calculator",
-        ":openvino_inference_calculator_cc_proto",
-        "//mediapipe/calculators/core:constant_side_packet_calculator",
-        "//mediapipe/calculators/util:local_file_contents_calculator",
-        "//mediapipe/framework:calculator_framework",
-        "//mediapipe/framework:calculator_runner",
-        "//mediapipe/framework/deps:file_path",
-        "//mediapipe/framework/port:gtest_main",
-        "//mediapipe/framework/port:integral_types",
-        "//mediapipe/framework/port:parse_text_proto",
-        "//mediapipe/framework/tool:validate_type",
-        "@com_google_absl//absl/memory",
-        "@com_google_absl//absl/strings",
-        "@com_google_absl//absl/types:optional",
+        ":openvino_calculators",
+        ":test_util",
+        "@mediapipe//mediapipe/framework:calculator_framework",
+        "@mediapipe//mediapipe/framework/port:gtest_main",
+        "@mediapipe//mediapipe/framework/port:parse_text_proto",
+        "@mediapipe//mediapipe/framework/port:status_matchers",
+        "@mediapipe//mediapipe/framework/tool:sink",
+        "//third_party:openvino",
     ],
 )
 
 cc_test(
-    name = "openvino_converter_calculator_test",
-    srcs = ["openvino_converter_calculator_test.cc"],
-    deps = [
-        ":openvino_converter_calculator",
-        ":openvino_converter_calculator_cc_proto",
-        "//mediapipe/framework:calculator_framework",
-        "//mediapipe/framework:calculator_runner",
-        "//mediapipe/framework/formats:image_format_cc_proto",
-        "//mediapipe/framework/formats:image_frame",
-        "//mediapipe/framework/formats:image_frame_opencv",
-        "//mediapipe/framework/formats:matrix",
-        "//mediapipe/framework/port:gtest_main",
-        "//mediapipe/framework/port:integral_types",
-        "//mediapipe/framework/port:parse_text_proto",
-        "//mediapipe/framework/tool:validate_type",
-        "@com_google_absl//absl/memory",
-        "@com_google_absl//absl/strings",
+    name = "openvino_session_calculator_test",
+    srcs = ["openvino_session_calculator_test.cc"],
+    data = [
+        ":runtime_dlls",
+        "testdata/add.bin",
+        "testdata/add.xml",
+        "testdata/identity.bin",
+        "testdata/identity.xml",
     ],
-)
-
-cc_test(
-    name = "openvino_tensors_to_classification_calculator_test",
-    srcs = ["openvino_tensors_to_classification_calculator_test.cc"],
-    data = ["testdata/labelmap.txt"],
     deps = [
-        ":openvino_tensors_to_classification_calculator",
-        ":openvino_tensors_to_classification_calculator_cc_proto",
-        "//mediapipe/framework:calculator_cc_proto",
-        "//mediapipe/framework:calculator_framework",
-        "//mediapipe/framework:calculator_runner",
-        "//mediapipe/framework/formats:classification_cc_proto",
-        "//mediapipe/framework/port:gtest_main",
-        "//mediapipe/framework/port:parse_text_proto",
-        "@com_google_absl//absl/memory",
-        "@com_google_googletest//:gtest_main",
+        ":openvino_calculators",
+        ":test_util",
+        "@mediapipe//mediapipe/framework:calculator_framework",
+        "@mediapipe//mediapipe/framework/port:gtest_main",
+        "@mediapipe//mediapipe/framework/port:parse_text_proto",
+        "@mediapipe//mediapipe/framework/port:status_matchers",
+        "@mediapipe//mediapipe/framework/tool:sink",
+        "//third_party:openvino",
+        "@com_google_absl//absl/strings:str_format",
     ],
 )

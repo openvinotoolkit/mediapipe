@@ -1,6 +1,11 @@
-.github
 .git
-.vscode
-Dockerfile
-Dockerfile.openvino
-*.mp4
+bazel-*
+.configure.bazelrc
+.user.bazelrc
+MODULE.bazel.lock
+test-results
+gstreamer
+installer.sh
+LICENSE.txt
+*.tar.gz
+**/__pycache__

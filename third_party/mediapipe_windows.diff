@@ -1,0 +1,40 @@
+diff --git a/mediapipe/framework/legacy_calculator_support.cc b/mediapipe/framework/legacy_calculator_support.cc
+--- a/mediapipe/framework/legacy_calculator_support.cc
++++ b/mediapipe/framework/legacy_calculator_support.cc
+@@ -16,11 +16,20 @@
+ 
+ namespace mediapipe {
+ 
++// Must match the ABSL_CONST_INIT (constinit) on the declarations; MSVC enforces it.
++#ifndef __APPLE__
++#define MP_LEGACY_CONST_INIT ABSL_CONST_INIT
++#else
++#define MP_LEGACY_CONST_INIT
++#endif  // !__APPLE__
++
+ template <>
+-thread_local CalculatorContext*
++MP_LEGACY_CONST_INIT thread_local CalculatorContext*
+     LegacyCalculatorSupport::Scoped<CalculatorContext>::current_ = nullptr;
+ template <>
+-thread_local CalculatorContract*
++MP_LEGACY_CONST_INIT thread_local CalculatorContract*
+     LegacyCalculatorSupport::Scoped<CalculatorContract>::current_ = nullptr;
+ 
++#undef MP_LEGACY_CONST_INIT
++
+ }  // namespace mediapipe
+diff --git a/mediapipe/framework/port/advanced_proto_inc.h b/mediapipe/framework/port/advanced_proto_inc.h
+--- a/mediapipe/framework/port/advanced_proto_inc.h
++++ b/mediapipe/framework/port/advanced_proto_inc.h
+@@ -22,7 +22,10 @@
+ #include "google/protobuf/descriptor.pb.h"
+ #include "google/protobuf/descriptor_database.h"
+ #include "google/protobuf/dynamic_message.h"
++// Protobuf's Bazel build provides no zlib for MSVC, so gzip_stream.h is unusable there.
++#ifndef _MSC_VER
+ #include "google/protobuf/io/gzip_stream.h"
++#endif  // _MSC_VER
+ #include "google/protobuf/io/zero_copy_stream_impl.h"
+ #include "google/protobuf/message.h"
+ #include "mediapipe/framework/port.h"

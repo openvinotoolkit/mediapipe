@@ -34,10 +34,9 @@ set -e
 out_dir="."
 build_only=false
 run_only=false
-one_target=false
 app_dir="mediapipe/examples/desktop"
 bin_dir="bazel-bin"
-declare -a default_bazel_flags=(build -c opt  --sandbox_debug --define MEDIAPIPE_DISABLE_GPU=1 --define=MEDIAPIPE_DISABLE=1 --define=PYTHON_DISABLE=1 --cxxopt=-DPYTHON_DISABLE=1 --cxxopt=-DMEDIAPIPE_DISABLE=1 --define=USE_DROGON=1 --cxxopt=-DUSE_DROGON=1 --cxxopt=-std=c++17 --host_cxxopt=-std=c++17 --cxxopt=-D_GLIBCXX_USE_CXX11_ABI=1 --cxxopt=-DOVMS_DUMP_TO_FILE=0 --copt=-DGRPC_BAZEL_BUILD )
+declare -a default_bazel_flags=(build -c opt --define MEDIAPIPE_DISABLE_GPU=1)
 
 while [[ -n $1 ]]; do
   case $1 in
@@ -50,12 +49,6 @@ while [[ -n $1 ]]; do
       ;;
     -r)
       run_only=true
-      ;;
-    -t)
-      one_target=true
-      shift
-      one_target_name=$1
-      echo "one_target_name: $one_target_name"
       ;;
     *)
       echo "Unsupported input argument $1."
@@ -74,52 +67,26 @@ apps="${app_dir}/*"
 for app in ${apps}; do
   if [[ -d "${app}" ]]; then
     target_name=${app##*/}
-    if [[ "${target_name}" == "hello_world" ||
-          "${target_name}" == "hello_ovms" ]]; then
-      target="${app}:${target_name}"
-    elif [[ "${target_name}" == "media_sequence" ]]; then
-        target="${app}:${target_name}_demo"
-        echo "Skipping target ${target}"
-        continue
-    elif [[ "${target_name}" == "autoflip" ]]; then
-        target="${app}:run_${target_name}"
-    elif [[ "${target_name}" == "object_detection_3d" ]]; then
-        target="${app}:objectron_cpu"
-    elif [[ "${target_name}" == "object_detection" ]]; then
-        target="${app}:${target_name}_ovms"
-    elif [[ "${target_name}" == "template_matching" ]]; then
-        target="${app}:template_matching_tflite"
-    elif [[ "${target_name}" == "youtube8m" ]]; then
-        target="${app}:extract_yt8m_features"
-        echo "Skipping target ${target}"
-        continue
-    else
-      target="${app}:${target_name}_cpu"
+    if [[ "${target_name}" == "autoflip" ||
+          "${target_name}" == "hello_world" ||
+          "${target_name}" == "media_sequence" ||
+          "${target_name}" == "object_detection_3d" ||
+          "${target_name}" == "template_matching" ||
+          "${target_name}" == "youtube8m" ]]; then
+      continue
     fi
+    target="${app}:${target_name}_cpu"
 
-    echo "target_name:${target_name}"
-    echo "target:${target}"
-    if [[ $one_target == true ]]; then
-      if [[ "${target_name}" == "${one_target_name}" ]]; then
-        bazel_flags=("${default_bazel_flags[@]}")
-        bazel_flags+=(${target})
-        echo "BUILD COMMAND:bazelisk ${bazel_flags[@]}"
-        bazelisk "${bazel_flags[@]}"
-        exit 0
-      else
-        continue
-      fi
-    fi
+    echo "=== Target: ${target}"
 
     if [[ $run_only == false ]]; then
       bazel_flags=("${default_bazel_flags[@]}")
       bazel_flags+=(${target})
 
       bazelisk "${bazel_flags[@]}"
+      cp -f "${bin_dir}/${app}/"*"_cpu" "${out_dir}"
     fi
-
     if [[ $build_only == false ]]; then
-      cp -f "${bin_dir}/${app}/"*"" "${out_dir}"
       if  [[ ${target_name} == "object_tracking" ]]; then
         graph_name="tracking/object_detection_tracking"
       elif [[ ${target_name} == "upper_body_pose_tracking" ]]; then
