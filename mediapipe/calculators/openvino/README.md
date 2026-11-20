@@ -71,9 +71,14 @@ Node parameters (`OpenVINOSessionCalculatorOptions`):
 | `scale` | string | empty | A scalar, tuple, or array used to divide a single model input. |
 | `color_format` | string | empty | Incoming color format or conversion such as `RGB:BGR`. Supports `RGB`, `BGR`, `GRAY`, `NV12`, `NV12_2`, `I420`, and `I420_3`. |
 | `precision` | string | empty | Incoming precision or conversion such as `uint8:fp32`. Supports OVMS precision names including `fp32`, `uint8`, and `bf16`. |
+| `remote_context` | enum | `NONE` | `VA` (Linux) or `D3D11` (Windows): compile on a shared GPU device so `VIDEO_FRAME` surfaces are consumed without copies. Requires a `GPU` device and `--config=gst`. |
+| `va_render_node` | string | `/dev/dri/renderD128` | DRM render node used to create the VADisplay for `remote_context: VA`. |
 
 Contract: no input streams, no output streams, one output side packet
-`SESSION` of type `std::shared_ptr<OpenVINOSession>`.
+`SESSION` of type `std::shared_ptr<OpenVINOSession>`. With `remote_context`,
+an optional `DEVICE` input side packet (`void*`, a `VADisplay` or
+`ID3D11Device*` that outlives the graph) replaces the device the calculator
+would otherwise create and share between all sessions of the process.
 
 ```pbtxt
 node {
@@ -290,6 +295,62 @@ Outputs are currently always emitted as host `ov::Tensor`. To keep results on
 the device as well, bind a remote output tensor with `set_output_tensor()`
 using the pre-allocation pattern shown above.
 
+## Decoded video frames (`VIDEO_FRAME`, GStreamer)
+
+With `--config=gst`, `//mediapipe/calculators/gstreamer:gst_calculators`
+adds GStreamer-based video calculators built on the Intel MPI library
+(`mediapipe/calculators/gstreamer/mpi`). Frames are NV12 GPU surfaces (VA on
+Linux, D3D11 on Windows) carried in `GstVideoFramePacket`:
+
+| Calculator | Purpose |
+| --- | --- |
+| `GstVideoSourceCalculator` | Decodes a file or RTSP stream; `FRAME` at model resolution, optional `FRAME_FULL` for overlay. |
+| `OpenVINOInferenceCalculator` | `VIDEO_FRAME` input binds the surface as `<input>/y` and `<input>/uv` remote tensors. |
+| `SsdTensorToDetectionBoxesCalculator` | SSD `[1,1,N,7]` output to pixel `GstDetectionBoxes`; no GStreamer dependency. |
+| `GstDetectionOverlayCalculator` | Draws boxes in place on host NV12 or VA surfaces. |
+| `GstVideoSinkCalculator` | H.264 encode to MP4 or RTSP; GPU surfaces are encoded without copies. |
+
+The session must compile the model for NV12 surfaces on the decoder's device,
+and the source takes the same `SESSION` so that GStreamer decodes on it:
+
+```pbtxt
+node {
+  calculator: "OpenVINOSessionCalculator"
+  output_side_packet: "SESSION:session"
+  node_options: {
+    [type.googleapis.com/mediapipe.OpenVINOSessionCalculatorOptions] {
+      model_path: "/models/face-detection-adas-0001.xml"
+      device: "GPU"
+      remote_context: VA
+      layout: "NHWC:NCHW"
+      color_format: "NV12_2:BGR"
+      precision: "u8:fp32"
+    }
+  }
+}
+node {
+  calculator: "GstVideoSourceCalculator"
+  input_side_packet: "SESSION:session"
+  input_side_packet: "VIDEO_PATH:video_path"
+  input_side_packet: "WIDTH:width"
+  input_side_packet: "HEIGHT:height"
+  output_stream: "FRAME:frame"
+}
+node {
+  calculator: "OpenVINOInferenceCalculator"
+  input_side_packet: "SESSION:session"
+  input_stream: "VIDEO_FRAME:frame"
+  output_stream: "TENSORS:detections"
+}
+```
+
+`WIDTH`/`HEIGHT` must match the model input. On Linux GStreamer is loaded with
+`dlopen` at runtime and needs the VA plugin and the Intel media driver. The
+`Dockerfile` builds GStreamer 1.26 from source (`setup_gstreamer.sh`);
+`--build-arg GSTREAMER_SOURCE=apt` uses Ubuntu's 1.24.2 packages instead, whose
+`vapostproc` crashes when scaling VA frames into system memory (host
+`FRAME_FULL` at a size other than the source).
+
 Building for GPU: `third_party/openvino.BUILD` excludes
 `libopenvino_intel_gpu_plugin.so` from linking because it needs
 `libOpenCL.so.1`, which is not part of the archive. Install an OpenCL ICD
@@ -398,6 +459,11 @@ bazel test -c opt --define MEDIAPIPE_DISABLE_GPU=1 \
   //mediapipe/calculators/openvino:openvino_calculators_concurrency_test \
   --test_output=all
 ```
+
+`make gst_tests` additionally runs
+`//mediapipe/calculators/gstreamer:gst_video_gpu_test` with `--config=gst`. It
+decodes, infers, overlays and encodes a clip generated with `ffmpeg`, and skips
+without a VA/D3D11-capable GPU. Run the container with `--device /dev/dri`.
 
 ## See also
 

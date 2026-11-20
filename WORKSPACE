@@ -2,6 +2,7 @@ workspace(name = "mediapipe_openvino")
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("//third_party:local_opencv.bzl", "local_opencv")
+load("//third_party:local_gstreamer.bzl", "local_gstreamer")
 
 http_archive(
     name = "mediapipe",
@@ -545,6 +546,21 @@ local_opencv(
     name = "linux_opencv",
     build_file = "@//third_party:opencv_linux.BUILD",
     default_path = "/usr/local",
+)
+
+# GStreamer headers for //mediapipe/calculators/gstreamer:*, only used with
+# --config=gst. Linux prefers the source build in /opt/gstreamer (see
+# setup_gstreamer.sh), then Ubuntu packages in /usr; GSTREAMER_PREFIX overrides.
+local_gstreamer(
+    name = "linux_gstreamer",
+    build_file = "@//third_party:gstreamer_linux.BUILD",
+    default_paths = ["/opt/gstreamer"],
+)
+
+new_local_repository(
+    name = "windows_gstreamer",
+    build_file = "@//third_party:gstreamer_windows.BUILD",
+    path = "C:/opt/gstreamer/1.0/msvc_x86_64",
 )
 
 new_local_repository(

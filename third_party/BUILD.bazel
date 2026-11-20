@@ -10,6 +10,26 @@ alias(
     }),
 )
 
+# Enabled with --config=gst (--define=OPENVINO_GSTREAMER=1).
+config_setting(
+    name = "gstreamer_enabled",
+    define_values = {"OPENVINO_GSTREAMER": "1"},
+)
+
+config_setting(
+    name = "gstreamer_enabled_windows",
+    constraint_values = ["@platforms//os:windows"],
+    define_values = {"OPENVINO_GSTREAMER": "1"},
+)
+
+alias(
+    name = "gstreamer",
+    actual = select({
+        "@mediapipe//mediapipe:windows": "@windows_gstreamer//:gstreamer",
+        "//conditions:default": "@linux_gstreamer//:gstreamer",
+    }),
+)
+
 filegroup(
     name = "windows_openvino_runtime_dlls",
     srcs = select({

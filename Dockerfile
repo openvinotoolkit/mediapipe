@@ -1,3 +1,21 @@
+# GStreamer for //mediapipe/calculators/gstreamer (--config=gst), dlopen()-ed
+# at runtime. GSTREAMER_SOURCE=build (default) builds 1.26 from source into
+# /opt/gstreamer; GSTREAMER_SOURCE=apt installs Ubuntu's 1.24.2 instead.
+# WARNING: Ubuntu's 1.24.2 vapostproc crashes (GLib "failed to allocate") when
+# scaling VA frames into system memory, e.g. GstVideoSourceCalculator
+# FRAME_FULL host frames at a size other than the source. GPU surface paths
+# work with both versions.
+FROM ubuntu:24.04 AS gstreamer
+ARG GSTREAMER_SOURCE=build
+ARG GST_VERSION=1.26.2
+ARG JOBS=16
+COPY setup_gstreamer.sh /tmp/setup_gstreamer.sh
+RUN if [ "${GSTREAMER_SOURCE}" = build ]; then \
+        GST_VERSION="${GST_VERSION}" JOBS="${JOBS}" /tmp/setup_gstreamer.sh; \
+    else \
+        mkdir -p /opt/gstreamer; \
+    fi
+
 FROM ubuntu:24.04 AS dependencies
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -9,6 +27,30 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 COPY install_drivers.sh /usr/local/bin/install_drivers.sh
 RUN /usr/local/bin/install_drivers.sh
+
+# The VA driver comes from Intel's GPU repository: Ubuntu's iHD build crashes
+# with the gmmlib installed by install_drivers.sh.
+ARG GSTREAMER_SOURCE=build
+COPY --from=gstreamer /opt/gstreamer /opt/gstreamer
+RUN apt-get update && apt-get install -y --no-install-recommends gnupg && \
+    curl --fail --location --retry 3 https://repositories.intel.com/gpu/intel-graphics.key | \
+    gpg --dearmor --output /usr/share/keyrings/intel-graphics.gpg && \
+    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/intel-graphics.gpg] https://repositories.intel.com/gpu/ubuntu noble client" \
+    > /etc/apt/sources.list.d/intel-gpu-noble.list && \
+    apt-get update && apt-get install -y --no-install-recommends \
+    intel-media-va-driver-non-free libdrm2 libglib2.0-0t64 libva-dev \
+    libva-drm2 libva2 && \
+    if [ "${GSTREAMER_SOURCE}" = build ]; then \
+        echo /opt/gstreamer/lib > /etc/ld.so.conf.d/gstreamer.conf && ldconfig; \
+    else \
+        apt-get install -y --no-install-recommends gstreamer1.0-libav \
+        gstreamer1.0-plugins-bad gstreamer1.0-plugins-base \
+        gstreamer1.0-plugins-good gstreamer1.0-rtsp \
+        libgstreamer-plugins-bad1.0-0 libgstreamer-plugins-base1.0-dev \
+        libgstreamer1.0-dev; \
+    fi && rm -rf /var/lib/apt/lists/*
+ENV PATH="/opt/gstreamer/bin:${PATH}"
+ENV GST_PLUGIN_PATH=/opt/gstreamer/lib/gstreamer-1.0
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-dev python3-pip python3-setuptools python3-wheel python3.12 \

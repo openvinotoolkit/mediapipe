@@ -22,11 +22,15 @@ BAZEL_CMD = $(BAZEL) $(BAZEL_STARTUP_FLAGS)
 CALCULATORS := //mediapipe/calculators/openvino:openvino_calculators
 EXAMPLE := //mediapipe/examples/desktop/openvino_classification:openvino_classification
 UNIT_TESTS := //mediapipe/calculators/openvino:openvino_session_calculator_test \
-              //mediapipe/calculators/openvino:openvino_calculators_concurrency_test
+              //mediapipe/calculators/openvino:openvino_calculators_concurrency_test \
+              //mediapipe/calculators/gstreamer:gst_calculators_test
 EXAMPLE_TEST := //mediapipe/examples/desktop/openvino_classification:openvino_classification_test
 PYTHON_DEMO := //mediapipe/python/openvino:openvino_classification_demo
+GST_FLAGS := --config=gst
+GST_CALCULATORS := //mediapipe/calculators/gstreamer:gst_calculators
+GST_TESTS := //mediapipe/calculators/gstreamer:gst_video_gpu_test
 
-.PHONY: all build tests test example-tests python clean docker_build ovms_demos_image release_image test_release_image tests_in_docker run_demos_in_docker
+.PHONY: all build tests test example-tests python gst_build gst_tests clean docker_build ovms_demos_image release_image test_release_image tests_in_docker run_demos_in_docker
 
 all: build tests example-tests
 
@@ -43,6 +47,12 @@ example-tests:
 
 python:
 	$(BAZEL_CMD) build --jobs=$(JOBS) $(BAZEL_FLAGS) $(PYTHON_DEMO)
+
+gst_build:
+	$(BAZEL_CMD) build --jobs=$(JOBS) $(GST_FLAGS) $(BAZEL_FLAGS) $(GST_CALCULATORS)
+
+gst_tests:
+	$(BAZEL_CMD) test --jobs=$(JOBS) --test_output=errors $(GST_FLAGS) $(BAZEL_FLAGS) $(UNIT_TESTS) $(GST_TESTS)
 
 clean:
 	$(BAZEL_CMD) clean
