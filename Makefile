@@ -8,6 +8,8 @@ OVMS_MEDIA_IMAGE_TAG ?= local
 IMAGE ?= mediapipe-openvino:$(OVMS_MEDIA_IMAGE_TAG)
 DEMOS_IMAGE ?= mediapipe-openvino-demos:$(OVMS_MEDIA_IMAGE_TAG)
 RUNTIME_IMAGE ?= mediapipe-openvino-runtime:$(OVMS_MEDIA_IMAGE_TAG)
+DOCKER_BUILD_ARGS := --build-arg JOBS=$(JOBS) --build-arg http_proxy="$(http_proxy)" \
+                     --build-arg https_proxy="$(https_proxy)" --build-arg no_proxy="$(no_proxy)"
 
 ifeq ($(OS),Windows_NT)
 SHELL := bash.exe
@@ -58,13 +60,13 @@ clean:
 	$(BAZEL_CMD) clean
 
 docker_build:
-	$(DOCKER) build --target builder --build-arg JOBS=$(JOBS) -t $(IMAGE) .
+	$(DOCKER) build --target builder $(DOCKER_BUILD_ARGS) -t $(IMAGE) .
 
 ovms_demos_image:
-	$(DOCKER) build --target demos --build-arg JOBS=$(JOBS) -t $(DEMOS_IMAGE) .
+	$(DOCKER) build --target demos $(DOCKER_BUILD_ARGS) -t $(DEMOS_IMAGE) .
 
 release_image:
-	$(DOCKER) build --target release --build-arg JOBS=$(JOBS) -t $(RUNTIME_IMAGE) .
+	$(DOCKER) build --target release $(DOCKER_BUILD_ARGS) -t $(RUNTIME_IMAGE) .
 
 test_release_image:
 	mkdir -p test-results
