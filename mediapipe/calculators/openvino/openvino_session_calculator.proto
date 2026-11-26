@@ -77,4 +77,19 @@ message OpenVINOSessionCalculatorOptions {
 
   // Tensor/model element type, e.g. "uint8:fp32".
   optional string precision = 11;
+
+  // GPU device sharing for zero-copy video frames. Requires a GPU device and
+  // a build with --config=gst. When the DEVICE input side packet is absent
+  // the calculator creates (and shares between sessions) its own VADisplay or
+  // ID3D11Device. With color_format "NV12_2:...", the model input accepts
+  // GPU surfaces, bound as "<input>/y" and "<input>/uv".
+  enum RemoteContext {
+    NONE = 0;
+    VA = 1;     // Linux VA-API.
+    D3D11 = 2;  // Windows Direct3D 11.
+  }
+  optional RemoteContext remote_context = 12 [default = NONE];
+
+  // DRM render node used to create the VADisplay for remote_context VA.
+  optional string va_render_node = 13 [default = "/dev/dri/renderD128"];
 }

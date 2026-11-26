@@ -8,6 +8,11 @@ OVMS_MEDIA_IMAGE_TAG ?= local
 IMAGE ?= mediapipe-openvino:$(OVMS_MEDIA_IMAGE_TAG)
 DEMOS_IMAGE ?= mediapipe-openvino-demos:$(OVMS_MEDIA_IMAGE_TAG)
 RUNTIME_IMAGE ?= mediapipe-openvino-runtime:$(OVMS_MEDIA_IMAGE_TAG)
+DOCKER_BUILD_ARGS := --build-arg JOBS=$(JOBS) --build-arg http_proxy="$(http_proxy)" \
+                     --build-arg https_proxy="$(https_proxy)" --build-arg no_proxy="$(no_proxy)"
+# Passed only when set, so the defaults live in the Dockerfile.
+DOCKER_BUILD_ARGS += $(foreach arg,GSTREAMER_SOURCE MEDIA_DRIVER_SOURCE MEDIA_DRIVER_VERSION,\
+                       $(if $($(arg)),--build-arg $(arg)="$($(arg))"))
 
 ifeq ($(OS),Windows_NT)
 SHELL := bash.exe
@@ -22,11 +27,15 @@ BAZEL_CMD = $(BAZEL) $(BAZEL_STARTUP_FLAGS)
 CALCULATORS := //mediapipe/calculators/openvino:openvino_calculators
 EXAMPLE := //mediapipe/examples/desktop/openvino_classification:openvino_classification
 UNIT_TESTS := //mediapipe/calculators/openvino:openvino_session_calculator_test \
-              //mediapipe/calculators/openvino:openvino_calculators_concurrency_test
+              //mediapipe/calculators/openvino:openvino_calculators_concurrency_test \
+              //mediapipe/calculators/gstreamer:gst_calculators_test
 EXAMPLE_TEST := //mediapipe/examples/desktop/openvino_classification:openvino_classification_test
 PYTHON_DEMO := //mediapipe/python/openvino:openvino_classification_demo
+GST_FLAGS := --config=gst
+GST_CALCULATORS := //mediapipe/calculators/gstreamer:gst_calculators
+GST_TESTS := //mediapipe/calculators/gstreamer:gst_video_gpu_test
 
-.PHONY: all build tests test example-tests python clean docker_build ovms_demos_image release_image test_release_image tests_in_docker run_demos_in_docker
+.PHONY: all build tests test example-tests python gst_build gst_tests clean docker_build ovms_demos_image release_image test_release_image tests_in_docker run_demos_in_docker
 
 all: build tests example-tests
 
@@ -44,17 +53,23 @@ example-tests:
 python:
 	$(BAZEL_CMD) build --jobs=$(JOBS) $(BAZEL_FLAGS) $(PYTHON_DEMO)
 
+gst_build:
+	$(BAZEL_CMD) build --jobs=$(JOBS) $(GST_FLAGS) $(BAZEL_FLAGS) $(GST_CALCULATORS)
+
+gst_tests:
+	$(BAZEL_CMD) test --jobs=$(JOBS) --test_output=errors $(GST_FLAGS) $(BAZEL_FLAGS) $(UNIT_TESTS) $(GST_TESTS)
+
 clean:
 	$(BAZEL_CMD) clean
 
 docker_build:
-	$(DOCKER) build --target builder --build-arg JOBS=$(JOBS) -t $(IMAGE) .
+	$(DOCKER) build --target builder $(DOCKER_BUILD_ARGS) -t $(IMAGE) .
 
 ovms_demos_image:
-	$(DOCKER) build --target demos --build-arg JOBS=$(JOBS) -t $(DEMOS_IMAGE) .
+	$(DOCKER) build --target demos $(DOCKER_BUILD_ARGS) -t $(DEMOS_IMAGE) .
 
 release_image:
-	$(DOCKER) build --target release --build-arg JOBS=$(JOBS) -t $(RUNTIME_IMAGE) .
+	$(DOCKER) build --target release $(DOCKER_BUILD_ARGS) -t $(RUNTIME_IMAGE) .
 
 test_release_image:
 	mkdir -p test-results

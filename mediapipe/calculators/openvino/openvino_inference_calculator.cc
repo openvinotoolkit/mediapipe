@@ -13,19 +13,25 @@
 // limitations under the License.
 
 #include <algorithm>
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <utility>
+#include <variant>
 #include <vector>
 
+#include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
+#include "mediapipe/calculators/gstreamer/gst_video_frame_packet.h"
 #include "mediapipe/calculators/openvino/openvino_infer_request_queue.h"
 #include "mediapipe/calculators/openvino/openvino_inference_calculator.pb.h"
 #include "mediapipe/calculators/openvino/openvino_session.h"
 #include "mediapipe/framework/calculator_framework.h"
 #include "mediapipe/framework/port/ret_check.h"
 #include "mediapipe/framework/port/status.h"
+#include "mediapipe/framework/port/status_macros.h"
 #include "openvino/openvino.hpp"
+#include "openvino/runtime/intel_gpu/remote_properties.hpp"
 
 namespace mediapipe {
 namespace {
@@ -33,10 +39,12 @@ namespace {
 using ::mediapipe::openvino_calculators::InferRequestLease;
 using ::mediapipe::openvino_calculators::OpenVINOSession;
 using ::mediapipe::openvino_calculators::OpenVINOSessionPtr;
+using ::mediapipe::openvino_calculators::RemoteDeviceType;
 
 constexpr char kSessionTag[] = "SESSION";
 constexpr char kTensorsTag[] = "TENSORS";
 constexpr char kRemoteTensorsTag[] = "REMOTE_TENSORS";
+constexpr char kVideoFrameTag[] = "VIDEO_FRAME";
 
 bool ContainsName(const std::vector<std::string> &names,
                   const std::string &name) {
@@ -54,9 +62,15 @@ ov::Tensor CopyTensor(const ov::Tensor &source) {
 // Runs inference on a pool of ov::InferRequest objects shared through the
 // SESSION side packet produced by OpenVINOSessionCalculator.
 //
-// Inputs are either one tensor vector (TENSORS or REMOTE_TENSORS) or multiple
-// individually tagged ov::Tensor streams. Named streams are bound to model
-// input names with tag_to_input_tensor_names.
+// Inputs are either one tensor vector (TENSORS or REMOTE_TENSORS), one
+// decoded GPU video frame (VIDEO_FRAME) or multiple individually tagged
+// ov::Tensor streams. Named streams are bound to model input names with
+// tag_to_input_tensor_names.
+//
+// VIDEO_FRAME (GstVideoFramePacket) wraps the NV12 VA surface or D3D11
+// texture without copies. It requires a SESSION compiled with remote_context
+// and color_format "NV12_2:...", whose model inputs are "<input>/y" and
+// "<input>/uv".
 //
 // Side inputs:
 //   SESSION - std::shared_ptr<OpenVINOSession>
@@ -75,9 +89,14 @@ public:
   static absl::Status GetContract(CalculatorContract *cc) {
     const bool has_tensors = cc->Inputs().HasTag(kTensorsTag);
     const bool has_remote_tensors = cc->Inputs().HasTag(kRemoteTensorsTag);
-    RET_CHECK(!(has_tensors && has_remote_tensors))
-        << "Connect only one of TENSORS or REMOTE_TENSORS";
-    const bool has_vector_input = has_tensors || has_remote_tensors;
+    const bool has_video_frame = cc->Inputs().HasTag(kVideoFrameTag);
+    RET_CHECK_LE(static_cast<int>(has_tensors) +
+                     static_cast<int>(has_remote_tensors) +
+                     static_cast<int>(has_video_frame),
+                 1)
+        << "Connect only one of TENSORS, REMOTE_TENSORS or VIDEO_FRAME";
+    const bool has_vector_input =
+        has_tensors || has_remote_tensors || has_video_frame;
     RET_CHECK(has_vector_input || cc->Inputs().NumEntries() > 0)
         << "OpenVINOInferenceCalculator requires input streams";
     if (has_vector_input) {
@@ -88,6 +107,8 @@ public:
       cc->Inputs().Tag(kTensorsTag).Set<std::vector<ov::Tensor>>();
     } else if (has_remote_tensors) {
       cc->Inputs().Tag(kRemoteTensorsTag).Set<std::vector<ov::RemoteTensor>>();
+    } else if (has_video_frame) {
+      cc->Inputs().Tag(kVideoFrameTag).Set<GstVideoFramePacket>();
     } else {
       RET_CHECK(!cc->Inputs().GetTags().empty())
           << "Named tensor input streams must have tags";
@@ -133,8 +154,26 @@ public:
     output_order_.assign(options.output_order().begin(),
                          options.output_order().end());
 
-    if (cc->Inputs().HasTag(kTensorsTag) ||
-        cc->Inputs().HasTag(kRemoteTensorsTag)) {
+    if (cc->Inputs().HasTag(kVideoFrameTag)) {
+      RET_CHECK(input_order_.empty() &&
+                options.tag_to_input_tensor_names().empty())
+          << "VIDEO_FRAME binds model inputs automatically";
+      RET_CHECK(session_->remote_device_type != RemoteDeviceType::kNone)
+          << "VIDEO_FRAME requires a SESSION compiled with remote_context";
+      for (const std::string &name : session_->input_names) {
+        if (absl::EndsWith(name, "/y")) {
+          input_order_.insert(input_order_.begin(), name);
+        } else if (absl::EndsWith(name, "/uv")) {
+          input_order_.push_back(name);
+        }
+      }
+      RET_CHECK(session_->input_names.size() == 2 &&
+                input_order_.size() == 2 &&
+                absl::EndsWith(input_order_[0], "/y"))
+          << "VIDEO_FRAME requires a model with one NV12 two-plane input; "
+             "set color_format \"NV12_2:BGR\" on the session";
+    } else if (cc->Inputs().HasTag(kTensorsTag) ||
+               cc->Inputs().HasTag(kRemoteTensorsTag)) {
       RET_CHECK(options.tag_to_input_tensor_names().empty())
           << "Use input_order with vector input streams";
       RET_CHECK(input_order_.empty() ||
@@ -202,8 +241,15 @@ public:
     // can be bound to an infer request through the same API.
     std::vector<ov::Tensor> inputs;
     const bool has_vector_input = cc->Inputs().HasTag(kTensorsTag) ||
-                                  cc->Inputs().HasTag(kRemoteTensorsTag);
-    if (cc->Inputs().HasTag(kTensorsTag)) {
+                                  cc->Inputs().HasTag(kRemoteTensorsTag) ||
+                                  cc->Inputs().HasTag(kVideoFrameTag);
+    if (cc->Inputs().HasTag(kVideoFrameTag)) {
+      if (cc->Inputs().Tag(kVideoFrameTag).IsEmpty())
+        return absl::OkStatus();
+      ABSL_RETURN_IF_ERROR(WrapVideoFrame(
+          cc->Inputs().Tag(kVideoFrameTag).Get<GstVideoFramePacket>(),
+          &inputs));
+    } else if (cc->Inputs().HasTag(kTensorsTag)) {
       if (cc->Inputs().Tag(kTensorsTag).IsEmpty())
         return absl::OkStatus();
       inputs = cc->Inputs().Tag(kTensorsTag).Get<std::vector<ov::Tensor>>();
@@ -286,6 +332,52 @@ public:
   }
 
 private:
+  // Wraps the NV12 GPU surface of `frame` as Y and UV remote tensors on the
+  // session's shared context.
+  absl::Status WrapVideoFrame(const GstVideoFramePacket &frame,
+                              std::vector<ov::Tensor> *planes) {
+    RET_CHECK(frame.width > 0 && frame.height > 0 && frame.width % 2 == 0 &&
+              frame.height % 2 == 0)
+        << "Invalid NV12 frame size " << frame.width << "x" << frame.height;
+    ov::AnyMap params{{ov::intel_gpu::shared_mem_type.name(),
+                       ov::intel_gpu::SharedMemType::VA_SURFACE}};
+#ifdef _WIN32
+    const auto *d3d11 = std::get_if<D3D11Frame>(&frame.resource);
+    RET_CHECK(d3d11 != nullptr && d3d11->texture_handle != 0)
+        << "VIDEO_FRAME must carry a D3D11 texture on Windows";
+    RET_CHECK(session_->remote_device_type == RemoteDeviceType::kD3D11)
+        << "D3D11 frames require a session with remote_context D3D11";
+    RET_CHECK_EQ(d3d11->subresource, 0u)
+        << "D3D11 texture array slices are not importable by OpenVINO";
+    params[ov::intel_gpu::dev_object_handle.name()] =
+        reinterpret_cast<ov::intel_gpu::gpu_handle_param>(
+            d3d11->texture_handle);
+#else
+    const auto *va = std::get_if<VaSurfaceFrame>(&frame.resource);
+    RET_CHECK(va != nullptr) << "VIDEO_FRAME must carry a VA surface on Linux";
+    RET_CHECK(session_->remote_device_type == RemoteDeviceType::kVa)
+        << "VA frames require a session with remote_context VA";
+    RET_CHECK(va->display == nullptr || va->display == session_->remote_device)
+        << "VIDEO_FRAME was decoded on a different VADisplay than the session "
+           "uses; connect the SESSION side packet to the video source";
+    params[ov::intel_gpu::dev_object_handle.name()] = va->surface_id;
+#endif
+    const size_t height = static_cast<size_t>(frame.height);
+    const size_t width = static_cast<size_t>(frame.width);
+    try {
+      params[ov::intel_gpu::va_plane.name()] = uint32_t(0);
+      planes->push_back(session_->remote_context.create_tensor(
+          ov::element::u8, {1, height, width, 1}, params));
+      params[ov::intel_gpu::va_plane.name()] = uint32_t(1);
+      planes->push_back(session_->remote_context.create_tensor(
+          ov::element::u8, {1, height / 2, width / 2, 2}, params));
+    } catch (const std::exception &e) {
+      return absl::InternalError(absl::StrCat(
+          "OpenVINOInferenceCalculator cannot wrap VIDEO_FRAME: ", e.what()));
+    }
+    return absl::OkStatus();
+  }
+
   OpenVINOSessionPtr session_;
   std::vector<std::string> input_order_;
   std::vector<std::string> output_order_;

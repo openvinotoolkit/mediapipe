@@ -21,6 +21,9 @@ build --java_runtime_version=remotejdk_21
 build --tool_java_runtime_version=remotejdk_21
 build --define=DISABLE_HUGGINGFACE_TOKENIZER=1
 
+# GStreamer video calculators and GPU remote context support.
+build:gst --define=OPENVINO_GSTREAMER=1
+
 # Enable stack traces
 test --test_env="GTEST_INSTALL_FAILURE_SIGNAL_HANDLER=1"
 

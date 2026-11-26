@@ -25,13 +25,17 @@
 namespace mediapipe {
 namespace openvino_calculators {
 
+enum class RemoteDeviceType { kNone, kVa, kD3D11 };
+
 // A compiled OpenVINO model together with the pool of inference requests that
 // serve it. Instances are shared (via std::shared_ptr side packets) between
 // every graph that declares the same model_path/device/plugin_config, so that
 // concurrently running graphs reuse one compiled model and one request queue.
 struct OpenVINOSession {
-  OpenVINOSession(ov::CompiledModel compiled, int nireq)
-      : compiled_model(std::move(compiled)),
+  OpenVINOSession(ov::CompiledModel compiled, int nireq,
+                  std::shared_ptr<void> device_owner = nullptr)
+      : remote_device_owner(std::move(device_owner)),
+        compiled_model(std::move(compiled)),
         infer_requests(compiled_model, nireq) {
     for (const auto& input : compiled_model.inputs()) {
       input_names.push_back(input.get_names().empty() ? std::string()
@@ -43,10 +47,19 @@ struct OpenVINOSession {
     }
   }
 
+  // Keeps a calculator-created remote_device alive. Declared first so that it
+  // is destroyed after the compiled model and requests that use the device.
+  std::shared_ptr<void> remote_device_owner;
   ov::CompiledModel compiled_model;
   OVInferRequestsQueue infer_requests;
   std::vector<std::string> input_names;
   std::vector<std::string> output_names;
+
+  // Set when the model is compiled on a shared GPU device: the context used
+  // to wrap decoded surfaces, and the VADisplay or ID3D11Device* behind it.
+  RemoteDeviceType remote_device_type = RemoteDeviceType::kNone;
+  ov::RemoteContext remote_context;
+  void* remote_device = nullptr;
 };
 
 using OpenVINOSessionPtr = std::shared_ptr<OpenVINOSession>;

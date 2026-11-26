@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <cstdint>
 #include <map>
 #include <memory>
 #include <mutex>
@@ -21,7 +22,9 @@
 #include <vector>
 
 #include "absl/log/absl_log.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/ascii.h"
+#include "absl/strings/match.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
@@ -35,14 +38,29 @@
 #include "openvino/core/layout.hpp"
 #include "openvino/core/preprocess/pre_post_process.hpp"
 #include "openvino/openvino.hpp"
+#include "openvino/runtime/intel_gpu/properties.hpp"
+#include "openvino/runtime/intel_gpu/remote_properties.hpp"
+
+#ifdef MEDIAPIPE_OPENVINO_REMOTE_DEVICE
+#ifdef _WIN32
+#include <d3d11.h>
+#else
+#include <fcntl.h>
+#include <unistd.h>
+#include <va/va.h>
+#include <va/va_drm.h>
+#endif
+#endif
 
 namespace mediapipe {
 namespace {
 
 using ::mediapipe::openvino_calculators::OpenVINOSession;
 using ::mediapipe::openvino_calculators::OpenVINOSessionPtr;
+using ::mediapipe::openvino_calculators::RemoteDeviceType;
 
 constexpr char kSessionTag[] = "SESSION";
+constexpr char kDeviceTag[] = "DEVICE";
 
 // Process-wide ov::Core. Creating more than one is wasteful and defeats the
 // model caching that the plugins do internally.
@@ -305,7 +323,17 @@ std::shared_ptr<ov::Model> PrepareModel(
     auto& input = preprocessor.input();
     if (!options.color_format().empty()) {
       const auto formats = ParsePair(options.color_format(), "color_format");
-      input.tensor().set_color_format(ParseColorFormat(formats[0]));
+      const ov::preprocess::ColorFormat tensor_format =
+          ParseColorFormat(formats[0]);
+      if (tensor_format == ov::preprocess::ColorFormat::NV12_TWO_PLANES) {
+        input.tensor().set_color_format(tensor_format, {"y", "uv"});
+      } else {
+        input.tensor().set_color_format(tensor_format);
+      }
+      if (tensor_format == ov::preprocess::ColorFormat::NV12_TWO_PLANES &&
+          options.remote_context() != OpenVINOSessionCalculatorOptions::NONE) {
+        input.tensor().set_memory_type(ov::intel_gpu::memory_type::surface);
+      }
       if (formats.size() == 2) {
         input.preprocess().convert_color(ParseColorFormat(formats[1]));
       }
@@ -335,6 +363,98 @@ std::shared_ptr<ov::Model> PrepareModel(
   return model;
 }
 
+RemoteDeviceType ToRemoteDeviceType(
+    OpenVINOSessionCalculatorOptions::RemoteContext remote_context) {
+  switch (remote_context) {
+    case OpenVINOSessionCalculatorOptions::VA:
+      return RemoteDeviceType::kVa;
+    case OpenVINOSessionCalculatorOptions::D3D11:
+      return RemoteDeviceType::kD3D11;
+    default:
+      return RemoteDeviceType::kNone;
+  }
+}
+
+#ifdef MEDIAPIPE_OPENVINO_REMOTE_DEVICE
+#ifdef _WIN32
+absl::StatusOr<std::shared_ptr<void>> CreateD3D11Device() {
+  ID3D11Device* device = nullptr;
+  D3D_FEATURE_LEVEL feature_level{};
+  const HRESULT hr = D3D11CreateDevice(
+      nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr,
+      D3D11_CREATE_DEVICE_VIDEO_SUPPORT, nullptr, 0, D3D11_SDK_VERSION,
+      &device, &feature_level, nullptr);
+  if (FAILED(hr) || device == nullptr) {
+    return absl::UnavailableError("Cannot create a D3D11 video device");
+  }
+  return std::shared_ptr<void>(
+      device, [](void* d) { static_cast<ID3D11Device*>(d)->Release(); });
+}
+#else
+struct VaDisplayOwner {
+  ~VaDisplayOwner() {
+    if (display != nullptr) vaTerminate(display);
+    if (fd >= 0) close(fd);
+  }
+  int fd = -1;
+  VADisplay display = nullptr;
+};
+
+absl::StatusOr<std::shared_ptr<void>> CreateVaDisplay(
+    const std::string& render_node) {
+  auto owner = std::make_shared<VaDisplayOwner>();
+  owner->fd = open(render_node.c_str(), O_RDWR);
+  if (owner->fd < 0) {
+    return absl::UnavailableError(
+        absl::StrCat("Cannot open VA render node ", render_node));
+  }
+  VADisplay display = vaGetDisplayDRM(owner->fd);
+  if (display == nullptr) {
+    return absl::UnavailableError(
+        absl::StrCat("Cannot create VADisplay for ", render_node));
+  }
+  int major = 0;
+  int minor = 0;
+  if (vaInitialize(display, &major, &minor) != VA_STATUS_SUCCESS) {
+    return absl::UnavailableError(
+        absl::StrCat("Cannot initialize VADisplay for ", render_node));
+  }
+  owner->display = display;
+  return std::shared_ptr<void>(owner, display);
+}
+#endif
+
+// One device per render node (or one D3D11 device) for the whole process, so
+// that every session and video source works on the same GPU device. Must be
+// called with SessionRegistryMutex held.
+absl::StatusOr<std::shared_ptr<void>> AcquireRemoteDevice(
+    const OpenVINOSessionCalculatorOptions& options) {
+  static auto* devices = new std::map<std::string, std::weak_ptr<void>>();
+#ifdef _WIN32
+  if (options.remote_context() != OpenVINOSessionCalculatorOptions::D3D11) {
+    return absl::InvalidArgumentError("Windows supports remote_context D3D11");
+  }
+  const std::string key = "d3d11";
+#else
+  if (options.remote_context() != OpenVINOSessionCalculatorOptions::VA) {
+    return absl::InvalidArgumentError("Linux supports remote_context VA");
+  }
+  const std::string key = absl::StrCat("va:", options.va_render_node());
+#endif
+  if (std::shared_ptr<void> existing = (*devices)[key].lock()) {
+    return existing;
+  }
+#ifdef _WIN32
+  absl::StatusOr<std::shared_ptr<void>> device = CreateD3D11Device();
+#else
+  absl::StatusOr<std::shared_ptr<void>> device =
+      CreateVaDisplay(options.va_render_node());
+#endif
+  if (device.ok()) (*devices)[key] = *device;
+  return device;
+}
+#endif  // MEDIAPIPE_OPENVINO_REMOTE_DEVICE
+
 }  // namespace
 
 // Compiles a model with OpenVINO and publishes it, together with a queue of
@@ -342,7 +462,12 @@ std::shared_ptr<ov::Model> PrepareModel(
 // OpenVINOInferenceCalculator.
 //
 // Node parameters: model_path, device, plugin_config, num_infer_requests,
-// shape, batch_size, layout, mean, scale, color_format, precision.
+// shape, batch_size, layout, mean, scale, color_format, precision,
+// remote_context, va_render_node.
+//
+// Optional input side packet DEVICE (void*): externally owned VADisplay or
+// ID3D11Device* used with remote_context instead of creating one. It must
+// outlive the session.
 //
 //   node {
 //     calculator: "OpenVINOSessionCalculator"
@@ -364,12 +489,35 @@ class OpenVINOSessionCalculator : public CalculatorBase {
     const auto& options = cc->Options<OpenVINOSessionCalculatorOptions>();
     RET_CHECK(!options.model_path().empty())
         << "OpenVINOSessionCalculator requires model_path";
+    if (cc->InputSidePackets().HasTag(kDeviceTag)) {
+      RET_CHECK(options.remote_context() !=
+                OpenVINOSessionCalculatorOptions::NONE)
+          << "DEVICE side packet requires remote_context";
+      cc->InputSidePackets().Tag(kDeviceTag).Set<void*>();
+    }
     return absl::OkStatus();
   }
 
   absl::Status Open(CalculatorContext* cc) override {
     const auto& options = cc->Options<OpenVINOSessionCalculatorOptions>();
-    const std::string key = BuildSessionKey(options);
+    const bool use_remote_context =
+        options.remote_context() != OpenVINOSessionCalculatorOptions::NONE;
+#ifndef MEDIAPIPE_OPENVINO_REMOTE_DEVICE
+    RET_CHECK(!use_remote_context)
+        << "remote_context requires a build with --config=gst";
+#endif
+    RET_CHECK(!use_remote_context || absl::StartsWith(options.device(), "GPU"))
+        << "remote_context requires a GPU device, got " << options.device();
+    void* external_device = nullptr;
+    if (cc->InputSidePackets().HasTag(kDeviceTag)) {
+      external_device = cc->InputSidePackets().Tag(kDeviceTag).Get<void*>();
+      RET_CHECK(external_device != nullptr) << "DEVICE side packet is null";
+    }
+    std::string key = BuildSessionKey(options);
+    if (external_device != nullptr) {
+      absl::StrAppend(&key, "|device=",
+                      reinterpret_cast<uintptr_t>(external_device));
+    }
 
     std::lock_guard<std::mutex> lock(SessionRegistryMutex());
     auto& registry = SessionRegistry();
@@ -384,11 +532,36 @@ class OpenVINOSessionCalculator : public CalculatorBase {
       registry.erase(it);
     }
 
+    std::shared_ptr<void> device_owner;
+    void* remote_device = external_device;
+#ifdef MEDIAPIPE_OPENVINO_REMOTE_DEVICE
+    if (use_remote_context && remote_device == nullptr) {
+      absl::StatusOr<std::shared_ptr<void>> device =
+          AcquireRemoteDevice(options);
+      if (!device.ok()) return device.status();
+      device_owner = *std::move(device);
+      remote_device = device_owner.get();
+    }
+#endif
+
     OpenVINOSessionPtr session;
     try {
       std::shared_ptr<ov::Model> model = PrepareModel(options);
-      ov::CompiledModel compiled = GlobalCore().compile_model(
-          model, options.device(), ToAnyMap(options));
+      ov::RemoteContext remote_context;
+      ov::CompiledModel compiled;
+      if (use_remote_context) {
+        remote_context = GlobalCore().create_context(
+            options.device(),
+            {{ov::intel_gpu::context_type.name(),
+              ov::intel_gpu::ContextType::VA_SHARED},
+             {ov::intel_gpu::va_device.name(),
+              static_cast<ov::intel_gpu::gpu_handle_param>(remote_device)}});
+        compiled = GlobalCore().compile_model(model, remote_context,
+                                              ToAnyMap(options));
+      } else {
+        compiled = GlobalCore().compile_model(model, options.device(),
+                                              ToAnyMap(options));
+      }
       int nireq = static_cast<int>(options.num_infer_requests());
       if (nireq <= 0) {
         nireq = static_cast<int>(
@@ -397,7 +570,14 @@ class OpenVINOSessionCalculator : public CalculatorBase {
       if (nireq <= 0) {
         nireq = 1;
       }
-      session = std::make_shared<OpenVINOSession>(std::move(compiled), nireq);
+      session = std::make_shared<OpenVINOSession>(std::move(compiled), nireq,
+                                                  std::move(device_owner));
+      if (use_remote_context) {
+        session->remote_device_type =
+            ToRemoteDeviceType(options.remote_context());
+        session->remote_context = std::move(remote_context);
+        session->remote_device = remote_device;
+      }
       ABSL_LOG(INFO) << "OpenVINOSessionCalculator compiled "
                      << options.model_path() << " on " << options.device()
                      << " with " << nireq << " inference requests";

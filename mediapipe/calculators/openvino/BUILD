@@ -56,6 +56,18 @@ cc_library(
 cc_library(
     name = "openvino_session_calculator",
     srcs = ["openvino_session_calculator.cc"],
+    linkopts = select({
+        "//third_party:gstreamer_enabled_windows": ["d3d11.lib"],
+        "//third_party:gstreamer_enabled": [
+            "-lva",
+            "-lva-drm",
+        ],
+        "//conditions:default": [],
+    }),
+    local_defines = select({
+        "//third_party:gstreamer_enabled": ["MEDIAPIPE_OPENVINO_REMOTE_DEVICE"],
+        "//conditions:default": [],
+    }),
     deps = [
         ":openvino_session",
         ":openvino_session_calculator_cc_proto",
@@ -64,6 +76,7 @@ cc_library(
         "@mediapipe//mediapipe/framework/port:status",
         "//third_party:openvino",
         "@com_google_absl//absl/log:absl_log",
+        "@com_google_absl//absl/status:statusor",
         "@com_google_absl//absl/strings",
         "@com_github_nlohmann_json//:json",
     ],
@@ -76,6 +89,7 @@ cc_library(
     deps = [
         ":openvino_inference_calculator_cc_proto",
         ":openvino_session",
+        "//mediapipe/calculators/gstreamer:gst_video_frame_packet",
         "@mediapipe//mediapipe/framework:calculator_framework",
         "@mediapipe//mediapipe/framework/port:ret_check",
         "@mediapipe//mediapipe/framework/port:status",
