@@ -48,6 +48,7 @@ apt-get update && apt-get install -y --no-install-recommends \
     libavformat-dev \
     libavutil-dev \
     libswscale-dev \
+    libopenh264-dev \
     git
 apt-get clean && rm -rf /var/lib/apt/lists/*
 
@@ -59,7 +60,13 @@ mkdir -p /src && cd /src
 git clone --depth 1 --branch "${GST_VERSION}" https://gitlab.freedesktop.org/gstreamer/gstreamer.git
 cd /src/gstreamer
 
+# No meson fallbacks: bundled copies of system libraries (libpng, cairo, ...) in
+# ${GST_PREFIX}/lib would shadow Ubuntu's once registered with ldconfig.
+# FFmpeg is forced as a fallback only so gst-libav links it statically; this is
+# GStreamer plugin code, not an executable FFmpeg dependency used directly by MPI.
 meson setup \
+    --wrap-mode=nofallback \
+    --force-fallback-for=FFmpeg \
     -Dexamples=disabled \
     -Dtests=disabled \
     -Dgst-examples=disabled \

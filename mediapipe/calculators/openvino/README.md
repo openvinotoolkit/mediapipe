@@ -347,9 +347,22 @@ node {
 `WIDTH`/`HEIGHT` must match the model input. On Linux GStreamer is loaded with
 `dlopen` at runtime and needs the VA plugin and the Intel media driver. The
 `Dockerfile` builds GStreamer 1.26 from source (`setup_gstreamer.sh`);
-`--build-arg GSTREAMER_SOURCE=apt` uses Ubuntu's 1.24.2 packages instead, whose
+`make docker_build GSTREAMER_SOURCE=apt` uses Ubuntu's 1.24.2 packages instead, whose
 `vapostproc` crashes when scaling VA frames into system memory (host
 `FRAME_FULL` at a size other than the source).
+
+The Intel media driver (iHD) source is selected with `MEDIA_DRIVER_SOURCE`:
+
+| Value | Source | Use |
+| --- | --- | --- |
+| `intel-gpu-repo` (default) | `repositories.intel.com/gpu/ubuntu noble client`, iHD 24.3 | Arc A-series / Flex (DG2) and older |
+| `kobuk-ppa` | `ppa:kobuk-team/intel-graphics`, newer iHD (26.x) | required for Arc B-series (BMG), where iHD 24.3 fails in `vaInitialize` |
+
+`MEDIA_DRIVER_VERSION` pins the exact apt version of
+`intel-media-va-driver-non-free` (empty means the latest from that source; the
+PPA removes old versions). Example:
+`make docker_build MEDIA_DRIVER_SOURCE=kobuk-ppa`. Ubuntu's own iHD package is
+not used: it crashes with the gmmlib installed by `install_drivers.sh`.
 
 Building for GPU: `third_party/openvino.BUILD` excludes
 `libopenvino_intel_gpu_plugin.so` from linking because it needs

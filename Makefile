@@ -10,6 +10,9 @@ DEMOS_IMAGE ?= mediapipe-openvino-demos:$(OVMS_MEDIA_IMAGE_TAG)
 RUNTIME_IMAGE ?= mediapipe-openvino-runtime:$(OVMS_MEDIA_IMAGE_TAG)
 DOCKER_BUILD_ARGS := --build-arg JOBS=$(JOBS) --build-arg http_proxy="$(http_proxy)" \
                      --build-arg https_proxy="$(https_proxy)" --build-arg no_proxy="$(no_proxy)"
+# Passed only when set, so the defaults live in the Dockerfile.
+DOCKER_BUILD_ARGS += $(foreach arg,GSTREAMER_SOURCE MEDIA_DRIVER_SOURCE MEDIA_DRIVER_VERSION,\
+                       $(if $($(arg)),--build-arg $(arg)="$($(arg))"))
 
 ifeq ($(OS),Windows_NT)
 SHELL := bash.exe

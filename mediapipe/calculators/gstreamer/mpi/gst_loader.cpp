@@ -45,6 +45,7 @@
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <atomic>
 #include <chrono>
 #include <cstring>
 #include <cstdlib>
@@ -68,6 +69,7 @@ struct GstFunctionTable {
     // gstreamer-1.0
     void (*gst_init)(int*, char***);
     GstElement* (*gst_parse_launch)(const gchar*, GError**);
+    GstElementFactory* (*gst_element_factory_find)(const gchar*);
     GstStateChangeReturn (*gst_element_set_state)(GstElement*, GstState);
     GstStateChangeReturn (*gst_element_get_state)(GstElement*, GstState*,
         GstState*, GstClockTime);
@@ -131,12 +133,12 @@ struct GstFunctionTable {
 };
 
 static GstFunctionTable s_fns = {};
+// Written only inside gst_loader_init(), which publishes them to all callers.
 static bool s_available = false;
-static bool s_initialized = false;
-static bool s_va_available = false;            // true when vapostproc element found
-static bool s_va_surface_capable = false;      // true when gst_va + libva dlopen succeeded
-static void* s_va_display = nullptr;           // externally-owned VADisplay
-static void* s_injected_va_display = nullptr;  // external VADisplay to push into GStreamer (Option B)
+static bool s_va_available = false;        // true when vapostproc element found
+static bool s_va_surface_capable = false;  // true when gst_va + libva dlopen succeeded
+static std::atomic<void*> s_va_display{nullptr};           // externally-owned VADisplay
+static std::atomic<void*> s_injected_va_display{nullptr};  // external VADisplay to push into GStreamer (Option B)
 
 // ============================================================================
 // Symbol loading helpers
@@ -165,6 +167,7 @@ static bool load_symbols(void* gst_h, void* app_h,
     LOAD_SYM(gst_h, gst_structure_get_int);
     LOAD_SYM(gst_h, gst_caps_unref);
     LOAD_SYM(gst_h, gst_object_unref);
+    LOAD_SYM(gst_h, gst_element_factory_find);
     LOAD_SYM(gst_h, gst_element_get_bus);
     LOAD_SYM(gst_h, gst_element_send_event);
     LOAD_SYM(gst_h, gst_event_new_eos);
@@ -236,11 +239,7 @@ static void try_load_va_symbols() {
 // Public loader API
 // ============================================================================
 
-bool gst_loader_init() {
-    if (s_initialized)
-        return s_available;
-    s_initialized = true;
-
+static bool load_gstreamer() {
     void* gst_h = dlopen("libgstreamer-1.0.so.0", RTLD_LAZY | RTLD_GLOBAL);
     void* app_h = dlopen("libgstapp-1.0.so.0", RTLD_LAZY | RTLD_GLOBAL);
     void* vid_h = dlopen("libgstvideo-1.0.so.0", RTLD_LAZY | RTLD_GLOBAL);
@@ -314,6 +313,11 @@ bool gst_loader_init() {
     return true;
 }
 
+bool gst_loader_init() {
+    static const bool available = load_gstreamer();
+    return available;
+}
+
 bool gst_loader_available() { return s_available; }
 bool gst_loader_va_available() { return s_va_available; }
 void* gst_loader_va_display() { return s_va_display; }
@@ -327,8 +331,6 @@ void gst_loader_set_va_display(void* va_display) {
     // decode actually happens on this (externally-owned) display — Option B.
     s_va_display = va_display;
     s_injected_va_display = va_display;
-    s_va_surface_capable = s_fns.gst_va_buffer_get_surface &&
-                           s_fns.gst_va_buffer_peek_display && s_fns.gst_va_display_get_va_dpy;
 }
 
 // ============================================================================
@@ -481,7 +483,8 @@ static bool read_frame_va_surface(imp_branch_info_t& branch,
 
 static void gst_inject_va_display_context(GstElement* target) {
     const auto& f = s_fns;
-    if (!s_injected_va_display || !target)
+    void* const injected = s_injected_va_display.load();
+    if (!injected || !target)
         return;
     if (!(f.gst_va_display_wrapped_new && f.gst_context_set_va_display &&
             f.gst_context_new && f.gst_element_set_context &&
@@ -494,14 +497,14 @@ static void gst_inject_va_display_context(GstElement* target) {
     static void* s_wrapped_display = nullptr;
     static void* s_wrapped_for = nullptr;
     std::lock_guard<std::mutex> lock(s_wrapped_mutex);
-    if (s_wrapped_for != s_injected_va_display) {
-        void* wrapped = f.gst_va_display_wrapped_new(s_injected_va_display);
+    if (s_wrapped_for != injected) {
+        void* wrapped = f.gst_va_display_wrapped_new(injected);
         if (!wrapped)
             return;
         if (s_wrapped_display)
             f.gst_object_unref(s_wrapped_display);
         s_wrapped_display = wrapped;
-        s_wrapped_for = s_injected_va_display;
+        s_wrapped_for = injected;
     }
     GstContext* va_ctx = f.gst_context_new("gst.va.display.handle", TRUE);
     f.gst_context_set_va_display(va_ctx, s_wrapped_display);
@@ -744,8 +747,9 @@ imp_status_t linux_video_open(imp_video_stream_t** stream,
     // elements decode onto THAT display instead of creating their own. A sync
     // bus handler answers NEED_CONTEXT in the element's own thread, which is
     // required: the elements fall back to their own display otherwise.
+    void* const injected_display = s_injected_va_display.load();
     const bool inject_display =
-        want_va_surface && s_injected_va_display &&
+        want_va_surface && injected_display &&
         f.gst_va_display_wrapped_new && f.gst_context_set_va_display &&
         f.gst_context_new && f.gst_message_parse_context_type &&
         f.gst_bus_set_sync_handler;
@@ -758,7 +762,7 @@ imp_status_t linux_video_open(imp_video_stream_t** stream,
             f.gst_object_unref(bus);
         }
         std::cout << "[linux_video_open] External VADisplay "
-                  << s_injected_va_display << " injection armed.\n";
+                  << injected_display << " injection armed.\n";
     }
 
     f.gst_element_set_state(s->pipeline, GST_STATE_PLAYING);
@@ -796,7 +800,7 @@ imp_status_t linux_video_open(imp_video_stream_t** stream,
     s->use_hw_decode = use_va;
     s->use_native_surface_memory = want_va_surface;
     s->output_memory = want_va_surface ? IMP_VIDEO_MEMORY_NATIVE : IMP_VIDEO_MEMORY_SYSTEM;
-    s->va_display = want_va_surface ? s_va_display : nullptr;
+    s->va_display = want_va_surface ? s_va_display.load() : nullptr;
 
     auto end = chrono::high_resolution_clock::now();
     ctx->timing.video_open_ms =
@@ -914,6 +918,24 @@ void linux_video_close(imp_video_stream_t* stream) {
     delete stream;
 }
 
+// The VA plugin registers one H.264 encoder per entrypoint the driver exposes:
+// vah264lpenc for the low-power VDEnc path (VAEntrypointEncSliceLP), vah264enc
+// for VAEntrypointEncSlice. Which one exists depends on the GPU and driver: e.g.
+// Flex 140 (DG2) has only the low-power one, Arc Pro B70 with iHD 26.4 only the
+// regular one. Prefer low power when both are available.
+static const char* find_va_h264_encoder() {
+    const auto& f = s_fns;
+    f.gst_init(nullptr, nullptr);
+    for (const char* name : {"vah264lpenc", "vah264enc"}) {
+        GstElementFactory* factory = f.gst_element_factory_find(name);
+        if (factory) {
+            f.gst_object_unref(factory);
+            return name;
+        }
+    }
+    return nullptr;
+}
+
 // ============================================================================
 // Public: Linux video encoder (appsrc -> x264enc -> h264parse -> mp4mux -> file)
 // ============================================================================
@@ -947,10 +969,16 @@ imp_status_t linux_video_encoder_create(imp_video_encoder_t** encoder,
              : ("mp4mux ! filesink location=\"" + output_path + "\"");
 
     // GPU (VA) zero-copy encode when requested: push the decoded VA surface's
-    // own buffer straight into vah264lpenc — no host copy. Otherwise software
+    // own buffer straight into the VA encoder — no host copy. Otherwise software
     // encode from host NV12 planes.
     const bool gpu = opts && opts->encode_device &&
                      (std::string(opts->encode_device).rfind("GPU", 0) == 0);
+    const char* va_encoder = gpu ? find_va_h264_encoder() : nullptr;
+    if (gpu && !va_encoder) {
+        ctx->last_error = "no VA H.264 encoder (vah264lpenc/vah264enc) available";
+        delete e;
+        return IMP_ERROR_ENCODE_FAILED;
+    }
 
     std::string pipeline;
     if (gpu) {
@@ -959,9 +987,8 @@ imp_status_t linux_video_encoder_create(imp_video_encoder_t** encoder,
             "video/x-raw(memory:VAMemory),format=NV12,width=" +
             std::to_string(width) +
             ",height=" + std::to_string(height) +
-            ",framerate=" + std::to_string(e->fps_num) + "/" + std::to_string(e->fps_den) + " ! "
-                                                                                            "vah264lpenc ! h264parse ! " +
-            terminus;
+            ",framerate=" + std::to_string(e->fps_num) + "/" + std::to_string(e->fps_den) + " ! " +
+            va_encoder + " ! h264parse ! " + terminus;
     } else {
         // TODO: expose source latency and encoder bitrate/complexity through
         // graph configuration when the test harness gains a production lifecycle.
@@ -1011,7 +1038,7 @@ imp_status_t linux_video_encoder_create(imp_video_encoder_t** encoder,
         return IMP_ERROR_ENCODE_FAILED;
     }
 
-    e->encoder_name = gpu ? "vah264lpenc" : "openh264enc";
+    e->encoder_name = gpu ? va_encoder : "openh264enc";
     e->is_gpu_encoder = gpu;
     e->initialized = true;
     *encoder = e;

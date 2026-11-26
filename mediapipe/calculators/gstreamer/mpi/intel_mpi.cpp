@@ -57,6 +57,7 @@
 
 #include <iostream>
 #include <algorithm>
+#include <atomic>
 #include <chrono>
 #include <string>
 #include <utility>
@@ -267,15 +268,16 @@ void imp_video_source_destroy(imp_video_source_t* source) {
 // the model's ov::intel_gpu::ocl::D3DContext (built from the same device).
 //////////////////////////////////////////////////////////////////////////////
 
-static ID3D11Device* s_injected_d3d11_device = nullptr;
+static std::atomic<ID3D11Device*> s_injected_d3d11_device{nullptr};
 
 // Push the injected device into a VA/d3d11 element via the canonical
 // "gst.d3d11.device.handle" context. Used both preemptively on the pipeline and
 // in response to NEED_CONTEXT from dynamically-created elements (decodebin).
 static void gst_inject_d3d11_device_context(GstElement* target) {
-    if (!s_injected_d3d11_device || !target)
+    ID3D11Device* const device = s_injected_d3d11_device.load();
+    if (!device || !target)
         return;
-    GstD3D11Device* gst_dev = gst_d3d11_device_new_wrapped(s_injected_d3d11_device);
+    GstD3D11Device* gst_dev = gst_d3d11_device_new_wrapped(device);
     if (!gst_dev)
         return;
     GstContext* ctx = gst_d3d11_context_new(gst_dev);
@@ -689,12 +691,12 @@ imp_status_t imp_video_open(imp_video_stream_t** stream,
 
     s->use_native_surface_memory = d3d11_surface;
     s->output_memory = output_memory;
-    s->d3d11_device = s_injected_d3d11_device;
+    s->d3d11_device = s_injected_d3d11_device.load();
 
     // Inject the server-owned D3D11 device (Option B). A synchronous bus handler
     // answers NEED_CONTEXT in the element's own thread — an async poll is too
     // late, elements fall back to creating their own device (VA path parity).
-    if (d3d11_surface && s_injected_d3d11_device) {
+    if (d3d11_surface && s->d3d11_device) {
         GstBus* bus = gst_element_get_bus(s->pipeline);
         if (bus) {
             gst_bus_set_sync_handler(bus, gst_d3d11_sync_bus_handler, nullptr, nullptr);
@@ -1283,10 +1285,10 @@ void imp_video_set_va_display(void* /*va_display*/) {}
 #ifdef _WIN32
 bool imp_video_d3d11_available(void) { return windows_gstreamer_available(); }
 void imp_video_set_d3d11_device(void* d3d11_device) {
-    s_injected_d3d11_device = static_cast<ID3D11Device*>(d3d11_device);
-    if (s_injected_d3d11_device) {
+    auto* device = static_cast<ID3D11Device*>(d3d11_device);
+    if (device) {
         ID3D11DeviceContext* deviceContext = nullptr;
-        s_injected_d3d11_device->GetImmediateContext(&deviceContext);
+        device->GetImmediateContext(&deviceContext);
         ID3D11Multithread* multithread = nullptr;
         if (SUCCEEDED(deviceContext->QueryInterface(__uuidof(ID3D11Multithread),
                 reinterpret_cast<void**>(&multithread)))) {
@@ -1295,6 +1297,7 @@ void imp_video_set_d3d11_device(void* d3d11_device) {
         }
         deviceContext->Release();
     }
+    s_injected_d3d11_device = device;
 }
 #else
 bool imp_video_d3d11_available(void) { return false; }

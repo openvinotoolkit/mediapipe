@@ -12,11 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <atomic>
 #include <cstdio>
 #include <cstdlib>
 #include <map>
 #include <memory>
 #include <string>
+#include <thread>
 #include <vector>
 
 #include "absl/strings/str_cat.h"
@@ -72,6 +74,34 @@ int CountVideoFrames(const std::string& path) {
   pclose(pipe);
 #endif
   return frames;
+}
+
+// The "threadsafe" style re-executes the binary for this test only, so the
+// child starts before anything has initialized MPI.
+TEST(GstLoaderConcurrencyTest, VaAvailabilityIsConsistentAcrossThreads) {
+  ::testing::FLAGS_gtest_death_test_style = "threadsafe";
+  EXPECT_EXIT(
+      {
+        constexpr int kThreads = 16;
+        std::atomic<int> waiting{kThreads};
+        std::vector<char> results(kThreads);
+        std::vector<std::thread> threads;
+        for (int i = 0; i < kThreads; ++i) {
+          threads.emplace_back([&, i] {
+            waiting.fetch_sub(1);
+            while (waiting.load() > 0) {
+            }
+            results[i] = imp_video_va_available();
+          });
+        }
+        for (std::thread& thread : threads) thread.join();
+        const char expected = imp_video_va_available();
+        for (char result : results) {
+          if (result != expected) std::exit(1);
+        }
+        std::exit(0);
+      },
+      ::testing::ExitedWithCode(0), "");
 }
 
 class GstVideoGpuTest : public ::testing::Test {
